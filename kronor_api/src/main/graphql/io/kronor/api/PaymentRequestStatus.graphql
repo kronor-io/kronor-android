@@ -1,0 +1,36 @@
+subscription PaymentStatus {
+    paymentRequests(orderBy: {createdAt: ASC}) {
+        waitToken
+        amount
+        merchant {
+            currency
+        }
+        status {
+            status
+        }
+        createdAt
+        resultingPaymentId
+        transactionSwishDetails {
+            errorCode
+            amount
+            qrCode
+            returnUrl
+        }
+        transactionFinsharkDetails {
+            paymentFlowsUrl
+        }
+        transactionCreditCardDetails {
+            sessionId
+            sessionUrl
+        }
+        transactionMobilePayDetails {
+            sessionId
+            sessionUrl
+        }
+        transactionVippsDetails {
+            sessionId
+            sessionUrl
+        }
+        paymentFlow
+    }
+}
