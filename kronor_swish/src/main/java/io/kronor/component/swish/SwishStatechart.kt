@@ -9,7 +9,7 @@ enum class SelectedMethod {
 }
 
 class SwishStatechart {
-    private val stateMachine = StateMachine.create<State, Event, SideEffect> {
+     val stateMachine = StateMachine.create<State, Event, SideEffect> {
         initialState(State.PromptingMethod)
 
         state<State.PromptingMethod> {
@@ -125,6 +125,9 @@ class SwishStatechart {
                     sideEffect = SideEffect.ResetState
                 )
             }
+        }
+        state<State.Errored> {
+
         }
     }
 

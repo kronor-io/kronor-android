@@ -10,6 +10,7 @@ import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import io.kronor.api.*
 import io.kronor.api.type.AddSessionDeviceInformationInput
 import io.kronor.api.type.SwishPaymentInput
+import kotlinx.coroutines.flow.*
 import java.util.UUID
 
 data class SwishComponentInput(
@@ -20,7 +21,7 @@ suspend fun makeNewPaymentRequest(
     swishInputData: SwishComponentInput,
     deviceFingerprint: String,
     env: Environment
-) : String? {
+): String? {
     kronorApolloClient(token = swishInputData.sessionToken, env)?.let {
         val response = try {
             it.mutation(
@@ -48,4 +49,23 @@ suspend fun makeNewPaymentRequest(
         return response?.data?.newSwishPayment?.waitToken
     }
     return null
+}
+
+fun getPaymentRequests(
+    sessionToken: String,
+    env: Environment
+) : Flow<List<PaymentStatusSubscription.PaymentRequest>>? {
+    return kronorApolloClient(token = sessionToken, env = env)?.let {
+        try {
+            Log.d("InSub", "I am here in try $sessionToken")
+            it.subscription(
+                PaymentStatusSubscription()
+            ).toFlow()
+                .map { response -> response.data?.paymentRequests }
+                .filterNotNull()
+        } catch (e: ApolloException) {
+            Log.d("PaymentStatusSub", "Failed; $e")
+            null
+        }
+    }
 }

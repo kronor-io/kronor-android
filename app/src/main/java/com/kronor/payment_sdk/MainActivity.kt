@@ -34,7 +34,7 @@ import com.kronor.payment_sdk.databinding.ActivityMainBinding
 import com.kronor.payment_sdk.type.PaymentSessionInput
 import com.kronor.payment_sdk.type.SupportedCurrencyEnum
 import com.kronor.payment_sdk.ui.theme.KronorSDKTheme
-import io.kronor.component.swish.SwishScreen
+import io.kronor.component.swish.MainSwishScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -72,8 +72,8 @@ fun KronorTestApp() {
                 arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
             ) {
 
-                it.arguments?.getString("sessionToken")?.let {
-                    SwishScreen(sessionToken = it, merchantLogo = R.drawable.boozt_logo)
+                it.arguments?.getString("sessionToken")?.let { sessionToken ->
+                    MainSwishScreen(sessionToken = sessionToken, merchantLogo = R.drawable.boozt_logo)
                 }
             }
         }
@@ -114,6 +114,8 @@ fun paymentMethodsScreen(onNavigateToSwish: (String) -> Unit) {
                     GlobalScope.launch {
                         withContext(Dispatchers.Main) {
                             val sessionToken = createNewPaymentSession(context, amount.text)
+//                            val sessionToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOiAxNjc0NjYzNjA5LjAwMDAwMCwgImlhdCI6IDE2NzQ2NDM1MTUuNzY1ODcwLCAidGlkIjogIjFmMDdhNmU1LTQ0YTktNDE1MS1hMGUyLWE4M2FkYTUyODFjOCIsICJ0bmFtZSI6IG51bGwsICJ0dHlwZSI6ICJiYWNrZW5kIiwgImh0dHBzOi8vaGFzdXJhLmlvL2p3dC9jbGFpbXMiOiB7IngtaGFzdXJhLW1lcmNoYW50LWlkIjogIjIiLCAieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjogInBheW1lbnQtZ2F0ZXdheSIsICJ4LWhhc3VyYS1hbGxvd2VkLXJvbGVzIjogWyJwYXltZW50LWdhdGV3YXkiXSwgIngtaGFzdXJhLXBheW1lbnQtYW1vdW50IjogIjExMTAwIiwgIngtaGFzdXJhLXBheWVlLXJlZmVyZW5jZSI6ICJyZWZlcmVuY2UiLCAieC1oYXN1cmEtcGF5bWVudC1tZXNzYWdlIjogInJhbmRvbSBtZXNzYWdlIiwgIngtaGFzdXJhLXBheW1lbnQtY2F0ZWdvcnkiOiAiU3RhbmRBbG9uZSIsICJ4LWhhc3VyYS1wYXltZW50LXJlZmVyZW5jZSI6ICI3NzM5Y2Y0MC1kZGQ5LTQ2MjAtODM2Yi0zNzFkOGVkNWI1OWUiLCAieC1oYXN1cmEtcGF5bWVudC1leHBpcmVzLWF0IjogIjIwMjMtMDEtMjVUMTY6MjA6MDlaIn19.p2jVXSGQ8kuTLY2-LWljoSDh8HnH5uWBwKhhpmQQbqY"
+
                             sessionToken?.let {
                                 onNavigateToSwish(it)
                             }
