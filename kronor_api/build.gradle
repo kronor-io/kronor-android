@@ -34,6 +34,9 @@ android {
 apollo {
     service("service") {
         packageName.set("io.kronor.api")
+        mapScalarToKotlinString("bigint")
+        mapScalarToKotlinString("uuid")
+        mapScalar("timestamptz", "java.util.Date", "com.apollographql.apollo3.adapter.DateAdapter")
     }
 }
 
@@ -46,5 +49,6 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation("com.apollographql.apollo3:apollo-runtime:3.7.3")
+    implementation("com.apollographql.apollo3:apollo-adapters:3.7.3")
 
 }
