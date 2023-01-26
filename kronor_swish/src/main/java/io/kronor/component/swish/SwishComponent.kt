@@ -143,7 +143,8 @@ fun SwishScreen(
                             SwishPaymentWithQrCode(qrToken)
                         }
                         SelectedMethod.SwishApp -> {
-                            val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
+                            val returnUrl =
+                                paymentRequest?.transactionSwishDetails?.first()?.returnUrl
                             OpenSwishApp(context = LocalContext.current, returnUrl = returnUrl)
                         }
                         SelectedMethod.PhoneNumber -> {
@@ -219,12 +220,28 @@ fun SwishCreatingPaymentRequest() {
 }
 
 @Composable
-fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
-    Button(onClick = {
-        onAppOpen()
-    }) {
-        Text("Open Swish App")
+fun swishAppExists() : Boolean {
+    val context = LocalContext.current
+
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("swish://"))
+    val appIntentMatch = context.packageManager.queryIntentActivities(
+        intent, MATCH_DEFAULT_ONLY
+    )
+    return appIntentMatch.any { resolveInfo ->
+        resolveInfo.activityInfo.packageName == "se.bankgirot.swish.sandbox" ||
+                resolveInfo.activityInfo.packageName == "se.bankgirot.swish"
     }
+}
+
+@Composable
+fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
+    if (swishAppExists())
+        Button(onClick = {
+            onAppOpen()
+        }) {
+            Text("Open Swish App")
+        }
+
     Text("or pay using another phone")
     Button(onClick = {
         onQrCode()
@@ -243,15 +260,16 @@ fun OpenSwishApp(context: Context, returnUrl: String?) {
     val swishUrl = Uri.parse(returnUrl)
     val intent = Intent(Intent.ACTION_VIEW, swishUrl)
     val appIntentMatch = context.packageManager.queryIntentActivities(intent, MATCH_DEFAULT_ONLY)
-    val doesSwishAppExist = appIntentMatch.any{
-            resolveInfo ->
+    Text("$appIntentMatch")
+    val doesSwishAppExist = appIntentMatch.any { resolveInfo ->
         Log.d("AppCheck", "${resolveInfo.activityInfo}")
-        resolveInfo.activityInfo.packageName == "se.bankgirot.swish"
+        resolveInfo.activityInfo.packageName == "se.bankgirot.swish.sandbox" || resolveInfo.activityInfo.packageName == "se.bankgirot.swish"
     }
 
     if (doesSwishAppExist) {
-       startActivity(context, intent, null)
+        startActivity(context, intent, null)
     } else {
+        Text("No Swish App Found")
         Log.d("SwishApp", "No Swish app")
     }
 }
