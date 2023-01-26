@@ -42,7 +42,7 @@ class SwishStateMachine(val sessionToken: String) {
                     swishInputData = SwishComponentInput(
                         sessionToken = sessionToken,
                         customerSwishNumber = null,
-                        returnUrl = "https://kronor.io/"
+                        returnUrl = "kronor_test://"
                     ),
                     deviceFingerprint = "fingerprint",
                     env = Environment.Staging
