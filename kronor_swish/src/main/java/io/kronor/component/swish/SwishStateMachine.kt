@@ -17,7 +17,6 @@ class SwishStateMachine(val sessionToken: String) {
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
 
     suspend fun transition(event: SwishStatechart.Companion.Event) {
-        Log.d("SwishStateMachine", "I am here")
         val result = stateMachine.transition(event)
 
         when (result) {
@@ -41,6 +40,23 @@ class SwishStateMachine(val sessionToken: String) {
                     swishInputData = SwishComponentInput(
                         sessionToken = sessionToken,
                         customerSwishNumber = null,
+                        returnUrl = "https://kronor.io/"
+                    ),
+                    deviceFingerprint = "fingerprint",
+                    env = Environment.Staging
+                )
+                if (waitToken == null) {
+                    transition(SwishStatechart.Companion.Event.Error("No wait token"))
+                } else {
+                    transition(SwishStatechart.Companion.Event.PaymentRequestCreated(waitToken = waitToken))
+                }
+            }
+            is SwishStatechart.Companion.SideEffect.CreateEcomPaymentRequest -> {
+                Log.d("SwishStateMachine", "Creating Ecom Payment Request")
+                val waitToken = makeNewPaymentRequest(
+                    swishInputData = SwishComponentInput(
+                        sessionToken = sessionToken,
+                        customerSwishNumber = sideEffect.phoneNumber,
                         returnUrl = "https://kronor.io/"
                     ),
                     deviceFingerprint = "fingerprint",
