@@ -21,10 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.PaymentStatusSubscription
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun MainSwishScreen(
@@ -56,10 +53,6 @@ fun SwishScreen(
         mutableStateOf("")
     }
 
-    var waitToken: String? by remember {
-        mutableStateOf(null)
-    }
-
     if (LocalInspectionMode.current) {
         fingerprint = "preview fingerprint"
         waitToken = "preview waitToken"
@@ -78,7 +71,7 @@ fun SwishScreen(
 
     // A surface container using the 'background' color from the theme
     Surface(
-        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
+        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -106,30 +99,40 @@ fun SwishScreen(
                     SwishPromptMethods(onQrCode = {
                         composableScope.launch {
                             transitioner(SwishStatechart.Companion.Event.UseQR)
+
                         }
-                    }
-                    ) {
-                        transitioner(SwishStatechart.Companion.Event.UsePhoneNumber)
-                    }
+                    }, onPhoneNumber = {
+                        composableScope.launch {
+                            transitioner(SwishStatechart.Companion.Event.UsePhoneNumber)
+                        }
+                    })
                 }
                 SwishStatechart.Companion.State.InsertingPhoneNumber -> {
                     SwishPaymentWithPhoneNumber(onPayNow = { phoneNumber ->
-                        transitioner(SwishStatechart.Companion.Event.PhoneNumberInserted(phoneNumber))
+                        composableScope.launch {
+                            transitioner(
+                                SwishStatechart.Companion.Event.PhoneNumberInserted(
+                                    phoneNumber
+                                )
+                            )
+                        }
                     })
                 }
                 is SwishStatechart.Companion.State.CreatingPaymentRequest -> SwishCreatingPaymentRequest()
                 is SwishStatechart.Companion.State.WaitingForPaymentRequest -> SwishCreatingPaymentRequest()
-                is SwishStatechart.Companion.State.CreatingPaymentRequest -> SwishCreatingPaymentRequest()
-                is SwishStatechart.Companion.State.WaitingForPaymentRequest -> SwishCreatingPaymentRequest()
                 is SwishStatechart.Companion.State.PaymentRequestInitialized -> {
-                    if (state.selected == SelectedMethod.QrCode) {
-                        val qrToken = paymentRequest?.transactionSwishDetails?.first()?.qrCode
-                        Spacer(modifier = Modifier.height(100.dp))
-                        SwishPaymentWithQrCode(qrToken)
-                    } else if (state.selected == SelectedMethod.PhoneNumber) {
-                        Text("Open Swish App on your phone and accept the payment request")
-                    } else {
-                        Text("Cannot create payment for methods other than qr code")
+                    when (state.selected) {
+                        SelectedMethod.QrCode -> {
+                            val qrToken = paymentRequest?.transactionSwishDetails?.first()?.qrCode
+                            Spacer(modifier = Modifier.height(100.dp))
+                            SwishPaymentWithQrCode(qrToken)
+                        }
+                        SelectedMethod.PhoneNumber -> {
+                            Text("Open Swish App on your phone and accept the payment request")
+                        }
+                        else -> {
+                            Text("Cannot create payment for methods other than qr code")
+                        }
                     }
                 }
                 SwishStatechart.Companion.State.PaymentCompleted -> {
@@ -142,7 +145,7 @@ fun SwishScreen(
 }
 
 @Composable
-fun SwishPaymentWithPhoneNumber(onPayNow: suspend (String) -> Unit) {
+fun SwishPaymentWithPhoneNumber(onPayNow: (String) -> Unit) {
     var phoneNumber by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
@@ -159,11 +162,7 @@ fun SwishPaymentWithPhoneNumber(onPayNow: suspend (String) -> Unit) {
         )
         Spacer(modifier = Modifier.height(50.dp))
         Button(onClick = {
-            GlobalScope.launch {
-                withContext(Dispatchers.Main) {
-                    onPayNow(phoneNumber.text)
-                }
-            }
+            onPayNow(phoneNumber.text)
         }) {
             Text("Pay Now")
         }
@@ -204,27 +203,18 @@ fun SwishCreatingPaymentRequest() {
 }
 
 @Composable
-fun SwishPromptMethods(onQrCode: suspend () -> Unit,  onPhoneNumber: suspend () -> Unit) {
-    val composableScope = rememberCoroutineScope()
+fun SwishPromptMethods(onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
     Button(onClick = {}) {
         Text("Open Swish App")
     }
     Text("or pay using another phone")
     Button(onClick = {
-        GlobalScope.launch {
-            withContext(Dispatchers.Main) {
-                onQrCode()
-            }
-        }
+        onQrCode()
     }) {
         Text("Scan QR Code")
     }
     Button(onClick = {
-        GlobalScope.launch {
-            withContext(Dispatchers.Main) {
-                onPhoneNumber()
-            }
-        }
+        onPhoneNumber()
     }) {
         Text("Pay using phone number")
     }
