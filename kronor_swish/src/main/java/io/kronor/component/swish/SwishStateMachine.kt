@@ -7,10 +7,12 @@ import androidx.compose.runtime.setValue
 import com.tinder.StateMachine
 import io.kronor.api.Environment
 import io.kronor.api.PaymentStatusSubscription
+import io.kronor.api.Requests
 import io.kronor.api.type.PaymentStatusEnum
 import kotlinx.coroutines.flow.*
 
 class SwishStateMachine(val sessionToken: String) {
+    private val requests = Requests()
     var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
         SwishStatechart().stateMachine
     var swishState: SwishStatechart.Companion.State by mutableStateOf(SwishStatechart.Companion.State.PromptingMethod)
@@ -36,7 +38,7 @@ class SwishStateMachine(val sessionToken: String) {
         when (sideEffect) {
             is SwishStatechart.Companion.SideEffect.CreateMcomPaymentRequest -> {
                 Log.d("SwishStateMachine", "Creating Mcom Payment Request")
-                val waitToken = makeNewPaymentRequest(
+                val waitToken = requests.makeNewPaymentRequest(
                     swishInputData = SwishComponentInput(
                         sessionToken = sessionToken,
                         customerSwishNumber = null,
@@ -53,7 +55,7 @@ class SwishStateMachine(val sessionToken: String) {
             }
             is SwishStatechart.Companion.SideEffect.CreateEcomPaymentRequest -> {
                 Log.d("SwishStateMachine", "Creating Ecom Payment Request")
-                val waitToken = makeNewPaymentRequest(
+                val waitToken = requests.makeNewPaymentRequest(
                     swishInputData = SwishComponentInput(
                         sessionToken = sessionToken,
                         customerSwishNumber = sideEffect.phoneNumber,
@@ -70,7 +72,7 @@ class SwishStateMachine(val sessionToken: String) {
             }
             is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
                 Log.d("SwishStateMachine", "Subscribing to Payment Requests")
-                val response = getPaymentRequests(
+                val response = requests.getPaymentRequests(
                     sessionToken = sessionToken,
                     env = Environment.Staging
                 )

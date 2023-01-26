@@ -4,7 +4,6 @@ import android.util.Log
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
 import com.fingerprintjs.android.fingerprint.DeviceIdResult
-import com.fingerprintjs.android.fingerprint.FingerprintResult
 import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import io.kronor.api.*
@@ -17,7 +16,7 @@ data class SwishComponentInput(
     val sessionToken: String, val customerSwishNumber: String? = null, val returnUrl: String
 )
 
-suspend fun makeNewPaymentRequest(
+suspend fun Requests.makeNewPaymentRequest(
     swishInputData: SwishComponentInput,
     deviceFingerprint: String,
     env: Environment
@@ -46,12 +45,14 @@ suspend fun makeNewPaymentRequest(
             Log.d("NewSwishPayment", "Failed: $e")
             null
         }
+        Log.d("NewSwishPayment", "${response?.errors}")
         return response?.data?.newSwishPayment?.waitToken
     }
+    Log.d("NewSwishPayment", "client log")
     return null
 }
 
-fun getPaymentRequests(
+fun Requests.getPaymentRequests(
     sessionToken: String,
     env: Environment
 ) : Flow<List<PaymentStatusSubscription.PaymentRequest>>? {
