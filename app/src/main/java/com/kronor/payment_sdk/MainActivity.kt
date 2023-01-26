@@ -61,11 +61,9 @@ fun KronorTestApp() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = "paymentMethods") {
             composable("paymentMethods") {
-                paymentMethodsScreen(
-                    onNavigateToSwish = { sessionToken ->
-                        navController.navigate("swishScreen/${sessionToken}")
-                    }
-                )
+                paymentMethodsScreen(onNavigateToSwish = { sessionToken ->
+                    navController.navigate("swishScreen/${sessionToken}")
+                })
             }
             composable(
                 "swishScreen/{sessionToken}",
@@ -73,7 +71,9 @@ fun KronorTestApp() {
             ) {
 
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    MainSwishScreen(sessionToken = sessionToken, merchantLogo = R.drawable.boozt_logo)
+                    MainSwishScreen(
+                        sessionToken = sessionToken, merchantLogo = R.drawable.boozt_logo
+                    )
                 }
             }
         }
@@ -87,43 +87,40 @@ fun paymentMethodsScreen(onNavigateToSwish: (String) -> Unit) {
         mutableStateOf(TextFieldValue(""))
     }
 
-    KronorSDKTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colors.background
+    Surface(
+        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceEvenly,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Amount: ")
-                    TextField(
-                        value = amount,
-                        onValueChange = { amount = it },
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            keyboardType = KeyboardType.Decimal
-                        )
+                Text("Amount: ")
+                TextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Decimal
                     )
-                }
-                val context = LocalContext.current
-                Button(onClick = {
-                    GlobalScope.launch {
-                        withContext(Dispatchers.Main) {
-                            val sessionToken = createNewPaymentSession(context, amount.text)
+                )
+            }
+            val context = LocalContext.current
+            Button(onClick = {
+                GlobalScope.launch {
+                    withContext(Dispatchers.Main) {
+                        val sessionToken = createNewPaymentSession(context, amount.text)
 //                            val sessionToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOiAxNjc0NjYzNjA5LjAwMDAwMCwgImlhdCI6IDE2NzQ2NDM1MTUuNzY1ODcwLCAidGlkIjogIjFmMDdhNmU1LTQ0YTktNDE1MS1hMGUyLWE4M2FkYTUyODFjOCIsICJ0bmFtZSI6IG51bGwsICJ0dHlwZSI6ICJiYWNrZW5kIiwgImh0dHBzOi8vaGFzdXJhLmlvL2p3dC9jbGFpbXMiOiB7IngtaGFzdXJhLW1lcmNoYW50LWlkIjogIjIiLCAieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjogInBheW1lbnQtZ2F0ZXdheSIsICJ4LWhhc3VyYS1hbGxvd2VkLXJvbGVzIjogWyJwYXltZW50LWdhdGV3YXkiXSwgIngtaGFzdXJhLXBheW1lbnQtYW1vdW50IjogIjExMTAwIiwgIngtaGFzdXJhLXBheWVlLXJlZmVyZW5jZSI6ICJyZWZlcmVuY2UiLCAieC1oYXN1cmEtcGF5bWVudC1tZXNzYWdlIjogInJhbmRvbSBtZXNzYWdlIiwgIngtaGFzdXJhLXBheW1lbnQtY2F0ZWdvcnkiOiAiU3RhbmRBbG9uZSIsICJ4LWhhc3VyYS1wYXltZW50LXJlZmVyZW5jZSI6ICI3NzM5Y2Y0MC1kZGQ5LTQ2MjAtODM2Yi0zNzFkOGVkNWI1OWUiLCAieC1oYXN1cmEtcGF5bWVudC1leHBpcmVzLWF0IjogIjIwMjMtMDEtMjVUMTY6MjA6MDlaIn19.p2jVXSGQ8kuTLY2-LWljoSDh8HnH5uWBwKhhpmQQbqY"
 
-                            sessionToken?.let {
-                                onNavigateToSwish(it)
-                            }
+                        sessionToken?.let {
+                            onNavigateToSwish(it)
                         }
                     }
-                }) {
-                    Text("Pay ${amount.text}")
                 }
+            }) {
+                Text("Pay ${amount.text}")
             }
         }
     }
