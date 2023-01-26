@@ -3,9 +3,12 @@ package io.kronor.component.swish
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -239,8 +242,18 @@ fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumbe
 fun OpenSwishApp(context: Context, returnUrl: String?) {
     val swishUrl = Uri.parse(returnUrl)
     val intent = Intent(Intent.ACTION_VIEW, swishUrl)
+    val appIntentMatch = context.packageManager.queryIntentActivities(intent, MATCH_DEFAULT_ONLY)
+    val doesSwishAppExist = appIntentMatch.any{
+            resolveInfo ->
+        Log.d("AppCheck", "${resolveInfo.activityInfo}")
+        resolveInfo.activityInfo.packageName == "se.bankgirot.swish"
+    }
 
-    startActivity(context, intent, null)
+    if (doesSwishAppExist) {
+       startActivity(context, intent, null)
+    } else {
+        Log.d("SwishApp", "No Swish app")
+    }
 }
 
 @Composable
