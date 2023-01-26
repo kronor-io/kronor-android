@@ -1,7 +1,11 @@
 package io.kronor.component.swish
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.Uri
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -13,11 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startActivity
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.PaymentStatusSubscription
@@ -96,7 +102,11 @@ fun SwishScreen(
             when (state) {
                 SwishStatechart.Companion.State.PromptingMethod -> {
                     Spacer(modifier = Modifier.height(100.dp))
-                    SwishPromptMethods(onQrCode = {
+                    SwishPromptMethods(onAppOpen = {
+                        composableScope.launch {
+                            transitioner(SwishStatechart.Companion.Event.UseSwishApp)
+                        }
+                    }, onQrCode = {
                         composableScope.launch {
                             transitioner(SwishStatechart.Companion.Event.UseQR)
 
@@ -126,6 +136,10 @@ fun SwishScreen(
                             val qrToken = paymentRequest?.transactionSwishDetails?.first()?.qrCode
                             Spacer(modifier = Modifier.height(100.dp))
                             SwishPaymentWithQrCode(qrToken)
+                        }
+                        SelectedMethod.SwishApp -> {
+                            val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
+                            OpenSwishApp(context = LocalContext.current, returnUrl = returnUrl)
                         }
                         SelectedMethod.PhoneNumber -> {
                             Text("Open Swish App on your phone and accept the payment request")
@@ -203,8 +217,10 @@ fun SwishCreatingPaymentRequest() {
 }
 
 @Composable
-fun SwishPromptMethods(onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
-    Button(onClick = {}) {
+fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
+    Button(onClick = {
+        onAppOpen()
+    }) {
         Text("Open Swish App")
     }
     Text("or pay using another phone")
@@ -218,6 +234,14 @@ fun SwishPromptMethods(onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
     }) {
         Text("Pay using phone number")
     }
+}
+
+@Composable
+fun OpenSwishApp(context: Context, returnUrl: String?) {
+    val swishUrl = Uri.parse(returnUrl)
+    val intent = Intent(Intent.ACTION_VIEW, swishUrl)
+
+    startActivity(context, intent, null)
 }
 
 @Composable
