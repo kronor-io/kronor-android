@@ -126,6 +126,9 @@ class SwishStatechart {
                 )
             }
         }
+        state<State.PaymentCompleted> {
+
+        }
         state<State.Errored> {
 
         }
