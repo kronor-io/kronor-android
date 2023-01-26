@@ -17,42 +17,46 @@ private class AuthorizationInterceptor(val token: String) : Interceptor {
     }
 }
 
-private var instance: ApolloClient? = null
-
 enum class Environment {
     Staging, Production
 }
 
-fun kronorApolloClient(token: String, env: Environment): ApolloClient? {
-    if (instance != null) {
-        return instance!!
-    }
+class Requests {
 
-    val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(AuthorizationInterceptor(token))
-        .build()
+    private var instance: ApolloClient? = null
 
-    instance = ApolloClient.Builder()
-        .httpServerUrl(
-            when (env) {
-                Environment.Staging -> "https://staging.kronor.io/v1/graphql"
-                Environment.Production -> "https://kronor.io/v1/graphql"
-            }
-        )
-        .webSocketServerUrl(
-            when (env) {
-                Environment.Staging -> "wss://staging.kronor.io/v1/graphql"
-                Environment.Production -> "wss://kronor.io/v1/graphql"
-            }
-        )
-        .wsProtocol(
-            SubscriptionWsProtocol.Factory (
-                connectionPayload =
-                    { mapOf("headers" to (mapOf("Authorization" to "Bearer $token"))) }
+
+    fun kronorApolloClient(token: String, env: Environment): ApolloClient? {
+        if (instance != null) {
+            return instance!!
+        }
+
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(AuthorizationInterceptor(token))
+            .build()
+
+        instance = ApolloClient.Builder()
+            .httpServerUrl(
+                when (env) {
+                    Environment.Staging -> "https://staging.kronor.io/v1/graphql"
+                    Environment.Production -> "https://kronor.io/v1/graphql"
+                }
             )
-        )
-        .okHttpClient(okHttpClient)
-        .build()
+            .webSocketServerUrl(
+                when (env) {
+                    Environment.Staging -> "wss://staging.kronor.io/v1/graphql"
+                    Environment.Production -> "wss://kronor.io/v1/graphql"
+                }
+            )
+            .wsProtocol(
+                SubscriptionWsProtocol.Factory(
+                    connectionPayload =
+                    { mapOf("headers" to (mapOf("Authorization" to "Bearer $token"))) }
+                )
+            )
+            .okHttpClient(okHttpClient)
+            .build()
 
-    return instance
+        return instance
+    }
 }

@@ -26,7 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import io.kronor.api.Environment
 import io.kronor.api.PaymentStatusSubscription
+import io.kronor.api.Requests
 import kotlinx.coroutines.launch
 
 @Composable
@@ -144,15 +146,12 @@ fun SwishScreen(
                         SelectedMethod.PhoneNumber -> {
                             Text("Open Swish App on your phone and accept the payment request")
                         }
-                        else -> {
-                            Text("Cannot create payment for methods other than qr code")
-                        }
                     }
                 }
                 SwishStatechart.Companion.State.PaymentCompleted -> {
                     SwishPaymentCompleted()
                 }
-                else -> Text("Implementing")
+                else -> Text("Implementing $state")
             }
         }
     }
