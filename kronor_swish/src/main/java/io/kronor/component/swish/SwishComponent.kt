@@ -79,7 +79,6 @@ fun SwishScreen(
     // A surface container using the 'background' color from the theme
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
-        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -148,6 +147,32 @@ fun SwishPaymentWithPhoneNumber(onPayNow: suspend (String) -> Unit) {
         mutableStateOf(TextFieldValue(""))
     }
     Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxHeight()
+    ) {
+        TextField(value = phoneNumber, onValueChange = { phoneNumber = it }, placeholder = {
+            Text("Enter your Swish phone number")
+        }, keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardType = KeyboardType.Phone
+        )
+        )
+        Spacer(modifier = Modifier.height(50.dp))
+        Button(onClick = {
+            GlobalScope.launch {
+                withContext(Dispatchers.Main) {
+                    onPayNow(phoneNumber.text)
+                }
+            }
+        }) {
+            Text("Pay Now")
+        }
+    }
+}
+
+@Composable
+fun SwishPaymentCompleted() {
+    Column(
         verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Payment received")
@@ -179,17 +204,28 @@ fun SwishCreatingPaymentRequest() {
 }
 
 @Composable
-fun SwishPromptMethods(onQrCode: () -> Unit) {
+fun SwishPromptMethods(onQrCode: suspend () -> Unit,  onPhoneNumber: suspend () -> Unit) {
+    val composableScope = rememberCoroutineScope()
     Button(onClick = {}) {
         Text("Open Swish App")
     }
     Text("or pay using another phone")
     Button(onClick = {
-        onQrCode()
+        GlobalScope.launch {
+            withContext(Dispatchers.Main) {
+                onQrCode()
+            }
+        }
     }) {
         Text("Scan QR Code")
     }
-    Button(onClick = {}) {
+    Button(onClick = {
+        GlobalScope.launch {
+            withContext(Dispatchers.Main) {
+                onPhoneNumber()
+            }
+        }
+    }) {
         Text("Pay using phone number")
     }
 }
