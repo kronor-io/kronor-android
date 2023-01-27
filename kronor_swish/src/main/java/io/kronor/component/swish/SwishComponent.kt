@@ -1,9 +1,7 @@
 package io.kronor.component.swish
 
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -29,23 +27,37 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
-import io.kronor.api.Environment
 import io.kronor.api.PaymentStatusSubscription
-import io.kronor.api.Requests
 import kotlinx.coroutines.launch
 
 @Composable
 fun MainSwishScreen(
-    sessionToken: String,
-    @DrawableRes merchantLogo: Int? = null,
+    swishConfiguration: SwishConfiguration
 ) {
+
+    val deviceFingerprint = "fingerprint"
+
+/*    if (LocalInspectionMode.current) {
+        deviceFingerprint = "preview fingerprint"
+    } else {
+        val fingerprinterFactory = FingerprinterFactory.create(LocalContext.current)
+        fingerprinterFactory.getFingerprint(
+            version = Fingerprinter.Version.V_5,
+            listener = {
+                deviceFingerprint = it
+            }
+        )
+    }
+
+    Log.d("Fingerprint", "$deviceFingerprint")*/
+
     val swishStateMachine = remember {
-        SwishStateMachine(sessionToken)
+        SwishStateMachine(swishConfiguration, deviceFingerprint)
     }
     val state = swishStateMachine.swishState
 
     SwishScreen(
-        merchantLogo = merchantLogo, state = state, transitioner = { event ->
+        merchantLogo = swishConfiguration.merchantLogo, state = state, transitioner = { event ->
             swishStateMachine.transition(event)
         }, paymentRequest = swishStateMachine.paymentRequest
     )
@@ -58,26 +70,6 @@ fun SwishScreen(
     transitioner: suspend (SwishStatechart.Companion.Event) -> Unit = {},
     paymentRequest: PaymentStatusSubscription.PaymentRequest? = null
 ) {
-/*
-    val context = LocalContext.current
-    var fingerprint by remember {
-        mutableStateOf("")
-    }
-
-    if (LocalInspectionMode.current) {
-        fingerprint = "preview fingerprint"
-        waitToken = "preview waitToken"
-    } else {
-        val fingerprinterFactory = FingerprinterFactory.create(context)
-        fingerprinterFactory.getFingerprint(
-            version = Fingerprinter.Version.V_5,
-            listener = {
-                fingerprint = it
-            }
-        )
-    }
-*/
-
     val composableScope = rememberCoroutineScope()
 
     // A surface container using the 'background' color from the theme

@@ -1,6 +1,7 @@
 package com.kronor.payment_sdk
 
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -32,7 +33,9 @@ import com.apollographql.apollo3.exception.ApolloException
 import com.kronor.payment_sdk.type.PaymentSessionInput
 import com.kronor.payment_sdk.type.SupportedCurrencyEnum
 import com.kronor.payment_sdk.ui.theme.KronorSDKTheme
+import io.kronor.api.Environment
 import io.kronor.component.swish.MainSwishScreen
+import io.kronor.component.swish.SwishConfiguration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -70,7 +73,15 @@ fun KronorTestApp() {
 
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     MainSwishScreen(
-                        sessionToken = sessionToken, merchantLogo = R.drawable.boozt_logo
+                        SwishConfiguration(
+                            sessionToken = sessionToken                            ,
+                            merchantLogo = R.drawable.boozt_logo,
+                            environment = Environment.Staging,
+                            appName= "kronor-android-test",
+                            appVersion="0.1.0",
+                            locale=Locale("en_US"),
+                            redirectUrl = Uri.parse("kronor_test://")
+                        )
                     )
                 }
             }

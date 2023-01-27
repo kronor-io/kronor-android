@@ -5,14 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.tinder.StateMachine
-import io.kronor.api.Environment
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
 import io.kronor.api.type.PaymentStatusEnum
 import kotlinx.coroutines.flow.*
 
-class SwishStateMachine(val sessionToken: String) {
-    private val requests = Requests()
+class SwishStateMachine(private val swishConfiguration: SwishConfiguration, private val deviceFingerprint : String) {
+    private val requests = Requests(swishConfiguration.sessionToken, swishConfiguration.environment)
     var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
         SwishStatechart().stateMachine
     var swishState: SwishStatechart.Companion.State by mutableStateOf(SwishStatechart.Companion.State.PromptingMethod)
@@ -40,12 +39,12 @@ class SwishStateMachine(val sessionToken: String) {
                 Log.d("SwishStateMachine", "Creating Mcom Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
                     swishInputData = SwishComponentInput(
-                        sessionToken = sessionToken,
                         customerSwishNumber = null,
-                        returnUrl = "kronor_test://"
-                    ),
-                    deviceFingerprint = "fingerprint",
-                    env = Environment.Staging
+                        returnUrl = swishConfiguration.redirectUrl.toString(),
+                        deviceFingerprint = deviceFingerprint,
+                        appName = swishConfiguration.appName,
+                        appVersion = swishConfiguration.appVersion
+                    )
                 )
                 if (waitToken == null) {
                     transition(SwishStatechart.Companion.Event.Error("No wait token"))
@@ -57,12 +56,12 @@ class SwishStateMachine(val sessionToken: String) {
                 Log.d("SwishStateMachine", "Creating Ecom Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
                     swishInputData = SwishComponentInput(
-                        sessionToken = sessionToken,
                         customerSwishNumber = sideEffect.phoneNumber,
-                        returnUrl = "https://kronor.io/"
+                        returnUrl = swishConfiguration.redirectUrl.toString(),
+                        deviceFingerprint = deviceFingerprint,
+                        appName = swishConfiguration.appName,
+                        appVersion = swishConfiguration.appVersion
                     ),
-                    deviceFingerprint = "fingerprint",
-                    env = Environment.Staging
                 )
                 if (waitToken == null) {
                     transition(SwishStatechart.Companion.Event.Error("No wait token"))
@@ -72,46 +71,35 @@ class SwishStateMachine(val sessionToken: String) {
             }
             is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
                 Log.d("SwishStateMachine", "Subscribing to Payment Requests")
-                val response = requests.getPaymentRequests(
-                    sessionToken = sessionToken,
-                    env = Environment.Staging
-                )
-                if (response == null) {
-                    transition(SwishStatechart.Companion.Event.Error("No response from payment request status subscription"))
-                } else {
-                    response.map {
-                        paymentRequest = it.firstOrNull {
-                            (it.waitToken == sideEffect.waitToken) and
-                                    (it.status?.all {
-                                        it.status != PaymentStatusEnum.INITIALIZING
-                                    } ?: false)
-                        }
-                        return@map paymentRequest
-                    }.filterNotNull()
-                        .mapNotNull {
-                            if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest)
-                                transition(SwishStatechart.Companion.Event.PaymentRequestInitialized)
+                requests.getPaymentRequests()?.map {
+                    paymentRequest = it.firstOrNull {
+                        (it.waitToken == sideEffect.waitToken) and (it.status?.all {
+                            it.status != PaymentStatusEnum.INITIALIZING
+                        } ?: false)
+                    }
+                    return@map paymentRequest
+                }?.filterNotNull()?.mapNotNull {
+                    if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest) transition(
+                        SwishStatechart.Companion.Event.PaymentRequestInitialized
+                    )
 
-                            it.status?.any {
-                                it.status == PaymentStatusEnum.PAID
-                            }?.let {
-                                if (it)
-                                    transition(SwishStatechart.Companion.Event.PaymentAuthorized)
-                            }
+                    it.status?.any {
+                        it.status == PaymentStatusEnum.PAID
+                    }?.let {
+                        if (it) transition(SwishStatechart.Companion.Event.PaymentAuthorized)
+                    }
 
-                            it.status?.any {
-                                listOf(
-                                    PaymentStatusEnum.ERROR,
-                                    PaymentStatusEnum.DECLINED,
-                                    PaymentStatusEnum.CANCELLED
-                                ).contains(it.status)
-                            }?.let {
-                                if (it)
-                                    transition(SwishStatechart.Companion.Event.PaymentRejected)
-                            }
-                        }
-                        .collect()
-                }
+                    it.status?.any {
+                        listOf(
+                            PaymentStatusEnum.ERROR,
+                            PaymentStatusEnum.DECLINED,
+                            PaymentStatusEnum.CANCELLED
+                        ).contains(it.status)
+                    }?.let {
+                        if (it) transition(SwishStatechart.Companion.Event.PaymentRejected)
+                    }
+                }?.collect()
+                    ?: transition(SwishStatechart.Companion.Event.Error("No response from payment request status subscription"))
             }
             else -> {
                 Log.d("SwishStateMachine", "$sideEffect")
