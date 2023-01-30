@@ -5,16 +5,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.compose.material.Text
-import androidx.compose.foundation.layout.*
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Surface
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -30,6 +26,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
+import com.kronor.payment_sdk.type.Language
+import com.kronor.payment_sdk.type.PaymentSessionAdditionalData
 import com.kronor.payment_sdk.type.PaymentSessionInput
 import com.kronor.payment_sdk.type.SupportedCurrencyEnum
 import com.kronor.payment_sdk.ui.theme.KronorSDKTheme
@@ -40,6 +38,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.net.SocketException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -74,12 +76,12 @@ fun KronorTestApp() {
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     MainSwishScreen(
                         SwishConfiguration(
-                            sessionToken = sessionToken                            ,
+                            sessionToken = sessionToken,
                             merchantLogo = R.drawable.boozt_logo,
                             environment = Environment.Staging,
-                            appName= "kronor-android-test",
-                            appVersion="0.1.0",
-                            locale=Locale("en_US"),
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            locale = Locale("en_US"),
                             redirectUrl = Uri.parse("kronor_test://")
                         )
                     )
@@ -150,7 +152,15 @@ suspend fun createNewPaymentSession(context: Context, amountToPay: String): Stri
                     idempotencyKey = UUID.randomUUID().toString(),
                     merchantReference = "reference",
                     message = "random message",
-                    additionalData = Optional.absent()
+                    additionalData = Optional.present(
+                        PaymentSessionAdditionalData(
+                            name = "Normal Android User",
+                            ip = getLocalAddress().toString(),
+                            language = Language.EN,
+                            email = "normal@android.com",
+                            phoneNumber = Optional.absent()
+                        )
+                    )
                 )
             )
         ).execute()
@@ -163,6 +173,26 @@ suspend fun createNewPaymentSession(context: Context, amountToPay: String): Stri
     return sessionToken
 }
 
+
+@Throws(IOException::class)
+private fun getLocalAddress(): InetAddress? {
+    try {
+        val en: Enumeration<NetworkInterface> = NetworkInterface.getNetworkInterfaces()
+        while (en.hasMoreElements()) {
+            val intf: NetworkInterface = en.nextElement()
+            val enumIpAddr: Enumeration<InetAddress> = intf.getInetAddresses()
+            while (enumIpAddr.hasMoreElements()) {
+                val inetAddress: InetAddress = enumIpAddr.nextElement()
+                if (!inetAddress.isLoopbackAddress) {
+                    return inetAddress
+                }
+            }
+        }
+    } catch (ex: SocketException) {
+        Log.e("Error", ex.toString())
+    }
+    return null
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
