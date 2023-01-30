@@ -1,5 +1,6 @@
 package io.kronor.component.swish
 
+import android.os.Build
 import android.util.Log
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
@@ -20,6 +21,9 @@ data class SwishComponentInput(
 suspend fun Requests.makeNewPaymentRequest(
     swishInputData: SwishComponentInput
 ): String? {
+    val androidVersion = java.lang.Double.parseDouble(
+        java.lang.String(Build.VERSION.RELEASE).replaceAll("(\\d+[.]\\d+)(.*)", "$1")
+    )
     val response = try {
         kronorApolloClient.mutation(
             SwishPaymentMutation(
@@ -33,7 +37,7 @@ suspend fun Requests.makeNewPaymentRequest(
                     browserVersion = swishInputData.appVersion,
                     fingerprint = swishInputData.deviceFingerprint,
                     osName = "android",
-                    osVersion = "${android.os.Build.VERSION.SDK_INT}",
+                    osVersion = androidVersion.toString(),
                     userAgent = "kronor_android_sdk"
                 )
             )
