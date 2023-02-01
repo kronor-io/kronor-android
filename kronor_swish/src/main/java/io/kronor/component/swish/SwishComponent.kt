@@ -33,7 +33,7 @@ import io.kronor.api.PaymentStatusSubscription
 import kotlinx.coroutines.launch
 
 @Composable
-fun MainSwishScreen(
+fun SwishComponent(
     swishConfiguration: SwishConfiguration
 ) {
 
@@ -59,7 +59,7 @@ fun MainSwishScreen(
     val state = swishStateMachine.swishState
 
     SwishScreen(
-        merchantLogo = swishConfiguration.merchantLogo, state = state, transitioner = { event ->
+        merchantLogo = swishConfiguration.merchantLogo, swishConfiguration = swishConfiguration, state = state, transitioner = { event ->
             swishStateMachine.transition(event)
         }, paymentRequest = swishStateMachine.paymentRequest
     )
@@ -69,6 +69,7 @@ fun MainSwishScreen(
 fun SwishScreen(
     @DrawableRes merchantLogo: Int? = null,
     state: SwishStatechart.Companion.State,
+    swishConfiguration: SwishConfiguration? = null,
     transitioner: suspend (SwishStatechart.Companion.Event) -> Unit = {},
     paymentRequest: PaymentStatusSubscription.PaymentRequest? = null
 ) {
@@ -147,7 +148,8 @@ fun SwishScreen(
                     }
                 }
                 SwishStatechart.Companion.State.PaymentCompleted -> {
-                    SwishPaymentCompleted()
+                    Log.d("PaymentStatus", swishConfiguration?.redirectUrl.toString())
+                    SwishPaymentCompleted(LocalContext.current, swishConfiguration?.redirectUrl)
                 }
                 else -> Text("Implementing $state")
             }
@@ -181,12 +183,16 @@ fun SwishPaymentWithPhoneNumber(onPayNow: (String) -> Unit) {
 }
 
 @Composable
-fun SwishPaymentCompleted() {
-    Column(
-        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Payment received")
+fun SwishPaymentCompleted(context: Context, returnUrl: Uri?) {
+    if (returnUrl != null) {
+        val intent = Intent(Intent.ACTION_VIEW, returnUrl)
+        startActivity(context, intent, null)
     }
+//    Column(
+//        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+//    ) {
+//        Text("Payment received")
+//    }
 }
 
 @Composable
