@@ -19,7 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
@@ -140,7 +142,7 @@ fun SwishScreen(
                             OpenSwishApp(context = LocalContext.current, returnUrl = returnUrl)
                         }
                         SelectedMethod.PhoneNumber -> {
-                            Text("Open Swish App on your phone and accept the payment request")
+                            Text(stringResource(R.string.accept_swish_phpne))
                         }
                     }
                 }
@@ -194,9 +196,9 @@ fun SwishPaymentWithQrCode(qrToken: String?) {
     ) {
         if (qrToken != null) {
             SwishQrCode(qrToken)
-            Text("Open Swish App and Scan qr code")
+            Text(stringResource(R.string.scan_qr))
         } else {
-            Text("Brewing a QR code")
+            Text(stringResource(R.string.generate_qr))
         }
 
     }
@@ -207,12 +209,15 @@ fun SwishCreatingPaymentRequest() {
     Column(
         modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center
     ) {
-        Text("Creating secure Swish Transaction")
+        Text(stringResource(R.string.creating_swish))
     }
 }
 
 @Composable
 fun swishAppExists() : Boolean {
+    if (LocalInspectionMode.current) {
+        return true
+    }
     val context = LocalContext.current
 
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("swish://"))
@@ -231,19 +236,19 @@ fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumbe
         Button(onClick = {
             onAppOpen()
         }) {
-            Text("Open Swish App")
+            Text(stringResource(R.string.open_swish))
         }
 
-    Text("or pay using another phone")
+    Text(stringResource(R.string.pay_another_phone))
     Button(onClick = {
         onQrCode()
     }) {
-        Text("Scan QR Code")
+        Text(stringResource(R.string.scan_qr_code))
     }
     Button(onClick = {
         onPhoneNumber()
     }) {
-        Text("Pay using phone number")
+        Text(stringResource(R.string.enter_phone))
     }
 }
 

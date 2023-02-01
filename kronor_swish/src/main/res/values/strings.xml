@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="creating_swish">Creating secure Swish Transaction</string>
+    <string name="open_swish">Open Swish App</string>
+    <string name="pay_another_phone">or pay using another phone</string>
+    <string name="scan_qr_code">Scan QR Code</string>
+    <string name="enter_phone">Enter phone number</string>
+    <string name="scan_qr">Scan this code with the Swish app</string>
+    <string name="generate_qr">Brewing a QR code</string>
+    <string name="accept_swish_phpne">Open Swish App on your phone and accept the payment request</string>
+</resources>
