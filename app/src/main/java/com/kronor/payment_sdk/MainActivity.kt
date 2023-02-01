@@ -82,13 +82,24 @@ fun KronorTestApp() {
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
                             locale = Locale("en_US"),
-                            redirectUrl = Uri.parse("kronor_test://")
+                            redirectUrl = Uri.parse("kronor_test://"),
+                            onSuccess = {paymentId -> onSuccess(paymentId)},
+                            onFailure = { -> onFailure()}
                         )
                     )
                 }
             }
         }
     }
+}
+
+fun onFailure() {
+    Log.d("Status", "Failed")
+}
+
+
+fun onSuccess(paymentId: String) {
+    Log.d("Status", "${paymentId}")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
