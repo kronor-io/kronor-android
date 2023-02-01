@@ -18,9 +18,8 @@ class SwishStateMachine(private val swishConfiguration: SwishConfiguration, priv
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
 
     suspend fun transition(event: SwishStatechart.Companion.Event) {
-        val result = stateMachine.transition(event)
 
-        when (result) {
+        when (val result = stateMachine.transition(event)) {
             is StateMachine.Transition.Valid -> {
                 swishState = result.toState
                 result.sideEffect?.let {
@@ -71,32 +70,38 @@ class SwishStateMachine(private val swishConfiguration: SwishConfiguration, priv
             }
             is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
                 Log.d("SwishStateMachine", "Subscribing to Payment Requests")
-                requests.getPaymentRequests()?.map {
-                    paymentRequest = it.firstOrNull {
-                        (it.waitToken == sideEffect.waitToken) and (it.status?.all {
-                            it.status != PaymentStatusEnum.INITIALIZING
+                requests.getPaymentRequests()?.map { paymentRequestList ->
+                    paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
+                        (paymentRequest.waitToken == sideEffect.waitToken) and (paymentRequest.status?.all {paymentStatus ->
+                            paymentStatus.status != PaymentStatusEnum.INITIALIZING
                         } ?: false)
                     }
                     return@map paymentRequest
-                }?.filterNotNull()?.mapNotNull {
+                }?.filterNotNull()?.mapNotNull {paymentRequest ->
                     if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest) transition(
                         SwishStatechart.Companion.Event.PaymentRequestInitialized
                     )
 
-                    it.status?.any {
+                    paymentRequest.status?.any {
                         it.status == PaymentStatusEnum.PAID
                     }?.let {
-                        if (it) transition(SwishStatechart.Companion.Event.PaymentAuthorized)
+                        if (it) {
+                            swishConfiguration.onSuccess(paymentRequest.resultingPaymentId!!)
+                            transition(SwishStatechart.Companion.Event.PaymentAuthorized)
+                        }
                     }
 
-                    it.status?.any {
+                    paymentRequest.status?.any {
                         listOf(
                             PaymentStatusEnum.ERROR,
                             PaymentStatusEnum.DECLINED,
                             PaymentStatusEnum.CANCELLED
                         ).contains(it.status)
                     }?.let {
-                        if (it) transition(SwishStatechart.Companion.Event.PaymentRejected)
+                        if (it) {
+                            swishConfiguration.onFailure()
+                            transition(SwishStatechart.Companion.Event.PaymentRejected)
+                        }
                     }
                 }?.collect()
                     ?: transition(SwishStatechart.Companion.Event.Error("No response from payment request status subscription"))
