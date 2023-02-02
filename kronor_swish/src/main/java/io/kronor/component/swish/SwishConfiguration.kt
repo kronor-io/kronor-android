@@ -13,8 +13,6 @@ data class SwishConfiguration(
     val swishFlow: SupportedSwishFlows = SupportedSwishFlows.All,
     val appName: String,
     val appVersion: String,
-    val onSuccess: (paymentId: String) -> Unit,
-    val onFailure: () -> Unit,
     @DrawableRes val merchantLogo: Int? = null
 )
 
