@@ -32,12 +32,13 @@ import com.kronor.payment_sdk.type.PaymentSessionInput
 import com.kronor.payment_sdk.type.SupportedCurrencyEnum
 import com.kronor.payment_sdk.ui.theme.KronorSDKTheme
 import io.kronor.api.Environment
+import io.kronor.component.swish.PaymentEvent
 import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.SwishConfiguration
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import io.kronor.component.swish.getSwishComponent
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
 import java.io.IOException
 import java.net.InetAddress
 import java.net.NetworkInterface
@@ -74,19 +75,29 @@ fun KronorTestApp() {
             ) {
 
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    SwishComponent(
-                        SwishConfiguration(
-                            sessionToken = sessionToken,
-                            merchantLogo = R.drawable.boozt_logo,
-                            environment = Environment.Staging,
-                            appName = "kronor-android-test",
-                            appVersion = "0.1.0",
-                            locale = Locale("en_US"),
-                            redirectUrl = Uri.parse("kronor_test://"),
-                            onSuccess = {paymentId -> onSuccess(paymentId)},
-                            onFailure = { -> onFailure()}
-                        )
+                    val swishConfiguration = SwishConfiguration(
+                        sessionToken = sessionToken,
+                        merchantLogo = R.drawable.boozt_logo,
+                        environment = Environment.Staging,
+                        appName = "kronor-android-test",
+                        appVersion = "0.1.0",
+                        locale = Locale("en_US"),
+                        redirectUrl = Uri.parse("kronor_test://"),
                     )
+                    val swishComponent = getSwishComponent(swishConfiguration)
+                    swishComponent.get(swishConfiguration)
+
+                    navController.navigate("paymentMethods")
+                    swishComponent.observe { paymentEvent ->
+                        Log.d("observing", "$paymentEvent")
+/*                        when (paymentEvent) {
+                            is PaymentEvent.Error -> navController.navigate("paymentMethods")
+                            is PaymentEvent.Paid -> navController.navigate("paymentMethods")
+                            PaymentEvent.Processing -> {
+
+                            }
+                        }*/
+                    }
                 }
             }
         }

@@ -27,17 +27,31 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.PaymentStatusSubscription
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun SwishComponent(
-    swishConfiguration: SwishConfiguration
-) {
-
+fun getSwishComponent(swishConfiguration: SwishConfiguration): SwishComponent {
     val deviceFingerprint = "fingerprint"
+    val swishViewModel: SwishViewModel = viewModel(
+        factory = SwishViewModelFactory(
+            swishConfiguration, deviceFingerprint
+        )
+    )
+    return SwishComponent(swishViewModel)
+}
+
+class SwishComponent(private val viewModel: SwishViewModel) {
+
+    @Composable
+    fun get(
+        swishConfiguration: SwishConfiguration
+    ) {
 
 /*    if (LocalInspectionMode.current) {
         deviceFingerprint = "preview fingerprint"
@@ -53,27 +67,28 @@ fun SwishComponent(
 
     Log.d("Fingerprint", "$deviceFingerprint")*/
 
-    val swishStateMachine = remember {
-        SwishStateMachine(swishConfiguration, deviceFingerprint)
+        SwishScreen(
+            merchantLogo = swishConfiguration.merchantLogo,
+            swishConfiguration = swishConfiguration,
+            viewModel = viewModel
+        )
     }
-    val state = swishStateMachine.swishState
 
-    SwishScreen(
-        merchantLogo = swishConfiguration.merchantLogo, swishConfiguration = swishConfiguration, state = state, transitioner = { event ->
-            swishStateMachine.transition(event)
-        }, paymentRequest = swishStateMachine.paymentRequest
-    )
+    fun observe(callback: (PaymentEvent) -> Unit) {
+        Log.d("SwishComponent", "callback")
+        viewModel.observePaymentEvent(callback)
+    }
+
 }
 
 @Composable
 fun SwishScreen(
     @DrawableRes merchantLogo: Int? = null,
-    state: SwishStatechart.Companion.State,
     swishConfiguration: SwishConfiguration? = null,
-    transitioner: suspend (SwishStatechart.Companion.Event) -> Unit = {},
-    paymentRequest: PaymentStatusSubscription.PaymentRequest? = null
+    viewModel: SwishViewModel = viewModel()
 ) {
-    val composableScope = rememberCoroutineScope()
+    val state = viewModel.swishState
+    val paymentRequest: PaymentStatusSubscription.PaymentRequest? = viewModel.paymentRequest
 
     // A surface container using the 'background' color from the theme
     Surface(
@@ -102,30 +117,17 @@ fun SwishScreen(
             when (state) {
                 SwishStatechart.Companion.State.PromptingMethod -> {
                     Spacer(modifier = Modifier.height(100.dp))
-                    SwishPromptMethods(onAppOpen = {
-                        composableScope.launch {
-                            transitioner(SwishStatechart.Companion.Event.UseSwishApp)
-                        }
-                    }, onQrCode = {
-                        composableScope.launch {
-                            transitioner(SwishStatechart.Companion.Event.UseQR)
-
-                        }
-                    }, onPhoneNumber = {
-                        composableScope.launch {
-                            transitioner(SwishStatechart.Companion.Event.UsePhoneNumber)
-                        }
-                    })
+                    SwishPromptMethods(onAppOpen = { viewModel.transition(SwishStatechart.Companion.Event.UseSwishApp) },
+                        onQrCode = { viewModel.transition(SwishStatechart.Companion.Event.UseQR) },
+                        onPhoneNumber = { viewModel.transition(SwishStatechart.Companion.Event.UsePhoneNumber) })
                 }
                 SwishStatechart.Companion.State.InsertingPhoneNumber -> {
                     SwishPaymentWithPhoneNumber(onPayNow = { phoneNumber ->
-                        composableScope.launch {
-                            transitioner(
-                                SwishStatechart.Companion.Event.PhoneNumberInserted(
-                                    phoneNumber
-                                )
+                        viewModel.transition(
+                            SwishStatechart.Companion.Event.PhoneNumberInserted(
+                                phoneNumber
                             )
-                        }
+                        )
                     })
                 }
                 is SwishStatechart.Companion.State.CreatingPaymentRequest -> SwishCreatingPaymentRequest()
@@ -150,6 +152,12 @@ fun SwishScreen(
                 SwishStatechart.Companion.State.PaymentCompleted -> {
                     Log.d("PaymentStatus", swishConfiguration?.redirectUrl.toString())
                     SwishPaymentCompleted(LocalContext.current, swishConfiguration?.redirectUrl)
+                }
+                SwishStatechart.Companion.State.PaymentRejected -> {
+                    Text("Your payment got rejected")
+                }
+                is SwishStatechart.Companion.State.Errored -> {
+                    Text("Received an error: ${state.error}")
                 }
                 else -> Text("Implementing $state")
             }
@@ -220,7 +228,7 @@ fun SwishCreatingPaymentRequest() {
 }
 
 @Composable
-fun swishAppExists() : Boolean {
+fun swishAppExists(): Boolean {
     if (LocalInspectionMode.current) {
         return true
     }
@@ -231,8 +239,7 @@ fun swishAppExists() : Boolean {
         intent, MATCH_DEFAULT_ONLY
     )
     return appIntentMatch.any { resolveInfo ->
-        resolveInfo.activityInfo.packageName == "se.bankgirot.swish.sandbox" ||
-                resolveInfo.activityInfo.packageName == "se.bankgirot.swish"
+        resolveInfo.activityInfo.packageName == "se.bankgirot.swish.sandbox" || resolveInfo.activityInfo.packageName == "se.bankgirot.swish"
     }
 }
 
@@ -317,34 +324,29 @@ fun MerchantLogo(@DrawableRes merchantDrawable: Int) {
     )
 }
 
+/*
 @Preview
 @Composable
 fun PreviewPromptMethods() {
-    SwishScreen(
-        state = SwishStatechart.Companion.State.PromptingMethod,
-    )
+    SwishScreen(state = SwishStatechart.Companion.State.PromptingMethod)
 }
 
 @Preview
 @Composable
 fun PreviewCreatingPaymentRequest() {
-    SwishScreen(
-        state = SwishStatechart.Companion.State.CreatingPaymentRequest(SelectedMethod.QrCode),
-    )
+    SwishScreen(state = SwishStatechart.Companion.State.CreatingPaymentRequest(SelectedMethod.QrCode))
 }
 
 @Preview
 @Composable
 fun PreviewQrCodeScreen() {
-    SwishScreen(
-        state = SwishStatechart.Companion.State.PaymentRequestInitialized(SelectedMethod.QrCode),
-    )
+    SwishScreen(state = SwishStatechart.Companion.State.PaymentRequestInitialized(SelectedMethod.QrCode))
 }
 
 @Preview
 @Composable
 fun PreviewInsertingPhoneNumber() {
     SwishScreen(
-        state = SwishStatechart.Companion.State.InsertingPhoneNumber,
-    )
+        state = SwishStatechart.Companion.State.InsertingPhoneNumber)
 }
+*/

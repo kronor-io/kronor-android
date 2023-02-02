@@ -4,31 +4,68 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.tinder.StateMachine
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
 import io.kronor.api.type.PaymentStatusEnum
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-class SwishStateMachine(private val swishConfiguration: SwishConfiguration, private val deviceFingerprint : String) {
+sealed class PaymentEvent {
+    object Processing : PaymentEvent()
+    data class Paid(val paymentId: String) : PaymentEvent()
+    data class Error(val error: String?) : PaymentEvent()
+}
+
+class SwishViewModelFactory(
+    private val swishConfiguration: SwishConfiguration,
+    private val deviceFingerprint: String
+) : ViewModelProvider.NewInstanceFactory() {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return SwishViewModel(swishConfiguration, deviceFingerprint) as T
+    }
+}
+
+class SwishViewModel(
+    private val swishConfiguration: SwishConfiguration,
+    private val deviceFingerprint: String
+) : ViewModel() {
+
+    private val _paymentEvent: MutableStateFlow<PaymentEvent> =
+        MutableStateFlow(PaymentEvent.Processing)
+    val paymentEvent: Flow<PaymentEvent> = _paymentEvent.asStateFlow()
+
     private val requests = Requests(swishConfiguration.sessionToken, swishConfiguration.environment)
     var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
         SwishStatechart().stateMachine
     var swishState: SwishStatechart.Companion.State by mutableStateOf(SwishStatechart.Companion.State.PromptingMethod)
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
 
-    suspend fun transition(event: SwishStatechart.Companion.Event) {
+    fun transition(event: SwishStatechart.Companion.Event) {
+        viewModelScope.launch {
+            _transition(event)
+        }
+    }
 
-        when (val result = stateMachine.transition(event)) {
-            is StateMachine.Transition.Valid -> {
-                swishState = result.toState
-                result.sideEffect?.let {
-                    handleSideEffect(it)
+    suspend fun _transition(event: SwishStatechart.Companion.Event) {
+
+            when (val result = stateMachine.transition(event)) {
+                is StateMachine.Transition.Valid -> {
+                    swishState = result.toState
+                    result.sideEffect?.let {
+                        handleSideEffect(it)
+                    }
                 }
-            }
-            is StateMachine.Transition.Invalid -> {
-                Log.d("SwishStateMachine", "Cannot transition to $event from ${result.fromState}")
-            }
+                is StateMachine.Transition.Invalid -> {
+                    Log.d(
+                        "SwishStateMachine",
+                        "Cannot transition to $event from ${result.fromState}"
+                    )
+                }
+
         }
     }
 
@@ -46,9 +83,9 @@ class SwishStateMachine(private val swishConfiguration: SwishConfiguration, priv
                     )
                 )
                 if (waitToken == null) {
-                    transition(SwishStatechart.Companion.Event.Error("No wait token"))
+                    _transition(SwishStatechart.Companion.Event.Error("No wait token"))
                 } else {
-                    transition(SwishStatechart.Companion.Event.PaymentRequestCreated(waitToken = waitToken))
+                    _transition(SwishStatechart.Companion.Event.PaymentRequestCreated(waitToken = waitToken))
                 }
             }
             is SwishStatechart.Companion.SideEffect.CreateEcomPaymentRequest -> {
@@ -63,22 +100,22 @@ class SwishStateMachine(private val swishConfiguration: SwishConfiguration, priv
                     ),
                 )
                 if (waitToken == null) {
-                    transition(SwishStatechart.Companion.Event.Error("No wait token"))
+                    _transition(SwishStatechart.Companion.Event.Error("No wait token"))
                 } else {
-                    transition(SwishStatechart.Companion.Event.PaymentRequestCreated(waitToken = waitToken))
+                    _transition(SwishStatechart.Companion.Event.PaymentRequestCreated(waitToken = waitToken))
                 }
             }
             is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
                 Log.d("SwishStateMachine", "Subscribing to Payment Requests")
                 requests.getPaymentRequests()?.map { paymentRequestList ->
                     paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
-                        (paymentRequest.waitToken == sideEffect.waitToken) and (paymentRequest.status?.all {paymentStatus ->
+                        (paymentRequest.waitToken == sideEffect.waitToken) and (paymentRequest.status?.all { paymentStatus ->
                             paymentStatus.status != PaymentStatusEnum.INITIALIZING
                         } ?: false)
                     }
                     return@map paymentRequest
-                }?.filterNotNull()?.mapNotNull {paymentRequest ->
-                    if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest) transition(
+                }?.filterNotNull()?.mapNotNull { paymentRequest ->
+                    if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest) _transition(
                         SwishStatechart.Companion.Event.PaymentRequestInitialized
                     )
 
@@ -86,8 +123,8 @@ class SwishStateMachine(private val swishConfiguration: SwishConfiguration, priv
                         it.status == PaymentStatusEnum.PAID
                     }?.let {
                         if (it) {
-                            swishConfiguration.onSuccess(paymentRequest.resultingPaymentId!!)
-                            transition(SwishStatechart.Companion.Event.PaymentAuthorized)
+                            _paymentEvent.value = (PaymentEvent.Paid(paymentRequest.resultingPaymentId!!))
+                            _transition(SwishStatechart.Companion.Event.PaymentAuthorized)
                         }
                     }
 
@@ -99,15 +136,30 @@ class SwishStateMachine(private val swishConfiguration: SwishConfiguration, priv
                         ).contains(it.status)
                     }?.let {
                         if (it) {
-                            swishConfiguration.onFailure()
-                            transition(SwishStatechart.Companion.Event.PaymentRejected)
+                            _paymentEvent.value = PaymentEvent.Error(
+                                paymentRequest.transactionSwishDetails?.firstOrNull()?.errorCode
+                            )
+                            _transition(SwishStatechart.Companion.Event.PaymentRejected)
                         }
                     }
                 }?.collect()
-                    ?: transition(SwishStatechart.Companion.Event.Error("No response from payment request status subscription"))
+                    ?: suspend {
+                        _paymentEvent.value = PaymentEvent.Error(
+                            "No payment requests found"
+                        )
+                        _transition(SwishStatechart.Companion.Event.Error("No response from payment request status subscription"))
+                    }
             }
             else -> {
                 Log.d("SwishStateMachine", "$sideEffect")
+            }
+        }
+    }
+
+    fun observePaymentEvent(callback: (PaymentEvent) -> Unit) {
+        viewModelScope.launch {
+            paymentEvent.collect{
+                callback(it)
             }
         }
     }
