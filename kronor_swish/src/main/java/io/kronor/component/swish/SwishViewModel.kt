@@ -34,9 +34,8 @@ class SwishViewModel(
     private val deviceFingerprint: String
 ) : ViewModel() {
 
-    private val _paymentEvent: MutableStateFlow<PaymentEvent> =
-        MutableStateFlow(PaymentEvent.Processing)
-    val paymentEvent: Flow<PaymentEvent> = _paymentEvent.asStateFlow()
+    var paymentEvent : PaymentEvent by mutableStateOf(PaymentEvent.Processing)
+        private set
 
     private val requests = Requests(swishConfiguration.sessionToken, swishConfiguration.environment)
     var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
@@ -123,7 +122,7 @@ class SwishViewModel(
                         it.status == PaymentStatusEnum.PAID
                     }?.let {
                         if (it) {
-                            _paymentEvent.value = (PaymentEvent.Paid(paymentRequest.resultingPaymentId!!))
+                            paymentEvent = (PaymentEvent.Paid(paymentRequest.resultingPaymentId!!))
                             _transition(SwishStatechart.Companion.Event.PaymentAuthorized)
                         }
                     }
@@ -136,7 +135,7 @@ class SwishViewModel(
                         ).contains(it.status)
                     }?.let {
                         if (it) {
-                            _paymentEvent.value = PaymentEvent.Error(
+                            paymentEvent = PaymentEvent.Error(
                                 paymentRequest.transactionSwishDetails?.firstOrNull()?.errorCode
                             )
                             _transition(SwishStatechart.Companion.Event.PaymentRejected)
@@ -144,7 +143,7 @@ class SwishViewModel(
                     }
                 }?.collect()
                     ?: suspend {
-                        _paymentEvent.value = PaymentEvent.Error(
+                        paymentEvent = PaymentEvent.Error(
                             "No payment requests found"
                         )
                         _transition(SwishStatechart.Companion.Event.Error("No response from payment request status subscription"))
@@ -157,10 +156,6 @@ class SwishViewModel(
     }
 
     fun observePaymentEvent(callback: (PaymentEvent) -> Unit) {
-        viewModelScope.launch {
-            paymentEvent.collect{
-                callback(it)
-            }
-        }
+        callback(paymentEvent)
     }
 }

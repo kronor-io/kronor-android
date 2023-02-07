@@ -87,16 +87,19 @@ fun KronorTestApp() {
                     val swishComponent = getSwishComponent(swishConfiguration)
                     swishComponent.get(swishConfiguration)
 
-                    navController.navigate("paymentMethods")
-                    swishComponent.observe { paymentEvent ->
-                        Log.d("observing", "$paymentEvent")
-/*                        when (paymentEvent) {
-                            is PaymentEvent.Error -> navController.navigate("paymentMethods")
-                            is PaymentEvent.Paid -> navController.navigate("paymentMethods")
-                            PaymentEvent.Processing -> {
-
+                    LaunchedEffect(Unit) {
+                        snapshotFlow { swishComponent.paymentEvent }.collect {paymentEvent ->
+                            when (paymentEvent) {
+                                is PaymentEvent.Error -> {
+                                    navController.navigate("paymentMethods")
+                                }
+                                is PaymentEvent.Paid -> {
+                                    navController.navigate("paymentMethods")
+                                }
+                                PaymentEvent.Processing -> {
+                                }
                             }
-                        }*/
+                        }
                     }
                 }
             }
