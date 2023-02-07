@@ -46,7 +46,7 @@ fun getSwishComponent(swishConfiguration: SwishConfiguration): SwishComponent {
     return SwishComponent(swishViewModel)
 }
 
-class SwishComponent(private val viewModel: SwishViewModel) {
+class SwishComponent( val viewModel: SwishViewModel) {
 
     @Composable
     fun get(
@@ -78,6 +78,8 @@ class SwishComponent(private val viewModel: SwishViewModel) {
         Log.d("SwishComponent", "callback")
         viewModel.observePaymentEvent(callback)
     }
+
+    val paymentEvent = viewModel.paymentEvent
 
 }
 
