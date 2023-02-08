@@ -149,6 +149,10 @@ class SwishViewModel(
                         _transition(SwishStatechart.Companion.Event.Error("No response from payment request status subscription"))
                     }
             }
+            is SwishStatechart.Companion.SideEffect.ResetState -> {
+                Log.d("SwishStateMachine", "cancel payment")
+                requests.cancelPayment()
+            }
             else -> {
                 Log.d("SwishStateMachine", "$sideEffect")
             }

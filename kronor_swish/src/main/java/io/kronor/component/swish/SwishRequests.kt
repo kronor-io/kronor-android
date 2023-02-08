@@ -6,6 +6,7 @@ import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
 import io.kronor.api.*
 import io.kronor.api.type.AddSessionDeviceInformationInput
+import io.kronor.api.type.PaymentCancelInput
 import io.kronor.api.type.SwishPaymentInput
 import kotlinx.coroutines.flow.*
 import java.util.UUID
@@ -59,5 +60,17 @@ fun Requests.getPaymentRequests(): Flow<List<PaymentStatusSubscription.PaymentRe
     } catch (e: ApolloException) {
         Log.d("PaymentStatusSub", "Failed; $e")
         null
+    }
+}
+
+suspend fun Requests.cancelPayment() {
+    try {
+        kronorApolloClient.mutation(
+            CancelPaymentMutation(
+                pay = PaymentCancelInput(idempotencyKey = UUID.randomUUID().toString())
+            )
+        ).execute()
+    } catch (e: ApolloException) {
+        Log.d("NewSwishPayment", "Failed: $e")
     }
 }

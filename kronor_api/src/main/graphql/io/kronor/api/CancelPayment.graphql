@@ -1,0 +1,5 @@
+mutation CancelPayment($pay: PaymentCancelInput!) {
+    cancelPayment(cancel: $pay) {
+        waitToken
+    }
+}

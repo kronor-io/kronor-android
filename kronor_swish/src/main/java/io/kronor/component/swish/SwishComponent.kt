@@ -180,6 +180,10 @@ fun SwishPaymentWithPhoneNumber(onPayNow: (String) -> Unit) {
     }
 }
 
+fun Retry() {
+
+}
+
 @Composable
 fun SwishPaymentCompleted(onPaymentCompleted: () -> Unit) {
     Column(
