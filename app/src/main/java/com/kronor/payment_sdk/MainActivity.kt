@@ -85,7 +85,7 @@ fun KronorTestApp() {
                         redirectUrl = Uri.parse("kronor_test://"),
                     )
                     val swishComponent = getSwishComponent(swishConfiguration)
-                    swishComponent.get(swishConfiguration)
+                    swishComponent.get(LocalContext.current)
 
                     LaunchedEffect(Unit) {
                         snapshotFlow { swishComponent.paymentEvent }.collect {paymentEvent ->

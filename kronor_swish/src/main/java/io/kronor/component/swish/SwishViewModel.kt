@@ -21,21 +21,21 @@ sealed class PaymentEvent {
 }
 
 class SwishViewModelFactory(
-    private val swishConfiguration: SwishConfiguration,
-    private val deviceFingerprint: String
+    private val swishConfiguration: SwishConfiguration
 ) : ViewModelProvider.NewInstanceFactory() {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return SwishViewModel(swishConfiguration, deviceFingerprint) as T
+        return SwishViewModel(swishConfiguration) as T
     }
 }
 
 class SwishViewModel(
-    private val swishConfiguration: SwishConfiguration,
-    private val deviceFingerprint: String
+    private val swishConfiguration: SwishConfiguration
 ) : ViewModel() {
 
     var paymentEvent : PaymentEvent by mutableStateOf(PaymentEvent.Processing)
         private set
+
+    var deviceFingerprint: String? = null
 
     private val requests = Requests(swishConfiguration.sessionToken, swishConfiguration.environment)
     var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
@@ -76,7 +76,7 @@ class SwishViewModel(
                     swishInputData = SwishComponentInput(
                         customerSwishNumber = null,
                         returnUrl = swishConfiguration.redirectUrl.toString(),
-                        deviceFingerprint = deviceFingerprint,
+                        deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
                         appVersion = swishConfiguration.appVersion
                     )
@@ -93,7 +93,7 @@ class SwishViewModel(
                     swishInputData = SwishComponentInput(
                         customerSwishNumber = sideEffect.phoneNumber,
                         returnUrl = swishConfiguration.redirectUrl.toString(),
-                        deviceFingerprint = deviceFingerprint,
+                        deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
                         appVersion = swishConfiguration.appVersion
                     ),
