@@ -24,48 +24,45 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.fingerprintjs.android.fingerprint.Fingerprinter
+import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.PaymentStatusSubscription
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 
 @Composable
 fun getSwishComponent(swishConfiguration: SwishConfiguration): SwishComponent {
-    val deviceFingerprint = "fingerprint"
     val swishViewModel: SwishViewModel = viewModel(
         factory = SwishViewModelFactory(
-            swishConfiguration, deviceFingerprint
+            swishConfiguration
         )
     )
-    return SwishComponent(swishViewModel)
+    return SwishComponent(swishViewModel, swishConfiguration)
 }
 
-class SwishComponent( val viewModel: SwishViewModel) {
+class SwishComponent(
+    private val viewModel: SwishViewModel,
+    private val swishConfiguration: SwishConfiguration
+) {
 
     @Composable
     fun get(
-        swishConfiguration: SwishConfiguration
+        context: Context
     ) {
 
-/*    if (LocalInspectionMode.current) {
-        deviceFingerprint = "preview fingerprint"
-    } else {
-        val fingerprinterFactory = FingerprinterFactory.create(LocalContext.current)
-        fingerprinterFactory.getFingerprint(
-            version = Fingerprinter.Version.V_5,
-            listener = {
-                deviceFingerprint = it
+        if (!LocalInspectionMode.current) {
+            LaunchedEffect(Unit) {
+                val fingerprinterFactory = FingerprinterFactory.create(context)
+                fingerprinterFactory.getFingerprint(
+                    version = Fingerprinter.Version.V_5,
+                    listener = {
+                        viewModel.deviceFingerprint = it
+                    })
             }
-        )
-    }
-
-    Log.d("Fingerprint", "$deviceFingerprint")*/
+        }
 
         SwishScreen(
             merchantLogo = swishConfiguration.merchantLogo,
