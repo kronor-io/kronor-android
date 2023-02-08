@@ -32,13 +32,9 @@ import com.kronor.payment_sdk.type.PaymentSessionInput
 import com.kronor.payment_sdk.type.SupportedCurrencyEnum
 import com.kronor.payment_sdk.ui.theme.KronorSDKTheme
 import io.kronor.api.Environment
-import io.kronor.component.swish.PaymentEvent
-import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.SwishConfiguration
 import io.kronor.component.swish.getSwishComponent
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
 import java.io.IOException
 import java.net.InetAddress
 import java.net.NetworkInterface
@@ -83,37 +79,19 @@ fun KronorTestApp() {
                         appVersion = "0.1.0",
                         locale = Locale("en_US"),
                         redirectUrl = Uri.parse("kronor_test://"),
+                        onPaymentSuccess = {
+                            navController.navigate("paymentMethods")
+                        },
+                        onPaymentFailure = {
+                            navController.navigate("paymentMethods")
+                        }
                     )
                     val swishComponent = getSwishComponent(swishConfiguration)
                     swishComponent.get(LocalContext.current)
-
-                    LaunchedEffect(Unit) {
-                        snapshotFlow { swishComponent.paymentEvent }.collect {paymentEvent ->
-                            when (paymentEvent) {
-                                is PaymentEvent.Error -> {
-                                    navController.navigate("paymentMethods")
-                                }
-                                is PaymentEvent.Paid -> {
-                                    navController.navigate("paymentMethods")
-                                }
-                                PaymentEvent.Processing -> {
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
     }
-}
-
-fun onFailure() {
-    Log.d("Status", "Failed")
-}
-
-
-fun onSuccess(paymentId: String) {
-    Log.d("Status", "${paymentId}")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
