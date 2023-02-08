@@ -122,8 +122,7 @@ class SwishViewModel(
                         it.status == PaymentStatusEnum.PAID
                     }?.let {
                         if (it) {
-                            paymentEvent = (PaymentEvent.Paid(paymentRequest.resultingPaymentId!!))
-                            _transition(SwishStatechart.Companion.Event.PaymentAuthorized)
+                            _transition(SwishStatechart.Companion.Event.PaymentAuthorized(paymentRequest.resultingPaymentId!!))
                         }
                     }
 

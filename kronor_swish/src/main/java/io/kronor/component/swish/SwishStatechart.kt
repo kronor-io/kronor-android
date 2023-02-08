@@ -79,7 +79,7 @@ class SwishStatechart {
 
             on<Event.PaymentAuthorized> {
                 transitionTo(
-                    state = State.PaymentCompleted,
+                    state = State.PaymentCompleted(it.paymentId),
                     sideEffect = SideEffect.NotifyPaymentSuccess
                 )
             }
@@ -98,7 +98,7 @@ class SwishStatechart {
         state<State.WaitingForPayment> {
             on<Event.PaymentAuthorized> {
                 transitionTo(
-                    state = State.PaymentCompleted,
+                    state = State.PaymentCompleted(it.paymentId),
                     sideEffect = SideEffect.NotifyPaymentSuccess
                 )
             }
@@ -143,7 +143,7 @@ class SwishStatechart {
             data class PaymentRequestInitialized(val selected: SelectedMethod) : State()
             object WaitingForPayment : State()
             object PaymentRejected : State()
-            object PaymentCompleted : State()
+            data class PaymentCompleted(val paymentId: String) : State()
             data class Errored(val error: String) : State()
         }
 
@@ -154,7 +154,7 @@ class SwishStatechart {
             object UseQR : Event()
             data class PaymentRequestCreated(val waitToken: String) : Event()
             object PaymentRequestInitialized : Event()
-            object PaymentAuthorized : Event()
+            data class PaymentAuthorized(val paymentId: String) : Event()
             object PaymentRejected : Event()
             object Retry : Event()
             object CancelFlow : Event()
