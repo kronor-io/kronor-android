@@ -9,8 +9,19 @@ enum class SelectedMethod {
 }
 
 class SwishStatechart {
-     val stateMachine = StateMachine.create<State, Event, SideEffect> {
-        initialState(State.PromptingMethod)
+    val stateMachine = StateMachine.create<State, Event, SideEffect> {
+        initialState(State.WaitingForSubscription)
+
+        state<State.WaitingForSubscription> {
+            on<Event.SubscribeToPaymentStatus> {
+                dontTransition(sideEffect = SideEffect.SubscribeToPaymentStatus)
+            }
+            on<Event.Prompt> {
+                transitionTo(
+                    state = State.PromptingMethod
+                )
+            }
+        }
 
         state<State.PromptingMethod> {
             on<Event.UseSwishApp> {
@@ -43,7 +54,7 @@ class SwishStatechart {
             on<Event.PaymentRequestCreated> {
                 transitionTo(
                     state = State.WaitingForPaymentRequest(this.selected),
-                    sideEffect = SideEffect.SubscribeToPaymentStatus(it.waitToken)
+                    sideEffect = SideEffect.ListenOnPaymentRequest(it.waitToken)
                 )
             }
 
@@ -68,9 +79,12 @@ class SwishStatechart {
         state<State.PaymentRequestInitialized> {
             on<Event.Retry> {
                 transitionTo(
-                    state = State.PromptingMethod,
-                    sideEffect = SideEffect.ResetState
+                    state = State.PromptingMethod
                 )
+            }
+
+            on<Event.CancelFlow> {
+                dontTransition(sideEffect = SideEffect.CancelPaymentRequest)
             }
 
             on<Event.SwishAppOpened> {
@@ -80,7 +94,7 @@ class SwishStatechart {
             on<Event.PaymentAuthorized> {
                 transitionTo(
                     state = State.PaymentCompleted(it.paymentId),
-                    sideEffect = SideEffect.NotifyPaymentSuccess
+                    sideEffect = SideEffect.NotifyPaymentSuccess(it.paymentId)
                 )
             }
 
@@ -96,10 +110,20 @@ class SwishStatechart {
         }
 
         state<State.WaitingForPayment> {
+            on<Event.Retry> {
+                transitionTo(
+                    state = State.PromptingMethod
+                )
+            }
+
+            on<Event.CancelFlow> {
+                dontTransition(sideEffect = SideEffect.CancelPaymentRequest)
+            }
+
             on<Event.PaymentAuthorized> {
                 transitionTo(
                     state = State.PaymentCompleted(it.paymentId),
-                    sideEffect = SideEffect.NotifyPaymentSuccess
+                    sideEffect = SideEffect.NotifyPaymentSuccess(it.paymentId)
                 )
             }
 
@@ -130,12 +154,22 @@ class SwishStatechart {
 
         }
         state<State.Errored> {
+            on<Event.CancelFlow> {
+                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure)
+            }
 
+            on<Event.Retry> {
+                transitionTo(
+                    state = State.PromptingMethod,
+                    sideEffect = SideEffect.ResetState
+                )
+            }
         }
     }
 
     companion object {
         sealed class State {
+            object WaitingForSubscription : State()
             object PromptingMethod : State()
             object InsertingPhoneNumber : State()
             data class CreatingPaymentRequest(val selected: SelectedMethod) : State()
@@ -148,6 +182,8 @@ class SwishStatechart {
         }
 
         sealed class Event {
+            object SubscribeToPaymentStatus : Event()
+            object Prompt : Event()
             object UseSwishApp : Event()
             object UsePhoneNumber : Event()
             data class PhoneNumberInserted(val phoneNumber: String) : Event()
@@ -167,8 +203,9 @@ class SwishStatechart {
             object CreateMcomPaymentRequest : SideEffect()
             object CancelPaymentRequest : SideEffect()
             object OpenSwishApp : SideEffect()
-            data class SubscribeToPaymentStatus(val waitToken: String) : SideEffect()
-            object NotifyPaymentSuccess : SideEffect()
+            object SubscribeToPaymentStatus : SideEffect()
+            data class ListenOnPaymentRequest(val waitToken: String) : SideEffect()
+            data class NotifyPaymentSuccess(val paymentId: String) : SideEffect()
             object NotifyPaymentFailure : SideEffect()
             object ResetState : SideEffect()
         }

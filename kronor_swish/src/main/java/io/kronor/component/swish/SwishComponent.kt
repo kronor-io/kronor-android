@@ -24,6 +24,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
@@ -33,14 +34,11 @@ import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.PaymentStatusSubscription
-import kotlinx.coroutines.delay
 
 @Composable
 fun swishViewModel(swishConfiguration: SwishConfiguration): SwishViewModel {
     return viewModel(factory = SwishViewModelFactory(swishConfiguration))
 }
-
-private const val DelayBeforeCallback: Long = 2000 // 2000 milliseconds = 2 seconds
 
 @Composable
 fun GetSwishComponent(
@@ -52,39 +50,41 @@ fun GetSwishComponent(
     if (!LocalInspectionMode.current) {
         LaunchedEffect(Unit) {
             val fingerprinterFactory = FingerprinterFactory.create(context)
-            fingerprinterFactory.getFingerprint(version = Fingerprinter.Version.V_5,
-                listener = {
-                    viewModel.deviceFingerprint = it
-                })
+            fingerprinterFactory.getFingerprint(version = Fingerprinter.Version.V_5, listener = {
+                viewModel.deviceFingerprint = it
+            })
         }
     }
 
     SwishScreen(
-        merchantLogo = swishConfiguration.merchantLogo,
-        swishConfiguration = swishConfiguration,
-        viewModel = viewModel
+        merchantLogo = swishConfiguration.merchantLogo, viewModel = viewModel
     )
 }
 
 
 @Composable
 fun SwishScreen(
-    @DrawableRes merchantLogo: Int? = null,
-    swishConfiguration: SwishConfiguration,
-    viewModel: SwishViewModel = viewModel()
+    @DrawableRes merchantLogo: Int? = null, viewModel: SwishViewModel = viewModel()
 ) {
     val state = viewModel.swishState
     val paymentRequest: PaymentStatusSubscription.PaymentRequest? = viewModel.paymentRequest
 
+    LaunchedEffect(Unit) {
+        viewModel.transition(SwishStatechart.Companion.Event.SubscribeToPaymentStatus)
+    }
+
     SwishWrapper(merchantLogo) {
         when (state) {
+            SwishStatechart.Companion.State.WaitingForSubscription -> {
+                SwishInitializing()
+            }
             SwishStatechart.Companion.State.PromptingMethod -> {
                 SwishPromptMethods(onAppOpen = { viewModel.transition(SwishStatechart.Companion.Event.UseSwishApp) },
                     onQrCode = { viewModel.transition(SwishStatechart.Companion.Event.UseQR) },
                     onPhoneNumber = { viewModel.transition(SwishStatechart.Companion.Event.UsePhoneNumber) })
             }
             SwishStatechart.Companion.State.InsertingPhoneNumber -> {
-                SwishPaymentWithPhoneNumber(onPayNow = { phoneNumber ->
+                SwishPromptPhoneNumber(onPayNow = { phoneNumber ->
                     viewModel.transition(
                         SwishStatechart.Companion.Event.PhoneNumberInserted(
                             phoneNumber
@@ -98,29 +98,50 @@ fun SwishScreen(
                 when (state.selected) {
                     SelectedMethod.QrCode -> {
                         val qrToken = paymentRequest?.transactionSwishDetails?.first()?.qrCode
-                        SwishPaymentWithQrCode(qrToken)
+                        SwishPaymentWithQrCode(qrToken, onCancelPayment = {
+                            viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
+                        })
                     }
                     SelectedMethod.SwishApp -> {
                         val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
                         OpenSwishApp(context = LocalContext.current, returnUrl = returnUrl)
                     }
                     SelectedMethod.PhoneNumber -> {
-                        Text(stringResource(R.string.accept_swish_phpne))
+                        SwishPaymentWithPhoneNumber(onCancelPayment = {
+                            viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
+                        })
                     }
                 }
             }
             is SwishStatechart.Companion.State.PaymentCompleted -> {
-                SwishPaymentCompleted { swishConfiguration.onPaymentSuccess.invoke(state.paymentId) }
+                SwishPaymentCompleted()
             }
             SwishStatechart.Companion.State.PaymentRejected -> {
-                SwishPaymentRejected { swishConfiguration.onPaymentFailure.invoke() }
+                SwishPaymentRejected(onPaymentRetry = { viewModel.transition(SwishStatechart.Companion.Event.Retry) },
+                    onGoBack = { viewModel.transition(SwishStatechart.Companion.Event.CancelFlow) })
             }
             is SwishStatechart.Companion.State.Errored -> {
-                SwishPaymentErrored(state.error) { swishConfiguration.onPaymentFailure.invoke() }
+                SwishPaymentErrored(state.error, onPaymentRetry = {
+                    viewModel.transition(SwishStatechart.Companion.Event.Retry)
+                }, onGoBack = {
+                    viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
+                })
             }
-            else -> Text("Implementing $state")
+            else -> {
+                Log.d("SwishComponent", "Rendering $state")
+                Text("Implementing $state")
+            }
         }
     }
+}
+
+@Composable
+fun SwishInitializing() {
+    Column(
+        modifier = Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) { Text("Initializing...") }
 }
 
 @Composable
@@ -156,7 +177,7 @@ fun SwishWrapper(@DrawableRes merchantLogo: Int? = null, content: @Composable ()
 }
 
 @Composable
-fun SwishPaymentWithPhoneNumber(onPayNow: (String) -> Unit) {
+fun SwishPromptPhoneNumber(onPayNow: (String) -> Unit) {
     var phoneNumber by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
@@ -180,64 +201,98 @@ fun SwishPaymentWithPhoneNumber(onPayNow: (String) -> Unit) {
     }
 }
 
-fun Retry() {
-
-}
-
 @Composable
-fun SwishPaymentCompleted(onPaymentCompleted: () -> Unit) {
+fun SwishPaymentCompleted() {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxHeight()
     ) {
         Text("Payment received")
-        LaunchedEffect(Unit) {
-            delay(DelayBeforeCallback)
-            onPaymentCompleted()
-        }
     }
 }
 
 @Composable
-fun SwishPaymentRejected(onPaymentRejected: () -> Unit) {
+fun SwishPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
     Column(
-        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(modifier = Modifier.height(100.dp))
         Text("Your payment got rejected")
-        LaunchedEffect(Unit) {
-            delay(DelayBeforeCallback)
-            onPaymentRejected()
+        Button(onClick = {
+            onPaymentRetry()
+        }) {
+            Text("Try again")
+        }
+
+        Button(onClick = {
+            onGoBack()
+        }) {
+            Text("Go Back")
         }
     }
 }
 
 @Composable
-fun SwishPaymentErrored(error: String, onPaymentErrored: () -> Unit) {
+fun SwishPaymentErrored(error: String, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
     Column(
-        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(modifier = Modifier.height(100.dp))
         Text("Received an error: $error")
-        LaunchedEffect(Unit) {
-            delay(DelayBeforeCallback)
-            onPaymentErrored()
+        Button(onClick = {
+            onPaymentRetry()
+        }) {
+            Text("Try again")
+        }
+
+        Button(onClick = {
+            onGoBack()
+        }) {
+            Text("Go Back")
         }
     }
 }
 
 @Composable
-fun SwishPaymentWithQrCode(qrToken: String?) {
+fun SwishPaymentWithQrCode(qrToken: String?, onCancelPayment: () -> Unit) {
     Spacer(modifier = Modifier.height(100.dp))
     Column(
-        modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        if (qrToken != null) {
-            SwishQrCode(qrToken)
-            Text(stringResource(R.string.scan_qr))
-        } else {
-            Text(stringResource(R.string.generate_qr))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (qrToken != null) {
+                SwishQrCode(qrToken)
+                Text(stringResource(R.string.scan_qr))
+            } else {
+                Text(stringResource(R.string.generate_qr))
+            }
         }
+        Button(onClick = { onCancelPayment() }) {
+            Text("Cancel Payment")
+        }
+    }
+}
 
+@Composable
+fun SwishPaymentWithPhoneNumber(onCancelPayment: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(R.string.accept_swish_phone), textAlign = TextAlign.Center
+        )
+        Button(onClick = { onCancelPayment() }) {
+            Text("Cancel Payment")
+        }
     }
 }
 
@@ -359,6 +414,14 @@ fun PreviewPromptMethods() {
 
 @Preview
 @Composable
+fun PreviewInsertingPhoneNumber() {
+    SwishWrapper {
+        SwishPromptPhoneNumber(onPayNow = {})
+    }
+}
+
+@Preview
+@Composable
 fun PreviewCreatingPaymentRequest() {
     SwishWrapper {
         SwishCreatingPaymentRequest()
@@ -369,15 +432,15 @@ fun PreviewCreatingPaymentRequest() {
 @Composable
 fun PreviewQrCodeScreen() {
     SwishWrapper {
-        SwishPaymentWithQrCode("DpXc79mMZT7CJCMiLoLYzQ6FjHV46bk6p")
+        SwishPaymentWithQrCode("DpXc79mMZT7CJCMiLoLYzQ6FjHV46bk6p", onCancelPayment = {})
     }
 }
 
 @Preview
 @Composable
-fun PreviewInsertingPhoneNumber() {
+fun PreviewPhonePaymentScreen() {
     SwishWrapper {
-        SwishPaymentWithPhoneNumber(onPayNow = {})
+        SwishPaymentWithPhoneNumber(onCancelPayment = {})
     }
 }
 
@@ -385,7 +448,14 @@ fun PreviewInsertingPhoneNumber() {
 @Composable
 fun PreviewSwishPaymentCompleted() {
     SwishWrapper {
-        SwishPaymentCompleted {
-        }
+        SwishPaymentCompleted()
+    }
+}
+
+@Preview
+@Composable
+fun PreviewSwishPaymentRejected() {
+    SwishWrapper {
+        SwishPaymentRejected({}) {}
     }
 }

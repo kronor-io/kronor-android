@@ -7,5 +7,5 @@
     <string name="enter_phone">Enter phone number</string>
     <string name="scan_qr">Scan this code with the Swish app</string>
     <string name="generate_qr">Brewing a QR code</string>
-    <string name="accept_swish_phpne">Open Swish App on your phone and accept the payment request</string>
+    <string name="accept_swish_phone">Open Swish App on your phone and accept the payment request</string>
 </resources>
