@@ -36,42 +36,36 @@ import io.kronor.api.PaymentStatusSubscription
 import kotlinx.coroutines.delay
 
 @Composable
-fun getSwishComponent(swishConfiguration: SwishConfiguration): SwishComponent {
-    val swishViewModel: SwishViewModel = viewModel(
-        factory = SwishViewModelFactory(
-            swishConfiguration
-        )
-    )
-    return SwishComponent(swishViewModel, swishConfiguration)
+fun swishViewModel(swishConfiguration: SwishConfiguration): SwishViewModel {
+    return viewModel(factory = SwishViewModelFactory(swishConfiguration))
 }
 
 private const val DelayBeforeCallback: Long = 2000 // 2000 milliseconds = 2 seconds
 
-class SwishComponent(
-    private val viewModel: SwishViewModel, private val swishConfiguration: SwishConfiguration
+@Composable
+fun GetSwishComponent(
+    context: Context,
+    swishConfiguration: SwishConfiguration,
+    viewModel: SwishViewModel = swishViewModel(swishConfiguration)
 ) {
-    @Composable
-    fun get(
-        context: Context
-    ) {
 
-        if (!LocalInspectionMode.current) {
-            LaunchedEffect(Unit) {
-                val fingerprinterFactory = FingerprinterFactory.create(context)
-                fingerprinterFactory.getFingerprint(version = Fingerprinter.Version.V_5,
-                    listener = {
-                        viewModel.deviceFingerprint = it
-                    })
-            }
+    if (!LocalInspectionMode.current) {
+        LaunchedEffect(Unit) {
+            val fingerprinterFactory = FingerprinterFactory.create(context)
+            fingerprinterFactory.getFingerprint(version = Fingerprinter.Version.V_5,
+                listener = {
+                    viewModel.deviceFingerprint = it
+                })
         }
-
-        SwishScreen(
-            merchantLogo = swishConfiguration.merchantLogo,
-            swishConfiguration = swishConfiguration,
-            viewModel = viewModel
-        )
     }
+
+    SwishScreen(
+        merchantLogo = swishConfiguration.merchantLogo,
+        swishConfiguration = swishConfiguration,
+        viewModel = viewModel
+    )
 }
+
 
 @Composable
 fun SwishScreen(

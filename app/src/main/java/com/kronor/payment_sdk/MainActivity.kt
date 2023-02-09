@@ -32,8 +32,8 @@ import com.kronor.payment_sdk.type.PaymentSessionInput
 import com.kronor.payment_sdk.type.SupportedCurrencyEnum
 import com.kronor.payment_sdk.ui.theme.KronorSDKTheme
 import io.kronor.api.Environment
+import io.kronor.component.swish.GetSwishComponent
 import io.kronor.component.swish.SwishConfiguration
-import io.kronor.component.swish.getSwishComponent
 import kotlinx.coroutines.*
 import java.io.IOException
 import java.net.InetAddress
@@ -86,8 +86,7 @@ fun KronorTestApp() {
                             navController.navigate("paymentMethods")
                         }
                     )
-                    val swishComponent = getSwishComponent(swishConfiguration)
-                    swishComponent.get(LocalContext.current)
+                    GetSwishComponent(LocalContext.current, swishConfiguration)
                 }
             }
         }
