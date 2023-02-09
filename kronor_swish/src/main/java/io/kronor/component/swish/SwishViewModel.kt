@@ -11,14 +11,11 @@ import com.tinder.StateMachine
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
 import io.kronor.api.type.PaymentStatusEnum
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-sealed class PaymentEvent {
-    object Processing : PaymentEvent()
-    data class Paid(val paymentId: String) : PaymentEvent()
-    data class Error(val error: String?) : PaymentEvent()
-}
+private const val DelayBeforeCallback: Long = 2000 // 2000 milliseconds = 2 seconds
 
 class SwishViewModelFactory(
     private val swishConfiguration: SwishConfiguration
@@ -33,9 +30,6 @@ class SwishViewModel(
     private val swishConfiguration: SwishConfiguration
 ) : ViewModel() {
 
-    var paymentEvent : PaymentEvent by mutableStateOf(PaymentEvent.Processing)
-        private set
-
     var deviceFingerprint: String? = null
 
     private val requests = Requests(swishConfiguration.sessionToken, swishConfiguration.environment)
@@ -43,6 +37,7 @@ class SwishViewModel(
         SwishStatechart().stateMachine
     var swishState: SwishStatechart.Companion.State by mutableStateOf(SwishStatechart.Companion.State.PromptingMethod)
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
+    private var waitToken : String? by mutableStateOf(null)
 
     fun transition(event: SwishStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -105,15 +100,24 @@ class SwishViewModel(
                     _transition(SwishStatechart.Companion.Event.PaymentRequestCreated(waitToken = waitToken))
                 }
             }
+            is SwishStatechart.Companion.SideEffect.ListenOnPaymentRequest -> {
+                this.waitToken = sideEffect.waitToken
+            }
             is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
                 Log.d("SwishStateMachine", "Subscribing to Payment Requests")
                 requests.getPaymentRequests()?.map { paymentRequestList ->
-                    paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
-                        (paymentRequest.waitToken == sideEffect.waitToken) and (paymentRequest.status?.all { paymentStatus ->
-                            paymentStatus.status != PaymentStatusEnum.INITIALIZING
-                        } ?: false)
+                    this.waitToken?.let {
+                        paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
+                            (paymentRequest.waitToken == this.waitToken) and (paymentRequest.status?.all { paymentStatus ->
+                                paymentStatus.status != PaymentStatusEnum.INITIALIZING
+                            } ?: false)
+                        }
+                        return@map paymentRequest
+                    } ?: run {
+                        _transition(SwishStatechart.Companion.Event.Prompt)
+                        null
                     }
-                    return@map paymentRequest
+
                 }?.filterNotNull()?.mapNotNull { paymentRequest ->
                     if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest) _transition(
                         SwishStatechart.Companion.Event.PaymentRequestInitialized
@@ -130,36 +134,42 @@ class SwishViewModel(
                     paymentRequest.status?.any {
                         listOf(
                             PaymentStatusEnum.ERROR,
-                            PaymentStatusEnum.DECLINED,
-                            PaymentStatusEnum.CANCELLED
+                            PaymentStatusEnum.DECLINED
                         ).contains(it.status)
                     }?.let {
                         if (it) {
-                            paymentEvent = PaymentEvent.Error(
-                                paymentRequest.transactionSwishDetails?.firstOrNull()?.errorCode
-                            )
                             _transition(SwishStatechart.Companion.Event.PaymentRejected)
                         }
                     }
-                }?.collect()
-                    ?: suspend {
-                        paymentEvent = PaymentEvent.Error(
-                            "No payment requests found"
-                        )
-                        _transition(SwishStatechart.Companion.Event.Error("No response from payment request status subscription"))
+                    paymentRequest.status?.any { it.status == PaymentStatusEnum.CANCELLED }?.let {
+                        if (it) {
+                            _transition(SwishStatechart.Companion.Event.Retry)
+                        }
                     }
+
+                }?.collect()
+            }
+            is SwishStatechart.Companion.SideEffect.CancelPaymentRequest -> {
+                Log.d("SwishStateMachine", "reset payment flow")
+                requests.cancelPayment()?.let {
+                    if (!it) {
+                        _transition(SwishStatechart.Companion.Event.Error("Failed to cancel the payment"))
+                    }
+                } ?: _transition(SwishStatechart.Companion.Event.Error("Failed to cancel the payment"))
             }
             is SwishStatechart.Companion.SideEffect.ResetState -> {
-                Log.d("SwishStateMachine", "cancel payment")
-                requests.cancelPayment()
+
+            }
+            is SwishStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
+                delay(DelayBeforeCallback)
+                swishConfiguration.onPaymentSuccess(sideEffect.paymentId)
+            }
+            is SwishStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
+                swishConfiguration.onPaymentFailure()
             }
             else -> {
                 Log.d("SwishStateMachine", "$sideEffect")
             }
         }
-    }
-
-    fun observePaymentEvent(callback: (PaymentEvent) -> Unit) {
-        callback(paymentEvent)
     }
 }

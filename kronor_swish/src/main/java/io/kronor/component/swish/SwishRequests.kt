@@ -63,14 +63,18 @@ fun Requests.getPaymentRequests(): Flow<List<PaymentStatusSubscription.PaymentRe
     }
 }
 
-suspend fun Requests.cancelPayment() {
-    try {
-        kronorApolloClient.mutation(
+suspend fun Requests.cancelPayment() : Boolean? {
+    return try {
+        val response = kronorApolloClient.mutation(
             CancelPaymentMutation(
                 pay = PaymentCancelInput(idempotencyKey = UUID.randomUUID().toString())
             )
         ).execute()
+        response.data?.cancelPayment?.waitToken?.let {
+            return true
+        }
     } catch (e: ApolloException) {
         Log.d("NewSwishPayment", "Failed: $e")
+        null
     }
 }
