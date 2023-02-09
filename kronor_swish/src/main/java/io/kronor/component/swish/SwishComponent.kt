@@ -64,7 +64,7 @@ fun GetSwishComponent(
 
 @Composable
 fun SwishScreen(
-    @DrawableRes merchantLogo: Int? = null, viewModel: SwishViewModel = viewModel()
+    @DrawableRes merchantLogo: Int? = null, viewModel: SwishViewModel
 ) {
     val state = viewModel.swishState
     val paymentRequest: PaymentStatusSubscription.PaymentRequest? = viewModel.paymentRequest
