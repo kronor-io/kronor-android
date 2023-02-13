@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.util.Log
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -138,10 +139,12 @@ fun SwishScreen(
 @Composable
 fun SwishInitializing() {
     Column(
-        modifier = Modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) { Text("Initializing...") }
+        modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Initializing...")
+        Spacer(modifier = Modifier.height(30.dp))
+        CircularProgressIndicator()
+    }
 }
 
 @Composable
@@ -182,9 +185,7 @@ fun SwishPromptPhoneNumber(onPayNow: (String) -> Unit) {
         mutableStateOf(TextFieldValue(""))
     }
     Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxHeight()
+        horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxHeight()
     ) {
         TextField(value = phoneNumber, onValueChange = { phoneNumber = it }, placeholder = {
             Text("Enter your Swish phone number")
@@ -192,7 +193,7 @@ fun SwishPromptPhoneNumber(onPayNow: (String) -> Unit) {
             keyboardType = KeyboardType.Phone
         )
         )
-        Spacer(modifier = Modifier.height(50.dp))
+        Spacer(modifier = Modifier.height(100.dp))
         Button(onClick = {
             onPayNow(phoneNumber.text)
         }) {
@@ -260,19 +261,18 @@ fun SwishPaymentErrored(error: String, onPaymentRetry: () -> Unit, onGoBack: () 
 
 @Composable
 fun SwishPaymentWithQrCode(qrToken: String?, onCancelPayment: () -> Unit) {
-    Spacer(modifier = Modifier.height(100.dp))
     Column(
-        modifier = Modifier.fillMaxHeight(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             if (qrToken != null) {
                 SwishQrCode(qrToken)
+                Spacer(modifier = Modifier.height(30.dp))
                 Text(stringResource(R.string.scan_qr))
             } else {
                 Text(stringResource(R.string.generate_qr))
             }
+            Spacer(modifier = Modifier.height(30.dp))
         }
         Button(onClick = { onCancelPayment() }) {
             Text("Cancel Payment")
@@ -284,7 +284,7 @@ fun SwishPaymentWithQrCode(qrToken: String?, onCancelPayment: () -> Unit) {
 fun SwishPaymentWithPhoneNumber(onCancelPayment: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.SpaceBetween,
+        verticalArrangement = Arrangement.SpaceEvenly,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -299,9 +299,11 @@ fun SwishPaymentWithPhoneNumber(onCancelPayment: () -> Unit) {
 @Composable
 fun SwishCreatingPaymentRequest() {
     Column(
-        modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center
+        modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(stringResource(R.string.creating_swish))
+        Spacer(modifier = Modifier.height(30.dp))
+        CircularProgressIndicator()
     }
 }
 
@@ -322,26 +324,32 @@ fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumbe
     } else {
         swishAppExists(LocalContext.current)
     }
+    Column(
+        modifier = Modifier.fillMaxHeight(),
+        verticalArrangement = Arrangement.SpaceEvenly,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (doesSwishAppExist) {
+            Button(onClick = {
+                onAppOpen()
+            }) {
+                Text("Open Swish App")
+            }
+        }
 
-    if (doesSwishAppExist) {
+        Text(stringResource(R.string.pay_another_phone))
         Button(onClick = {
-            onAppOpen()
+            onQrCode()
         }) {
-            Text("Open Swish App")
+            Text(stringResource(R.string.scan_qr_code))
+        }
+        Button(onClick = {
+            onPhoneNumber()
+        }) {
+            Text(stringResource(R.string.enter_phone))
         }
     }
 
-    Text(stringResource(R.string.pay_another_phone))
-    Button(onClick = {
-        onQrCode()
-    }) {
-        Text(stringResource(R.string.scan_qr_code))
-    }
-    Button(onClick = {
-        onPhoneNumber()
-    }) {
-        Text(stringResource(R.string.enter_phone))
-    }
 }
 
 @Composable
