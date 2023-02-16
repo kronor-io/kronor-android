@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.core.os.bundleOf
+import androidx.fragment.app.setFragmentResult
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.kronor.payment_sdk.databinding.FragmentFirst2Binding
@@ -48,6 +50,7 @@ class First2Fragment : Fragment() {
                         binding.amountField.text.toString()
                     )
                     sessionToken?.let {
+                        setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
                         findNavController().navigate(R.id.action_First2Fragment_to_Second2Fragment)
                     }
                 }
