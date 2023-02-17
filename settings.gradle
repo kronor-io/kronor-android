@@ -16,6 +16,6 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Kronor SDK"
-include ':app'
 include ':kronor_swish'
 include ':kronor_api'
+include ':example-app'
