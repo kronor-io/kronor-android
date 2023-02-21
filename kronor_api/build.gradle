@@ -16,6 +16,10 @@ android {
         consumerProguardFiles "consumer-rules.pro"
         versionCode 1
         versionName "1.0"
+
+        aarMetadata {
+            minCompileSdk = 21
+        }
     }
 
     buildTypes {
