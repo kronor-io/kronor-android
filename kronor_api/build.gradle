@@ -2,6 +2,21 @@ plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id("com.apollographql.apollo3").version("3.7.3")
+    id 'maven-publish'
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId 'io.kronor.api'
+            artifactId 'kronor_api'
+            version '1.0'
+
+            pom {
+                description = 'Kronor API.'
+            }
+        }
+    }
 }
 
 android {
@@ -49,8 +64,6 @@ apollo {
 dependencies {
 
     implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.appcompat:appcompat:1.6.0'
-    implementation 'com.google.android.material:material:1.7.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
