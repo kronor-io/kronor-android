@@ -1,6 +1,21 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
+    id 'maven-publish'
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId 'io.kronor.component.swish'
+            artifactId 'kronor_swish'
+            version '1.0'
+
+            pom {
+                description = 'Kronor Swish Component for Kronor API.'
+            }
+        }
+    }
 }
 
 android {
