@@ -12,9 +12,19 @@ publishing {
             artifactId 'kronor_api'
             version '1.0'
 
+            afterEvaluate {
+                from components.release
+            }
+
             pom {
                 description = 'Kronor API.'
             }
+        }
+    }
+    repositories {
+        maven {
+            name = "myrepo"
+            url = "${project.buildDir}/repo"
         }
     }
 }

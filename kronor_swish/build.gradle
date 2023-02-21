@@ -11,9 +11,20 @@ publishing {
             artifactId 'kronor_swish'
             version '1.0'
 
+            afterEvaluate {
+                from components.release
+            }
+
             pom {
                 description = 'Kronor Swish Component for Kronor API.'
             }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "myrepo"
+            url = "${project.buildDir}/repo"
         }
     }
 }
