@@ -30,10 +30,8 @@ class First2Fragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
         _binding = FragmentFirst2Binding.inflate(inflater, container, false)
         return binding.root
-
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -49,7 +47,9 @@ class First2Fragment : Fragment() {
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
-                        findNavController().navigate(R.id.action_First2Fragment_to_Second2Fragment)
+                        withContext(Dispatchers.Main) {
+                            findNavController().navigate(R.id.action_First2Fragment_to_Second2Fragment)
+                        }
                     }
                 }
             }
