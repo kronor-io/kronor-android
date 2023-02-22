@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
+import io.kronor.api.ApiError
+import io.kronor.api.KronorError
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
 import io.kronor.api.type.PaymentStatusEnum
@@ -40,8 +42,8 @@ class SwishViewModel(
         SwishStatechart().stateMachine
     var swishState: SwishStatechart.Companion.State by mutableStateOf(SwishStatechart.Companion.State.PromptingMethod)
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
-    private var waitToken : String? by mutableStateOf(null)
-    private var selectedMethod : SelectedMethod? by mutableStateOf(null)
+    private var waitToken: String? by mutableStateOf(null)
+    private var selectedMethod: SelectedMethod? by mutableStateOf(null)
 
     fun transition(event: SwishStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -51,28 +53,35 @@ class SwishViewModel(
         }
     }
 
-    suspend fun _transition(event: SwishStatechart.Companion.Event) {
+    private suspend fun _transition(event: SwishStatechart.Companion.Event) {
 
-            when (val result = stateMachine.transition(event)) {
-                is StateMachine.Transition.Valid -> {
-                    swishState = result.toState
-                    result.sideEffect?.let {
-                        handleSideEffect(it)
-                    }
+        when (val result = stateMachine.transition(event)) {
+            is StateMachine.Transition.Valid -> {
+                swishState = result.toState
+                result.sideEffect?.let {
+                    handleSideEffect(it)
                 }
-                is StateMachine.Transition.Invalid -> {
-                    Log.d(
-                        "SwishStateMachine",
-                        "Cannot transition to $event from ${result.fromState}"
-                    )
-                }
+            }
+            is StateMachine.Transition.Invalid -> {
+                Log.d(
+                    "SwishViewModel", "Cannot transition to $event from ${result.fromState}"
+                )
+            }
         }
+    }
+
+    private suspend fun _transitionToError(t: Throwable?) {
+        _transition(
+            SwishStatechart.Companion.Event.Error(
+                (t ?: KronorError.graphQlError(ApiError(emptyList(), emptyMap()))) as KronorError
+            )
+        )
     }
 
     private suspend fun handleSideEffect(sideEffect: SwishStatechart.Companion.SideEffect) {
         when (sideEffect) {
             is SwishStatechart.Companion.SideEffect.CreateMcomPaymentRequest -> {
-                Log.d("SwishStateMachine", "Creating Mcom Payment Request")
+                Log.d("SwishViewModel", "Creating Mcom Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
                     swishInputData = SwishComponentInput(
                         customerSwishNumber = null,
@@ -82,14 +91,25 @@ class SwishViewModel(
                         appVersion = swishConfiguration.appVersion
                     )
                 )
-                if (waitToken == null) {
-                    _transition(SwishStatechart.Companion.Event.Error("No wait token"))
-                } else {
-                    _transition(SwishStatechart.Companion.Event.PaymentRequestCreated(waitToken = waitToken))
+                when {
+                    waitToken.isFailure -> {
+                        Log.d(
+                            "SwishViewModel",
+                            "Error creating mcom request: ${waitToken.exceptionOrNull()}"
+                        )
+                        _transitionToError(waitToken.exceptionOrNull())
+                    }
+                    waitToken.isSuccess -> {
+                        _transition(
+                            SwishStatechart.Companion.Event.PaymentRequestCreated(
+                                waitToken = waitToken.getOrNull()!!
+                            )
+                        )
+                    }
                 }
             }
             is SwishStatechart.Companion.SideEffect.CreateEcomPaymentRequest -> {
-                Log.d("SwishStateMachine", "Creating Ecom Payment Request")
+                Log.d("SwishViewModel", "Creating Ecom Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
                     swishInputData = SwishComponentInput(
                         customerSwishNumber = sideEffect.phoneNumber,
@@ -99,20 +119,30 @@ class SwishViewModel(
                         appVersion = swishConfiguration.appVersion
                     ),
                 )
-                if (waitToken == null) {
-                    _transition(SwishStatechart.Companion.Event.Error("No wait token"))
-                } else {
-                    _transition(SwishStatechart.Companion.Event.PaymentRequestCreated(waitToken = waitToken))
+                when {
+                    waitToken.isFailure -> {
+                        Log.d(
+                            "SwishViewModel",
+                            "Error creating ecom request: ${waitToken.exceptionOrNull()}"
+                        )
+                        _transitionToError(waitToken.exceptionOrNull())
+                    }
+                    waitToken.isSuccess -> {
+                        _transition(
+                            SwishStatechart.Companion.Event.PaymentRequestCreated(
+                                waitToken = waitToken.getOrNull()!!
+                            )
+                        )
+                    }
                 }
             }
             is SwishStatechart.Companion.SideEffect.ListenOnPaymentRequest -> {
                 this.waitToken = sideEffect.waitToken
             }
             is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
-                Log.d("SwishStateMachine", "Subscribing to Payment Requests")
+                Log.d("SwishViewModel", "Subscribing to Payment Requests")
                 try {
                     requests.getPaymentRequests().map { paymentRequestList ->
-                        Log.d("SwishStateMachine", "$paymentRequestList")
                         this.waitToken?.let {
                             paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
                                 (paymentRequest.waitToken == this.waitToken) and (paymentRequest.status?.all { paymentStatus ->
@@ -143,8 +173,7 @@ class SwishViewModel(
 
                         paymentRequest.status?.any {
                             listOf(
-                                PaymentStatusEnum.ERROR,
-                                PaymentStatusEnum.DECLINED
+                                PaymentStatusEnum.ERROR, PaymentStatusEnum.DECLINED
                             ).contains(it.status)
                         }?.let {
                             if (it) {
@@ -159,18 +188,24 @@ class SwishViewModel(
                             }
 
                     }.collect()
-                } catch (e : ApolloException) {
+                } catch (e: ApolloException) {
                     Log.d("SwishViewModel", "Payment Subscription error: $e")
-                    _transition(SwishStatechart.Companion.Event.Error("There was a network error."))
+                    _transition(SwishStatechart.Companion.Event.Error(KronorError.networkError(e)))
                 }
             }
             is SwishStatechart.Companion.SideEffect.CancelPaymentRequest -> {
-                Log.d("SwishStateMachine", "reset payment flow")
-                requests.cancelPayment()?.let {
-                    if (!it) {
-                        _transition(SwishStatechart.Companion.Event.Error("Failed to cancel the payment"))
+                Log.d("SwishViewModel", "reset payment flow")
+                val waitToken = requests.cancelPayment()
+                when {
+                    waitToken.isFailure -> {
+                        Log.d(
+                            "SwishViewModel",
+                            "Failed to cancel payment request: ${waitToken.exceptionOrNull()}"
+                        )
+                        _transitionToError(waitToken.exceptionOrNull())
                     }
-                } ?: _transition(SwishStatechart.Companion.Event.Error("Failed to cancel the payment"))
+                    waitToken.isSuccess -> {}
+                }
             }
             is SwishStatechart.Companion.SideEffect.ResetState -> {
 

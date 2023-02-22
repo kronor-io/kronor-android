@@ -1,6 +1,7 @@
 package io.kronor.component.swish
 
 import com.tinder.StateMachine
+import io.kronor.api.KronorError
 
 enum class SelectedMethod {
     SwishApp,
@@ -205,7 +206,7 @@ class SwishStatechart {
             object WaitingForPayment : State()
             object PaymentRejected : State()
             data class PaymentCompleted(val paymentId: String) : State()
-            data class Errored(val error: String) : State()
+            data class Errored(val error: KronorError) : State()
         }
 
         sealed class Event {
@@ -221,7 +222,7 @@ class SwishStatechart {
             object PaymentRejected : Event()
             object Retry : Event()
             object CancelFlow : Event()
-            data class Error(val error: String) : Event()
+            data class Error(val error: KronorError) : Event()
             object SwishAppOpened : Event()
         }
 

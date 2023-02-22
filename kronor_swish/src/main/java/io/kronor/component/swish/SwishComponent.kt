@@ -33,6 +33,7 @@ import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import io.kronor.api.KronorError
 import io.kronor.api.PaymentStatusSubscription
 
 @Composable
@@ -104,8 +105,7 @@ fun SwishScreen(
                     }
                     SelectedMethod.SwishApp -> {
                         val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
-                        OpenSwishApp(
-                            context = LocalContext.current,
+                        OpenSwishApp(context = LocalContext.current,
                             returnUrl = returnUrl,
                             onAppOpened = {
                                 viewModel.transition(SwishStatechart.Companion.Event.SwishAppOpened)
@@ -242,18 +242,25 @@ fun SwishPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
 }
 
 @Composable
-fun SwishPaymentErrored(error: String, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+fun SwishPaymentErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(100.dp))
-        Text("Received an error: $error")
+        when (error) {
+            is KronorError.networkError -> {
+                Text("Could not process the payment due to a network error. Please ensure your phone is connected to the internet and press Try Again.")
+            }
+            is KronorError.graphQlError -> {
+                Text("Could not complete the payment due to an error.")
+            }
+        }
         Button(onClick = {
             onPaymentRetry()
         }) {
-            Text("Try again")
+            Text("Try Again")
         }
 
         Button(onClick = {
