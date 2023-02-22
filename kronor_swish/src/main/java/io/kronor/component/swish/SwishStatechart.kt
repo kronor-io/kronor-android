@@ -21,6 +21,11 @@ class SwishStatechart {
                     state = State.PromptingMethod
                 )
             }
+            on<Event.Error> {
+                transitionTo(
+                    state = State.Errored(it.error)
+                )
+            }
         }
 
         state<State.PromptingMethod> {
@@ -39,6 +44,11 @@ class SwishStatechart {
             on<Event.UsePhoneNumber> {
                 transitionTo(state = State.InsertingPhoneNumber)
             }
+            on<Event.Error> {
+                transitionTo(
+                    state = State.Errored(it.error)
+                )
+            }
         }
 
         state<State.InsertingPhoneNumber> {
@@ -46,6 +56,11 @@ class SwishStatechart {
                 transitionTo(
                     state = State.CreatingPaymentRequest(SelectedMethod.PhoneNumber),
                     sideEffect = SideEffect.CreateEcomPaymentRequest(it.phoneNumber)
+                )
+            }
+            on<Event.Error> {
+                transitionTo(
+                    state = State.Errored(it.error)
                 )
             }
         }
@@ -149,6 +164,12 @@ class SwishStatechart {
                     sideEffect = SideEffect.ResetState
                 )
             }
+
+            on<Event.Error> {
+                transitionTo(
+                    state = State.Errored(it.error)
+                )
+            }
         }
         state<State.PaymentCompleted> {
 
@@ -162,6 +183,12 @@ class SwishStatechart {
                 transitionTo(
                     state = State.PromptingMethod,
                     sideEffect = SideEffect.ResetState
+                )
+            }
+
+            on<Event.Error> {
+                transitionTo(
+                    state = State.Errored(it.error)
                 )
             }
         }

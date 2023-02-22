@@ -52,18 +52,13 @@ suspend fun Requests.makeNewPaymentRequest(
     return response?.data?.newSwishPayment?.waitToken
 }
 
-fun Requests.getPaymentRequests(): Flow<List<PaymentStatusSubscription.PaymentRequest>>? {
-    return try {
-        kronorApolloClient.subscription(
-            PaymentStatusSubscription()
-        ).toFlow().map { response -> response.data?.paymentRequests }.filterNotNull()
-    } catch (e: ApolloException) {
-        Log.d("PaymentStatusSub", "Failed; $e")
-        null
-    }
+fun Requests.getPaymentRequests(): Flow<List<PaymentStatusSubscription.PaymentRequest>> {
+    return kronorApolloClient.subscription(
+        PaymentStatusSubscription()
+    ).toFlow().map { response -> response.data?.paymentRequests }.filterNotNull()
 }
 
-suspend fun Requests.cancelPayment() : Boolean? {
+suspend fun Requests.cancelPayment(): Boolean? {
     return try {
         val response = kronorApolloClient.mutation(
             CancelPaymentMutation(

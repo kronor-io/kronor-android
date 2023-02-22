@@ -7,13 +7,16 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
 import io.kronor.api.type.PaymentStatusEnum
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val DelayBeforeCallback: Long = 2000 // 2000 milliseconds = 2 seconds
 
@@ -38,10 +41,13 @@ class SwishViewModel(
     var swishState: SwishStatechart.Companion.State by mutableStateOf(SwishStatechart.Companion.State.PromptingMethod)
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken : String? by mutableStateOf(null)
+    private var selectedMethod : SelectedMethod? by mutableStateOf(null)
 
     fun transition(event: SwishStatechart.Companion.Event) {
         viewModelScope.launch {
-            _transition(event)
+            withContext(Dispatchers.IO) {
+                _transition(event)
+            }
         }
     }
 
@@ -60,7 +66,6 @@ class SwishViewModel(
                         "Cannot transition to $event from ${result.fromState}"
                     )
                 }
-
         }
     }
 
@@ -105,49 +110,59 @@ class SwishViewModel(
             }
             is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
                 Log.d("SwishStateMachine", "Subscribing to Payment Requests")
-                requests.getPaymentRequests()?.map { paymentRequestList ->
-                    this.waitToken?.let {
-                        paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
-                            (paymentRequest.waitToken == this.waitToken) and (paymentRequest.status?.all { paymentStatus ->
-                                paymentStatus.status != PaymentStatusEnum.INITIALIZING
-                            } ?: false)
+                try {
+                    requests.getPaymentRequests().map { paymentRequestList ->
+                        Log.d("SwishStateMachine", "$paymentRequestList")
+                        this.waitToken?.let {
+                            paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
+                                (paymentRequest.waitToken == this.waitToken) and (paymentRequest.status?.all { paymentStatus ->
+                                    (paymentStatus.status != PaymentStatusEnum.INITIALIZING)
+                                } ?: false)
+                            }
+                            return@map paymentRequest
+                        } ?: run {
+                            _transition(SwishStatechart.Companion.Event.Prompt)
+                            null
                         }
-                        return@map paymentRequest
-                    } ?: run {
-                        _transition(SwishStatechart.Companion.Event.Prompt)
-                        null
-                    }
+                    }.filterNotNull().mapNotNull { paymentRequest ->
+                        if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest) _transition(
+                            SwishStatechart.Companion.Event.PaymentRequestInitialized
+                        )
 
-                }?.filterNotNull()?.mapNotNull { paymentRequest ->
-                    if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest) _transition(
-                        SwishStatechart.Companion.Event.PaymentRequestInitialized
-                    )
-
-                    paymentRequest.status?.any {
-                        it.status == PaymentStatusEnum.PAID
-                    }?.let {
-                        if (it) {
-                            _transition(SwishStatechart.Companion.Event.PaymentAuthorized(paymentRequest.resultingPaymentId!!))
+                        paymentRequest.status?.any {
+                            it.status == PaymentStatusEnum.PAID
+                        }?.let {
+                            if (it) {
+                                _transition(
+                                    SwishStatechart.Companion.Event.PaymentAuthorized(
+                                        paymentRequest.resultingPaymentId!!
+                                    )
+                                )
+                            }
                         }
-                    }
 
-                    paymentRequest.status?.any {
-                        listOf(
-                            PaymentStatusEnum.ERROR,
-                            PaymentStatusEnum.DECLINED
-                        ).contains(it.status)
-                    }?.let {
-                        if (it) {
-                            _transition(SwishStatechart.Companion.Event.PaymentRejected)
+                        paymentRequest.status?.any {
+                            listOf(
+                                PaymentStatusEnum.ERROR,
+                                PaymentStatusEnum.DECLINED
+                            ).contains(it.status)
+                        }?.let {
+                            if (it) {
+                                _transition(SwishStatechart.Companion.Event.PaymentRejected)
+                            }
                         }
-                    }
-                    paymentRequest.status?.any { it.status == PaymentStatusEnum.CANCELLED }?.let {
-                        if (it) {
-                            _transition(SwishStatechart.Companion.Event.Retry)
-                        }
-                    }
+                        paymentRequest.status?.any { it.status == PaymentStatusEnum.CANCELLED }
+                            ?.let {
+                                if (it) {
+                                    _transition(SwishStatechart.Companion.Event.Retry)
+                                }
+                            }
 
-                }?.collect()
+                    }.collect()
+                } catch (e : ApolloException) {
+                    Log.d("SwishViewModel", "Payment Subscription error: $e")
+                    _transition(SwishStatechart.Companion.Event.Error("There was a network error."))
+                }
             }
             is SwishStatechart.Companion.SideEffect.CancelPaymentRequest -> {
                 Log.d("SwishStateMachine", "reset payment flow")
