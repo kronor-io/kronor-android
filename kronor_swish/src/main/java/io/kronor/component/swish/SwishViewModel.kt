@@ -167,8 +167,7 @@ class SwishViewModel(
             is SwishStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 swishConfiguration.onPaymentFailure()
             }
-            else -> {
-                Log.d("SwishStateMachine", "$sideEffect")
+            SwishStatechart.Companion.SideEffect.OpenSwishApp -> {
             }
         }
     }

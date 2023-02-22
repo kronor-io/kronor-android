@@ -8,7 +8,6 @@ import android.graphics.Color
 import android.net.Uri
 import android.util.Log
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -105,10 +104,15 @@ fun SwishScreen(
                     }
                     SelectedMethod.SwishApp -> {
                         val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
-                        OpenSwishApp(context = LocalContext.current, returnUrl = returnUrl)
+                        OpenSwishApp(
+                            context = LocalContext.current,
+                            returnUrl = returnUrl,
+                            onAppOpened = {
+                                viewModel.transition(SwishStatechart.Companion.Event.SwishAppOpened)
+                            })
                     }
                     SelectedMethod.PhoneNumber -> {
-                        SwishPaymentWithPhoneNumber(onCancelPayment = {
+                        SwishWaitingForPayment(onCancelPayment = {
                             viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
                         })
                     }
@@ -128,9 +132,10 @@ fun SwishScreen(
                     viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
                 })
             }
-            else -> {
-                Log.d("SwishComponent", "Rendering $state")
-                Text("Implementing $state")
+            SwishStatechart.Companion.State.WaitingForPayment -> {
+                SwishWaitingForPayment(onCancelPayment = {
+                    viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
+                })
             }
         }
     }
@@ -281,7 +286,7 @@ fun SwishPaymentWithQrCode(qrToken: String?, onCancelPayment: () -> Unit) {
 }
 
 @Composable
-fun SwishPaymentWithPhoneNumber(onCancelPayment: () -> Unit) {
+fun SwishWaitingForPayment(onCancelPayment: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceEvenly,
@@ -290,6 +295,7 @@ fun SwishPaymentWithPhoneNumber(onCancelPayment: () -> Unit) {
         Text(
             text = stringResource(R.string.accept_swish_phone), textAlign = TextAlign.Center
         )
+        CircularProgressIndicator()
         Button(onClick = { onCancelPayment() }) {
             Text("Cancel Payment")
         }
@@ -353,11 +359,10 @@ fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumbe
 }
 
 @Composable
-fun OpenSwishApp(context: Context, returnUrl: String?) {
+fun OpenSwishApp(context: Context, returnUrl: String?, onAppOpened: () -> Unit) {
     val swishUrl = Uri.parse(returnUrl)
     val intent = Intent(Intent.ACTION_VIEW, swishUrl)
     val appIntentMatch = context.packageManager.queryIntentActivities(intent, MATCH_DEFAULT_ONLY)
-    Text("$appIntentMatch")
     val doesSwishAppExist = appIntentMatch.any { resolveInfo ->
         Log.d("AppCheck", "${resolveInfo.activityInfo}")
         resolveInfo.activityInfo.packageName == "se.bankgirot.swish.sandbox" || resolveInfo.activityInfo.packageName == "se.bankgirot.swish"
@@ -365,6 +370,7 @@ fun OpenSwishApp(context: Context, returnUrl: String?) {
 
     if (doesSwishAppExist) {
         startActivity(context, intent, null)
+        onAppOpened()
     } else {
         Text("No Swish App Found")
         Log.d("SwishApp", "No Swish app")
@@ -446,9 +452,9 @@ fun PreviewQrCodeScreen() {
 
 @Preview
 @Composable
-fun PreviewPhonePaymentScreen() {
+fun PreviewWaitingForPaymentScreen() {
     SwishWrapper {
-        SwishPaymentWithPhoneNumber(onCancelPayment = {})
+        SwishWaitingForPayment(onCancelPayment = {})
     }
 }
 
