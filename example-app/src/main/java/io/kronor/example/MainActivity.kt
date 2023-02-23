@@ -72,7 +72,7 @@ fun KronorTestApp() {
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val swishConfiguration = SwishConfiguration(
                         sessionToken = sessionToken,
-                        merchantLogo = R.drawable.boozt_logo,
+                        merchantLogo = R.drawable.kronor_logo,
                         environment = Environment.Staging,
                         appName = "kronor-android-test",
                         appVersion = "0.1.0",

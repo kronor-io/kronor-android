@@ -42,7 +42,7 @@ class Second2Fragment : Fragment() {
             setContent {
                 if (sessionToken != null) {
                     val swishConfiguration = SwishConfiguration(sessionToken = sessionToken!!,
-                        merchantLogo = R.drawable.boozt_logo,
+                        merchantLogo = R.drawable.kronor_logo,
                         environment = Environment.Staging,
                         appName = "kronor-android-test",
                         appVersion = "0.1.0",
