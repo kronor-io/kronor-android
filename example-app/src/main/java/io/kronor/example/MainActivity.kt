@@ -1,6 +1,5 @@
 package io.kronor.example
 
-import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -120,11 +119,10 @@ fun paymentMethodsScreen(onNavigateToSwish: (String) -> Unit) {
                     )
                 )
             }
-            val context = LocalContext.current
             Button(onClick = {
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
-                        val sessionToken = createNewPaymentSession(context, amount.text)
+                        val sessionToken = createNewPaymentSession(amount.text)
 
                         sessionToken?.let {
                             onNavigateToSwish(it)
@@ -139,12 +137,12 @@ fun paymentMethodsScreen(onNavigateToSwish: (String) -> Unit) {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-suspend fun createNewPaymentSession(context: Context, amountToPay: String): String? {
+suspend fun createNewPaymentSession(amountToPay: String): String? {
     val expiresAt = LocalDateTime.now().plusMinutes(5)
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
     Log.d("NewPaymentSession", "test")
     val response = try {
-        apolloClient(context).mutation(
+        apolloClient().mutation(
             NewPaymentSessionMutation(
                 PaymentSessionInput(
                     amount = amountToPay.toInt() * 100,

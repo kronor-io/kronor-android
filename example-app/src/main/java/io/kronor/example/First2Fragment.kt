@@ -42,7 +42,6 @@ class First2Fragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
                     val sessionToken = createNewPaymentSession(
-                        requireContext(),
                         binding.amountField.text.toString()
                     )
                     sessionToken?.let {

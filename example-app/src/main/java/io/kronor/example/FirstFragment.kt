@@ -11,7 +11,6 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
-import io.kronor.example.apolloClient
 import io.kronor.example.databinding.FragmentFirstBinding
 import io.kronor.example.type.PaymentSessionInput
 import io.kronor.example.type.SupportedCurrencyEnum
@@ -51,7 +50,7 @@ class FirstFragment : Fragment() {
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
                 Log.d("NewPaymentSession", "test")
                 val response = try {
-                    apolloClient(requireContext()).mutation(
+                    apolloClient().mutation(
                         NewPaymentSessionMutation(
                             PaymentSessionInput(
                                 amount = binding.editTextNumber.text.toString().toInt()*100,
