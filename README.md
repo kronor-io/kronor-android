@@ -17,8 +17,8 @@ Add the dependency:
 
 ```gradle
 dependencies {
-    implementation 'com.github.kronor-io.kronor-android:kronor_api:main-SNAPSHOT'
-    implementation 'com.github.kronor-io.kronor-android:kronor_swish:main-SNAPSHOT'
+    implementation 'com.github.kronor-io.kronor-android:kronor_api:1.0'
+    implementation 'com.github.kronor-io.kronor-android:kronor_swish:1.0'
 }
 ```
 
