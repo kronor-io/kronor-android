@@ -55,4 +55,4 @@ val swishConfiguration = SwishConfiguration(
 GetSwishComponent(LocalContext.current, swishConfiguration)
 ```
 
-You can also refer to the [example-app](example-app) for reference
+You can also refer to the [example-app](example-app) for reference. `Second2Fragment` files shows using the swish component in traditional android views
