@@ -22,6 +22,11 @@ class SwishStatechart {
                     state = State.PromptingMethod
                 )
             }
+            on<Event.PaymentRequestInitialized> {
+                transitionTo(
+                    state = State.PaymentRequestInitialized(it.selected)
+                )
+            }
             on<Event.Error> {
                 transitionTo(
                     state = State.Errored(it.error)
@@ -182,8 +187,8 @@ class SwishStatechart {
 
             on<Event.Retry> {
                 transitionTo(
-                    state = State.PromptingMethod,
-                    sideEffect = SideEffect.ResetState
+                    state = State.WaitingForSubscription,
+                    sideEffect = SideEffect.SubscribeToPaymentStatus
                 )
             }
 
@@ -217,7 +222,7 @@ class SwishStatechart {
             data class PhoneNumberInserted(val phoneNumber: String) : Event()
             object UseQR : Event()
             data class PaymentRequestCreated(val waitToken: String) : Event()
-            object PaymentRequestInitialized : Event()
+            data class PaymentRequestInitialized(val selected: SelectedMethod) : Event()
             data class PaymentAuthorized(val paymentId: String) : Event()
             object PaymentRejected : Event()
             object Retry : Event()

@@ -80,9 +80,16 @@ fun SwishScreen(
                 SwishInitializing()
             }
             SwishStatechart.Companion.State.PromptingMethod -> {
-                SwishPromptMethods(onAppOpen = { viewModel.transition(SwishStatechart.Companion.Event.UseSwishApp) },
-                    onQrCode = { viewModel.transition(SwishStatechart.Companion.Event.UseQR) },
-                    onPhoneNumber = { viewModel.transition(SwishStatechart.Companion.Event.UsePhoneNumber) })
+                SwishPromptMethods(onAppOpen = {
+                    viewModel.selectedMethod = SelectedMethod.SwishApp
+                    viewModel.transition(SwishStatechart.Companion.Event.UseSwishApp)
+                }, onQrCode = {
+                    viewModel.selectedMethod = SelectedMethod.QrCode
+                    viewModel.transition(SwishStatechart.Companion.Event.UseQR)
+                }, onPhoneNumber = {
+                    viewModel.selectedMethod = SelectedMethod.PhoneNumber
+                    viewModel.transition(SwishStatechart.Companion.Event.UsePhoneNumber)
+                })
             }
             SwishStatechart.Companion.State.InsertingPhoneNumber -> {
                 SwishPromptPhoneNumber(onPayNow = { phoneNumber ->
@@ -105,7 +112,8 @@ fun SwishScreen(
                     }
                     SelectedMethod.SwishApp -> {
                         val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
-                        OpenSwishApp(context = LocalContext.current,
+                        OpenSwishApp(
+                            context = LocalContext.current,
                             returnUrl = returnUrl,
                             onAppOpened = {
                                 viewModel.transition(SwishStatechart.Companion.Event.SwishAppOpened)

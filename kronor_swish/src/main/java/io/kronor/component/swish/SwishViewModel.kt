@@ -43,7 +43,7 @@ class SwishViewModel(
     var swishState: SwishStatechart.Companion.State by mutableStateOf(SwishStatechart.Companion.State.PromptingMethod)
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
-    private var selectedMethod: SelectedMethod? by mutableStateOf(null)
+    var selectedMethod: SelectedMethod? by mutableStateOf(null)
 
     fun transition(event: SwishStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -155,8 +155,19 @@ class SwishViewModel(
                             null
                         }
                     }.filterNotNull().mapNotNull { paymentRequest ->
+                        val selected : SelectedMethod = selectedMethod ?: run {
+                            when (paymentRequest.paymentFlow) {
+                                "mcom" -> SelectedMethod.QrCode
+                                "ecom" -> SelectedMethod.PhoneNumber
+                                else -> SelectedMethod.QrCode
+                            }
+                        }
                         if (swishState is SwishStatechart.Companion.State.WaitingForPaymentRequest) _transition(
-                            SwishStatechart.Companion.Event.PaymentRequestInitialized
+                            SwishStatechart.Companion.Event.PaymentRequestInitialized(selected)
+                        )
+
+                        if (swishState is SwishStatechart.Companion.State.WaitingForSubscription) _transition(
+                            SwishStatechart.Companion.Event.PaymentRequestInitialized(selected)
                         )
 
                         paymentRequest.status?.any {
