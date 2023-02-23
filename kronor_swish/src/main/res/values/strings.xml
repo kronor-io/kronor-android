@@ -8,4 +8,14 @@
     <string name="scan_qr">Scan this code with the Swish app</string>
     <string name="generate_qr">Brewing a QR code</string>
     <string name="accept_swish_phone">Open Swish App on your phone and accept the payment request</string>
+    <string name="network_error">Could not process the payment due to a network error. Please ensure your phone is connected to the internet and press Try Again.</string>
+    <string name="cancel_payment">Cancel Payment</string>
+    <string name="try_again">Try Again</string>
+    <string name="go_back">Go Back</string>
+    <string name="graphql_error">Could not complete the payment due to an error.</string>
+    <string name="payment_rejected">Your payment got rejected</string>
+    <string name="payment_completed">Payment Completed</string>
+    <string name="pay_now">Pay Now</string>
+    <string name="enter_swish_number">Enter your Swish phone number</string>
+    <string name="initializing">Initializing…</string>
 </resources>

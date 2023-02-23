@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.apollographql.apollo3.exception.ApolloException
 import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import com.google.zxing.BarcodeFormat
@@ -112,8 +113,7 @@ fun SwishScreen(
                     }
                     SelectedMethod.SwishApp -> {
                         val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
-                        OpenSwishApp(
-                            context = LocalContext.current,
+                        OpenSwishApp(context = LocalContext.current,
                             returnUrl = returnUrl,
                             onAppOpened = {
                                 viewModel.transition(SwishStatechart.Companion.Event.SwishAppOpened)
@@ -154,7 +154,7 @@ fun SwishInitializing() {
     Column(
         modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Initializing...")
+        Text(stringResource(R.string.initializing))
         Spacer(modifier = Modifier.height(30.dp))
         CircularProgressIndicator()
     }
@@ -201,7 +201,7 @@ fun SwishPromptPhoneNumber(onPayNow: (String) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxHeight()
     ) {
         TextField(value = phoneNumber, onValueChange = { phoneNumber = it }, placeholder = {
-            Text("Enter your Swish phone number")
+            Text(stringResource(R.string.enter_swish_number))
         }, keyboardOptions = KeyboardOptions.Default.copy(
             keyboardType = KeyboardType.Phone
         )
@@ -210,7 +210,7 @@ fun SwishPromptPhoneNumber(onPayNow: (String) -> Unit) {
         Button(onClick = {
             onPayNow(phoneNumber.text)
         }) {
-            Text("Pay Now")
+            Text(stringResource(R.string.pay_now))
         }
     }
 }
@@ -222,7 +222,7 @@ fun SwishPaymentCompleted() {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxHeight()
     ) {
-        Text("Payment received")
+        Text(stringResource(R.string.payment_completed))
     }
 }
 
@@ -234,17 +234,17 @@ fun SwishPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(100.dp))
-        Text("Your payment got rejected")
+        Text(stringResource(R.string.payment_rejected))
         Button(onClick = {
             onPaymentRetry()
         }) {
-            Text("Try again")
+            Text(stringResource(id = R.string.try_again))
         }
 
         Button(onClick = {
             onGoBack()
         }) {
-            Text("Go Back")
+            Text(stringResource(id = R.string.go_back))
         }
     }
 }
@@ -259,22 +259,27 @@ fun SwishPaymentErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack
         Spacer(modifier = Modifier.height(100.dp))
         when (error) {
             is KronorError.networkError -> {
-                Text("Could not process the payment due to a network error. Please ensure your phone is connected to the internet and press Try Again.")
+                Text(
+                    stringResource(R.string.network_error),
+                    textAlign = TextAlign.Center
+                )
             }
             is KronorError.graphQlError -> {
-                Text("Could not complete the payment due to an error.")
+                Text(
+                    stringResource(R.string.graphql_error), textAlign = TextAlign.Center
+                )
             }
         }
         Button(onClick = {
             onPaymentRetry()
         }) {
-            Text("Try Again")
+            Text(stringResource(R.string.try_again))
         }
 
         Button(onClick = {
             onGoBack()
         }) {
-            Text("Go Back")
+            Text(stringResource(R.string.go_back))
         }
     }
 }
@@ -295,7 +300,7 @@ fun SwishPaymentWithQrCode(qrToken: String?, onCancelPayment: () -> Unit) {
             Spacer(modifier = Modifier.height(30.dp))
         }
         Button(onClick = { onCancelPayment() }) {
-            Text("Cancel Payment")
+            Text(stringResource(id = R.string.cancel_payment))
         }
     }
 }
@@ -312,7 +317,7 @@ fun SwishWaitingForPayment(onCancelPayment: () -> Unit) {
         )
         CircularProgressIndicator()
         Button(onClick = { onCancelPayment() }) {
-            Text("Cancel Payment")
+            Text(stringResource(R.string.cancel_payment))
         }
     }
 }
@@ -354,7 +359,7 @@ fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumbe
             Button(onClick = {
                 onAppOpen()
             }) {
-                Text("Open Swish App")
+                Text(stringResource(id = R.string.open_swish))
             }
         }
 
@@ -486,5 +491,15 @@ fun PreviewSwishPaymentCompleted() {
 fun PreviewSwishPaymentRejected() {
     SwishWrapper {
         SwishPaymentRejected({}) {}
+    }
+}
+
+@Preview
+@Composable
+fun PreviewSwishPaymentErrored() {
+    SwishWrapper {
+        SwishPaymentErrored(
+            error = KronorError.networkError(ApolloException()),
+            onPaymentRetry = { }) {}
     }
 }
