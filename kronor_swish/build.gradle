@@ -21,13 +21,6 @@ publishing {
             }
         }
     }
-
-//    repositories {
-//        maven {
-//            name = "io.kronor"
-//            url = "${project.buildDir}/repo"
-//        }
-//    }
 }
 
 android {

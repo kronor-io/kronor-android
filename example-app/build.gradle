@@ -4,7 +4,7 @@ plugins {
     id("com.apollographql.apollo3").version("3.7.3")
 }
 
-def kronorMerchantToken = project.hasProperty('KRONOR_MERCHANT_TOKEN') ? project.property('KRONOR_MERCHANT_TOKEN') : System.getenv('KRONOR_MERCHANT_TOKEN')
+def kronorMerchantToken = project.hasProperty('KRONOR_MERCHANT_TOKEN') ? project.property('KRONOR_MERCHANT_TOKEN') : System.getenv('KRONOR_MERCHANT_TOKEN') ?: ""
 
 android {
     namespace 'io.kronor.example'
@@ -21,7 +21,7 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
-        buildConfigField("String", "KRONOR_MERCHANT_TOKEN", kronorMerchantToken ?: "")
+        buildConfigField("String", "KRONOR_MERCHANT_TOKEN", kronorMerchantToken)
     }
 
     buildTypes {
