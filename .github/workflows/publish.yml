@@ -23,7 +23,7 @@ jobs:
 
       # Builds the release artifacts of the library
       - name: Release build
-        run: ./gradlew :kronor
+        run: ./gradlew
 
       # Publishes to the repository
       - name: Publish to MavenCentral
