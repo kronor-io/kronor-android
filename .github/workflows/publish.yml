@@ -23,7 +23,7 @@ jobs:
 
       # Builds the release artifacts of the library
       - name: Release build
-        run: ./gradlew
+        run: ./gradlew :kronor
 
       # Publishes to the repository
       - name: Publish to MavenCentral
@@ -35,3 +35,4 @@ jobs:
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           OSSRH_STAGING_PROFILE_ID: ${{ secrets.OSSRH_STAGING_PROFILE_ID }}
+          KRONOR_MERCHANT_TOKEN: ${{ secrets.KRONOR_MERCHANT_TOKEN }}
