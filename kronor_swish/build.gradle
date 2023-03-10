@@ -10,7 +10,7 @@ publishing {
         release(MavenPublication) {
             groupId 'io.kronor'
             artifactId 'component.swish'
-            version 'v1.0'
+            version 'v1.0.0-SNAPSHOT'
 
             afterEvaluate {
                 from components.release
@@ -18,10 +18,11 @@ publishing {
 
             pom {
                 name = 'component.swish'
+                description = 'Kronor Swish Component for Kronor API'
                 url = 'https://github.com/kronor-io/kronor-android'
                 licenses {
                     license {
-                        name = 'License'
+                        name = 'MIT License'
                         url = 'https://github.com/kronor-io/kronor-android/blob/main/LICENSE'
                     }
                 }
@@ -42,7 +43,6 @@ publishing {
                     developerConnection = 'scm:git:ssh://github.com/getstream/stream-chat-android.git'
                     url = 'https://github.com/getstream/stream-chat-android/tree/main'
                 }
-                description = 'Kronor Swish Component for Kronor API.'
             }
         }
     }

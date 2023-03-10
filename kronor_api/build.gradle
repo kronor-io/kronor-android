@@ -11,7 +11,7 @@ publishing {
         release(MavenPublication) {
             groupId 'io.kronor'
             artifactId 'api'
-            version 'v1.0'
+            version 'v1.0.0-SNAPSHOT'
 
             afterEvaluate {
                 from components.release
@@ -23,7 +23,7 @@ publishing {
                 description = 'Kronor API component for Kronor SDK'
                 licenses {
                     license {
-                        name = 'License'
+                        name = 'MIT License'
                         url = 'https://github.com/kronor-io/kronor-android/blob/main/LICENSE'
                     }
                 }
