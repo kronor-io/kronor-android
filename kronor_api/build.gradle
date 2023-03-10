@@ -18,7 +18,32 @@ publishing {
             }
 
             pom {
-                description = 'Kronor API.'
+                name = 'api'
+                url = 'https://github.com/kronor-io/kronor-android'
+                description = 'Kronor API component for Kronor SDK'
+                licenses {
+                    license {
+                        name = 'License'
+                        url = 'https://github.com/kronor-io/kronor-android/blob/main/LICENSE'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'iAmMrinal0'
+                        name = 'Mrinal Purohit'
+                        email = 'mrinal@kronor.io'
+                    }
+                    developer {
+                        id = 'pranaysashank'
+                        name = 'Pranay Sashank'
+                        email = 'pranay.sashank@kronor.io'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:github.com/getstream/stream-chat-android.git'
+                    developerConnection = 'scm:git:ssh://github.com/getstream/stream-chat-android.git'
+                    url = 'https://github.com/getstream/stream-chat-android/tree/main'
+                }
             }
         }
     }

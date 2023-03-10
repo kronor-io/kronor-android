@@ -54,7 +54,6 @@ android {
 apollo {
     service("service") {
         packageName.set("io.kronor.example")
-        // hello
     }
 }
 
