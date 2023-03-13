@@ -25,4 +25,4 @@ jobs:
 
       # Builds the release artifacts of the library
       - name: Builds all artifacts
-        run: ./gradlew
+        run: ./gradlew clean build

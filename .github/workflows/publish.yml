@@ -25,7 +25,7 @@ jobs:
 
       # Builds the release artifacts of the library
       - name: Build all artifacts
-        run: ./gradlew
+        run: ./gradlew clean build
 
       # Publishes to the repository
       - name: Publish to MavenCentral
