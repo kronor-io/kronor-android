@@ -1,7 +1,7 @@
 name: Build
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
     types: [opened, reopened, synchronize, ready_for_review]
 
 # Cancel previous runs of this workflow on new commits
