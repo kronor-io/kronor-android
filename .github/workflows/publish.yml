@@ -1,6 +1,8 @@
-name: Publish
-
-on: push
+name: Publish to MavenCentral
+on:
+  push:
+    branches:
+      - master
 
 # Cancel previous runs of this workflow on new commits
 concurrency:
@@ -22,7 +24,7 @@ jobs:
           java-version: 11
 
       # Builds the release artifacts of the library
-      - name: Release build
+      - name: Build all artifacts
         run: ./gradlew
 
       # Publishes to the repository
