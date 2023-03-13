@@ -9,8 +9,8 @@ publishing {
     publications {
         release(MavenPublication) {
             groupId 'io.kronor'
-            artifactId 'component.swish'
-            version 'v1.0.0-SNAPSHOT'
+            artifactId 'kronor_swish'
+            version '1.0'
 
             afterEvaluate {
                 from components.release
@@ -39,9 +39,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:github.com/getstream/stream-chat-android.git'
-                    developerConnection = 'scm:git:ssh://github.com/getstream/stream-chat-android.git'
-                    url = 'https://github.com/getstream/stream-chat-android/tree/main'
+                    connection = 'scm:git:github.com/kronor-io/kronor-android.git'
+                    developerConnection = 'scm:git:ssh://github.com/kronor-io/kronor-android.git'
+                    url = 'https://github.com/kronor-io/kronor-android/tree/main'
                 }
             }
         }
@@ -125,12 +125,6 @@ dependencies {
 
     implementation project(path: ":kronor_api")
 
-}
-
-ext {
-    PUBLISH_GROUP_ID = 'io.kronor'
-    PUBLISH_VERSION = '1.0'
-    PUBLISH_ARTIFACT_ID = 'component.swish'
 }
 
 apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
