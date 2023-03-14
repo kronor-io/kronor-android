@@ -4,33 +4,11 @@ Kronor Android provides payment components that you can use to create a custom c
 
 ## Installation
 
-### Maven Central
-
 You can use our official releases via Maven Central by adding the following dependencies:
 
 ```gradle
     implementation 'io.kronor:kronor_api:1.0'
     implementation 'io.kronor:kronor_swish:1.0'
-```
-
-### Jitpack
-
-Add `jitpack` to your repositories
-
-```gradle
-repositories {
-   ...
-   maven { url 'https://jitpack.io' }
-}
-```
-
-Add the dependency:
-
-```gradle
-dependencies {
-    implementation 'io.kronor.kronor-android:kronor_api:1.0'
-    implementation 'io.kronor.kronor-android:kronor_swish:1.0'
-}
 ```
 
 ## Additional Setup
