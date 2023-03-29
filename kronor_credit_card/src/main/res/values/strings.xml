@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">kronor_credit_card</string>
+    <string name="title_activity_credit_card_component">CreditCardComponent</string>
+</resources>

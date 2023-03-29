@@ -19,3 +19,4 @@ rootProject.name = "Kronor SDK"
 include ':kronor_swish'
 include ':kronor_api'
 include ':example-app'
+include ':kronor_credit_card'

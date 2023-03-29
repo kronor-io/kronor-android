@@ -31,6 +31,8 @@ import io.kronor.example.type.PaymentSessionInput
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
 import io.kronor.api.Environment
+import io.kronor.component.credit_card.CreditCardConfiguration
+import io.kronor.component.credit_card.GetCreditCardComponent
 import io.kronor.component.swish.GetSwishComponent
 import io.kronor.component.swish.SwishConfiguration
 import kotlinx.coroutines.*
@@ -62,6 +64,8 @@ fun KronorTestApp() {
             composable("paymentMethods") {
                 paymentMethodsScreen(onNavigateToSwish = { sessionToken ->
                     navController.navigate("swishScreen/${sessionToken}")
+                }, onNavigateToCreditCard = { sessionToken ->
+                    navController.navigate("creditCardScreen/${sessionToken}")
                 })
             }
             composable(
@@ -70,8 +74,7 @@ fun KronorTestApp() {
             ) {
 
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val swishConfiguration = SwishConfiguration(
-                        sessionToken = sessionToken,
+                    val swishConfiguration = SwishConfiguration(sessionToken = sessionToken,
                         merchantLogo = R.drawable.kronor_logo,
                         environment = Environment.Staging,
                         appName = "kronor-android-test",
@@ -83,9 +86,30 @@ fun KronorTestApp() {
                         },
                         onPaymentFailure = {
                             navController.navigate("paymentMethods")
-                        }
-                    )
+                        })
                     GetSwishComponent(LocalContext.current, swishConfiguration)
+                }
+            }
+            composable(
+                "creditCardScreen/{sessionToken}",
+                arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
+            ) {
+
+                it.arguments?.getString("sessionToken")?.let { sessionToken ->
+                    val creditCardConfiguration =
+                        CreditCardConfiguration(sessionToken = sessionToken,
+                            merchantLogo = R.drawable.kronor_logo,
+                            environment = Environment.Staging,
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            redirectUrl = Uri.parse("kronor_test://"),
+                            onPaymentSuccess = {
+                                navController.navigate("paymentMethods")
+                            },
+                            onPaymentFailure = {
+                                navController.navigate("paymentMethods")
+                            })
+                    GetCreditCardComponent(LocalContext.current, creditCardConfiguration)
                 }
             }
         }
@@ -94,7 +118,9 @@ fun KronorTestApp() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun paymentMethodsScreen(onNavigateToSwish: (String) -> Unit) {
+fun paymentMethodsScreen(
+    onNavigateToSwish: (String) -> Unit, onNavigateToCreditCard: (String) -> Unit
+) {
     var amount by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
@@ -130,7 +156,20 @@ fun paymentMethodsScreen(onNavigateToSwish: (String) -> Unit) {
                     }
                 }
             }) {
-                Text("Pay ${amount.text}")
+                Text("Pay ${amount.text} with Swish")
+            }
+            Button(onClick = {
+                GlobalScope.launch {
+                    withContext(Dispatchers.Main) {
+                        val sessionToken = createNewPaymentSession(amount.text)
+
+                        sessionToken?.let {
+                            onNavigateToCreditCard(it)
+                        }
+                    }
+                }
+            }) {
+                Text("Pay ${amount.text} with a Credit Card")
             }
         }
     }
@@ -197,5 +236,5 @@ private fun getLocalAddress(): InetAddress? {
 @Preview(showBackground = true)
 @Composable
 fun DefaultPaymentMethodsPreview() {
-    paymentMethodsScreen(onNavigateToSwish = {})
+    paymentMethodsScreen(onNavigateToSwish = {}, onNavigateToCreditCard = {})
 }
