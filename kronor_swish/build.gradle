@@ -8,8 +8,8 @@ plugins {
 publishing {
     publications {
         release(MavenPublication) {
-            groupId 'io.kronor'
-            artifactId 'kronor_swish'
+            groupId 'io.kronor.component'
+            artifactId 'swish'
             version '1.0'
 
             afterEvaluate {
@@ -17,7 +17,7 @@ publishing {
             }
 
             pom {
-                name = 'component.swish'
+                name = 'swish'
                 description = 'Kronor Swish Component for Kronor API'
                 url = 'https://github.com/kronor-io/kronor-android'
                 licenses {
@@ -61,8 +61,6 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
-        versionCode 1
-        versionName "1.0"
 
         aarMetadata {
             minCompileSdk = 21
