@@ -1,6 +1,11 @@
 package io.kronor.component.credit_card
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.view.ViewGroup
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
@@ -13,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import io.kronor.api.KronorError
@@ -78,10 +84,10 @@ fun CreditCardScreen(merchantLogo: Int?, viewModel: CreditCardViewModel) {
                     CreditCardErrored(error = state.error, onPaymentRetry = {}, onGoBack = {})
                 }
                 is CreditCardStatechart.Companion.State.PaymentRequestInitialized -> {
-
+                    PaymentGatewayView(gatewayUrl = viewModel.paymentRequest?.transactionCreditCardDetails?.firstOrNull()?.sessionUrl!!)
                 }
                 is CreditCardStatechart.Companion.State.WaitingForPayment -> {
-                    PaymentGatewayView()
+                    PaymentGatewayView(gatewayUrl = viewModel.paymentRequest?.transactionCreditCardDetails?.firstOrNull()?.sessionUrl!!)
                 }
                 else -> {
                     Text("In else clause")
@@ -91,9 +97,24 @@ fun CreditCardScreen(merchantLogo: Int?, viewModel: CreditCardViewModel) {
     }
 }
 
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun PaymentGatewayView() {
-    Text("Not yet implemented")
+fun PaymentGatewayView(gatewayUrl: String) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        AndroidView(factory = {
+            WebView(it).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                )
+                webViewClient = WebViewClient()
+                settings.javaScriptEnabled = true
+                loadUrl(gatewayUrl)
+            }
+        }, update = { it.loadUrl(gatewayUrl) })
+    }
 }
 
 @Composable
@@ -107,8 +128,7 @@ fun CreditCardErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: 
         when (error) {
             is KronorError.networkError -> {
                 Text(
-                    stringResource(R.string.network_error),
-                    textAlign = TextAlign.Center
+                    stringResource(R.string.network_error), textAlign = TextAlign.Center
                 )
             }
             is KronorError.graphQlError -> {
@@ -134,8 +154,7 @@ fun CreditCardErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: 
 @Composable
 fun CreditCardInitializing() {
     Column(
-        modifier = Modifier.fillMaxHeight(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(stringResource(R.string.secure_connection))
         Spacer(modifier = Modifier.height(30.dp))

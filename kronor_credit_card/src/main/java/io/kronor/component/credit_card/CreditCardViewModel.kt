@@ -131,7 +131,7 @@ class CreditCardViewModel(
                                 }
 
                                 paymentRequest.status?.any {
-                                    it.status == PaymentStatusEnum.PAID
+                                    it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED
                                 }?.let {
                                     if (it) {
                                         _transition(CreditCardStatechart.Companion.Event.PaymentAuthorized(paymentRequest.resultingPaymentId!!))
