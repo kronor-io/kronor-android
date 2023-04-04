@@ -72,7 +72,7 @@ fun KronorTestApp() {
                 "swishScreen/{sessionToken}",
                 arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
             ) {
-
+                val thisScope = rememberCoroutineScope()
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val swishConfiguration = SwishConfiguration(sessionToken = sessionToken,
                         merchantLogo = R.drawable.kronor_logo,
@@ -82,10 +82,18 @@ fun KronorTestApp() {
                         locale = Locale("en_US"),
                         redirectUrl = Uri.parse("kronor_test://"),
                         onPaymentSuccess = {
-                            navController.navigate("paymentMethods")
+                            thisScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    navController.navigate("paymentMethods")
+                                }
+                            }
                         },
                         onPaymentFailure = {
-                            navController.navigate("paymentMethods")
+                            thisScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    navController.navigate("paymentMethods")
+                                }
+                            }
                         })
                     GetSwishComponent(LocalContext.current, swishConfiguration)
                 }
@@ -94,7 +102,7 @@ fun KronorTestApp() {
                 "creditCardScreen/{sessionToken}",
                 arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
             ) {
-
+                val thisScope = rememberCoroutineScope()
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val creditCardConfiguration =
                         CreditCardConfiguration(sessionToken = sessionToken,
@@ -102,12 +110,20 @@ fun KronorTestApp() {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronor_test://"),
+                            redirectUrl = Uri.parse("kronor-test://?"),
                             onPaymentSuccess = {
-                                navController.navigate("paymentMethods")
+                                thisScope.launch {
+                                    withContext(Dispatchers.Main) {
+                                        navController.navigate("paymentMethods")
+                                    }
+                                }
                             },
                             onPaymentFailure = {
-                                navController.navigate("paymentMethods")
+                                thisScope.launch {
+                                    withContext(Dispatchers.Main) {
+                                        navController.navigate("paymentMethods")
+                                    }
+                                }
                             })
                     GetCreditCardComponent(LocalContext.current, creditCardConfiguration)
                 }
@@ -188,8 +204,8 @@ suspend fun createNewPaymentSession(amountToPay: String): String? {
                     currency = Optional.present(SupportedCurrencyEnum.SEK),
                     expiresAt = expiresAt,
                     idempotencyKey = UUID.randomUUID().toString(),
-                    merchantReference = "reference",
-                    message = "random message",
+                    merchantReference = "android-reference",
+                    message = "random message from android",
                     additionalData = Optional.present(
                         PaymentSessionAdditionalData(
                             name = "Normal Android User",
