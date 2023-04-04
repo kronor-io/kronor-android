@@ -6,9 +6,14 @@ import com.apollographql.apollo3.api.Operation
 import com.apollographql.apollo3.exception.ApolloException
 import com.apollographql.apollo3.network.okHttpClient
 import com.apollographql.apollo3.network.ws.SubscriptionWsProtocol
+import io.kronor.api.type.PaymentCancelInput
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
+import java.util.*
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
@@ -43,6 +48,20 @@ class Requests(token: String, env: Environment) {
     )
         .wsProtocol(SubscriptionWsProtocol.Factory(connectionPayload = { mapOf("headers" to (mapOf("Authorization" to "Bearer $token"))) }))
         .okHttpClient(okHttpClient).build()
+
+    fun getPaymentRequests(): Flow<List<PaymentStatusSubscription.PaymentRequest>> {
+        return kronorApolloClient.subscription(
+            PaymentStatusSubscription()
+        ).toFlow().map { response -> response.data?.paymentRequests }.filterNotNull()
+    }
+
+    suspend fun cancelPayment(): Result<String?> {
+        return kronorApolloClient.mutation(
+            CancelPaymentMutation(
+                pay = PaymentCancelInput(idempotencyKey = UUID.randomUUID().toString())
+            )
+        ).executeMapKronorError().map { it.cancelPayment.waitToken }
+    }
 
 }
 

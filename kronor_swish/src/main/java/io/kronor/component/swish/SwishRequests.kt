@@ -41,17 +41,3 @@ suspend fun Requests.makeNewPaymentRequest(
         )
     ).executeMapKronorError().map { it.newSwishPayment.waitToken }
 }
-
-fun Requests.getPaymentRequests(): Flow<List<PaymentStatusSubscription.PaymentRequest>> {
-    return kronorApolloClient.subscription(
-        PaymentStatusSubscription()
-    ).toFlow().map { response -> response.data?.paymentRequests }.filterNotNull()
-}
-
-suspend fun Requests.cancelPayment(): Result<String?> {
-    return kronorApolloClient.mutation(
-        CancelPaymentMutation(
-            pay = PaymentCancelInput(idempotencyKey = UUID.randomUUID().toString())
-        )
-    ).executeMapKronorError().map { it.cancelPayment.waitToken }
-}
