@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.internal.wait
 
 private const val DelayBeforeCallback: Long = 2000 // 2000 milliseconds = 2 seconds
 
@@ -113,6 +114,7 @@ class CreditCardViewModel(
                     requests.getPaymentRequests().collect { paymentRequestList ->
                         // If we have a waitToken set in our view model, get the payment request
                         // associated with that waitToken and in a status that is not initializing
+                        Log.d("CreditCardViewModel", "Inside Collect")
                         this.waitToken?.let {
                             this.paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
                                 (paymentRequest.waitToken == this.waitToken) and (paymentRequest.status?.all { paymentStatus ->
@@ -154,8 +156,10 @@ class CreditCardViewModel(
                                  }
                                 }
                             }
+                            return@let waitToken
                         } ?: run {
                             // When no waitToken is set, we should create a new payment request
+                            Log.d("CreditCardViewModel", "${this.waitToken}")
                             _transition(CreditCardStatechart.Companion.Event.Initialize)
                         }
                     }
