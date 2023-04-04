@@ -10,7 +10,7 @@ publishing {
     publications {
         release(MavenPublication) {
             groupId 'io.kronor'
-            artifactId 'kronor_api'
+            artifactId 'api'
             version '1.0'
 
             afterEvaluate {
