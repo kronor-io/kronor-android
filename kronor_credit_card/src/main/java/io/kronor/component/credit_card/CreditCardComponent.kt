@@ -93,7 +93,7 @@ fun CreditCardScreen(merchantLogo: Int?, viewModel: CreditCardViewModel) {
 
 @Composable
 fun PaymentGatewayView() {
-    TODO("Not yet implemented")
+    Text("Not yet implemented")
 }
 
 @Composable
