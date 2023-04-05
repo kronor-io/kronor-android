@@ -200,7 +200,7 @@ suspend fun createNewPaymentSession(amountToPay: String): String? {
         apolloClient().mutation(
             NewPaymentSessionMutation(
                 PaymentSessionInput(
-                    amount = amountToPay.toInt() * 100,
+                    amount = amountToPay.toInt(),
                     currency = Optional.present(SupportedCurrencyEnum.SEK),
                     expiresAt = expiresAt,
                     idempotencyKey = UUID.randomUUID().toString(),

@@ -14,10 +14,8 @@ import io.kronor.api.*
 import io.kronor.api.type.PaymentStatusEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.internal.wait
 
 private const val DelayBeforeCallback: Long = 2000 // 2000 milliseconds = 2 seconds
 
