@@ -6,4 +6,7 @@
     <string name="graphql_error">Could not complete the payment due to an error.</string>
     <string name="try_again">Try Again</string>
     <string name="go_back">Go Back</string>
+    <string name="payment_rejected">Your payment got rejected</string>
+    <string name="payment_completed">Payment Completed</string>
+    <string name="waiting_for_payment">Checking the payment status</string>
 </resources>

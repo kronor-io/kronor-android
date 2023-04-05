@@ -1,5 +1,6 @@
 package io.kronor.component.credit_card
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,10 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
-import io.kronor.api.ApiError
-import io.kronor.api.KronorError
-import io.kronor.api.PaymentStatusSubscription
-import io.kronor.api.Requests
+import io.kronor.api.*
 import io.kronor.api.type.PaymentStatusEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -44,6 +42,12 @@ class CreditCardViewModel(
     var creditCardState: CreditCardStatechart.Companion.State by mutableStateOf(CreditCardStatechart.Companion.State.Initializing)
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
+    val paymentGatewayUrl : Uri = constructPaymentGatewayUrl(
+        environment = creditCardConfiguration.environment,
+        sessionToken = creditCardConfiguration.sessionToken,
+        paymentMethod = "creditCard",
+        merchantReturnUrl = creditCardConfiguration.redirectUrl
+    )
 
     fun transition(event: CreditCardStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -99,9 +103,11 @@ class CreditCardViewModel(
                         _transitionToError(waitToken.exceptionOrNull())
                     }
                     waitToken.isSuccess -> {
-                        _transition(CreditCardStatechart.Companion.Event.PaymentRequestCreated(
-                            waitToken = waitToken.getOrNull()!!
-                        ))
+                        _transition(
+                            CreditCardStatechart.Companion.Event.PaymentRequestCreated(
+                                waitToken = waitToken.getOrNull()!!
+                            )
+                        )
                     }
                 }
             }
@@ -118,7 +124,7 @@ class CreditCardViewModel(
                         this.waitToken?.let {
                             this.paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
                                 (paymentRequest.waitToken == this.waitToken) and (paymentRequest.status?.all { paymentStatus ->
-                                    (paymentStatus.status != PaymentStatusEnum.INITIALIZING )
+                                    (paymentStatus.status != PaymentStatusEnum.INITIALIZING)
                                 } ?: false)
                             }
 
@@ -134,7 +140,11 @@ class CreditCardViewModel(
                                     it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED
                                 }?.let {
                                     if (it) {
-                                        _transition(CreditCardStatechart.Companion.Event.PaymentAuthorized(paymentRequest.resultingPaymentId!!))
+                                        _transition(
+                                            CreditCardStatechart.Companion.Event.PaymentAuthorized(
+                                                paymentRequest.resultingPaymentId!!
+                                            )
+                                        )
                                     }
                                 }
 
@@ -144,16 +154,16 @@ class CreditCardViewModel(
                                     ).contains(it.status)
                                 }?.let {
                                     if (it) {
-                                       _transition(CreditCardStatechart.Companion.Event.PaymentRejected)
+                                        _transition(CreditCardStatechart.Companion.Event.PaymentRejected)
                                     }
                                 }
 
                                 paymentRequest.status?.any {
                                     it.status == PaymentStatusEnum.CANCELLED
                                 }?.let {
-                                 if (it) {
-                                     _transition(CreditCardStatechart.Companion.Event.Retry)
-                                 }
+                                    if (it) {
+                                        _transition(CreditCardStatechart.Companion.Event.Retry)
+                                    }
                                 }
                             }
                             return@let waitToken
@@ -165,7 +175,13 @@ class CreditCardViewModel(
                     }
                 } catch (e: ApolloException) {
                     Log.d("CreditCardViewModel", "Payment Subscription error: $e")
-                    _transition(CreditCardStatechart.Companion.Event.Error(KronorError.networkError(e)))
+                    _transition(
+                        CreditCardStatechart.Companion.Event.Error(
+                            KronorError.networkError(
+                                e
+                            )
+                        )
+                    )
                 }
             }
             is CreditCardStatechart.Companion.SideEffect.CancelPaymentRequest -> {
@@ -173,7 +189,10 @@ class CreditCardViewModel(
                 val waitToken = requests.cancelPayment()
                 when {
                     waitToken.isFailure -> {
-                        Log.d("CreditCardViewModel", "Failed to cancel payment request: ${waitToken.exceptionOrNull()}")
+                        Log.d(
+                            "CreditCardViewModel",
+                            "Failed to cancel payment request: ${waitToken.exceptionOrNull()}"
+                        )
                         _transitionToError(waitToken.exceptionOrNull())
                     }
                     waitToken.isSuccess -> {}
@@ -189,12 +208,51 @@ class CreditCardViewModel(
             is CreditCardStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 creditCardConfiguration.onPaymentFailure()
             }
-            CreditCardStatechart.Companion.SideEffect.OpenEmbeddedSite -> {
+            is CreditCardStatechart.Companion.SideEffect.OpenEmbeddedSite -> {
 
             }
-            CreditCardStatechart.Companion.SideEffect.CancelAndNotifyFailure -> {
+            is CreditCardStatechart.Companion.SideEffect.CancelAndNotifyFailure -> {
 
             }
+            is CreditCardStatechart.Companion.SideEffect.CancelAfterDeadline -> {
+               viewModelScope.launch {
+                   delay(DelayBeforeCallback)
+                   _transition(CreditCardStatechart.Companion.Event.Cancel)
+               }
+            }
+        }
+    }
+}
+
+fun constructPaymentGatewayUrl(
+    environment: Environment, sessionToken: String, paymentMethod: String, merchantReturnUrl: Uri
+): Uri {
+    val paymentGatewayHost = when (environment) {
+        Environment.Staging -> {
+            "payment-gateway.staging.kronor.io"
+        }
+        Environment.Production -> {
+            "payment-gateway.kronor.io"
+        }
+    }
+    return Uri.Builder()
+        .scheme("https")
+        .authority(paymentGatewayHost)
+        .appendPath("payment")
+        .appendQueryParameter("env", toGatewayEnvName(environment))
+        .appendQueryParameter("paymentMethod", paymentMethod)
+        .appendQueryParameter("token", sessionToken)
+        .appendQueryParameter("merchantReturnUrl", merchantReturnUrl.toString())
+        .build()
+}
+
+fun toGatewayEnvName(environment: Environment): String {
+    return when (environment) {
+        Environment.Staging -> {
+            "staging"
+        }
+        Environment.Production -> {
+            "prod"
         }
     }
 }

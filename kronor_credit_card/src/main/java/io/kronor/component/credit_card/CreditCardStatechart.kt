@@ -86,6 +86,11 @@ class CreditCardStatechart {
                     state = State.PaymentRejected, sideEffect = SideEffect.CancelAndNotifyFailure
                 )
             }
+            on<Event.WaitForCancel> {
+                transitionTo(
+                    state = State.WaitingForPayment, sideEffect = SideEffect.CancelAfterDeadline
+                )
+            }
         }
 
         state<State.WaitingForPayment> {
@@ -169,6 +174,7 @@ class CreditCardStatechart {
             object Retry : Event()
             object CancelFlow : Event()
             data class Error(val error: KronorError) : Event()
+            object WaitForCancel: Event()
         }
 
         sealed class SideEffect {
@@ -181,6 +187,7 @@ class CreditCardStatechart {
             object NotifyPaymentFailure : SideEffect()
             object ResetState : SideEffect()
             object CancelAndNotifyFailure : SideEffect()
+            object CancelAfterDeadline: SideEffect()
         }
     }
 }
