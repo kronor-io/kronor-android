@@ -10,13 +10,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.Lifecycle
@@ -344,14 +347,20 @@ fun PaymentMethodsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val pattern = remember { Regex("^\\d+\$") }
+
+                val focusManager = LocalFocusManager.current
+
                 Text("Amount: ")
-                TextField(
-                    value = amount,
-                    onValueChange = { amount = it },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        keyboardType = KeyboardType.Decimal
-                    )
-                )
+                TextField(value = amount, onValueChange = {
+                    if (it.text.matches(pattern)) {
+                        amount = it
+                    }
+                }, keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number, imeAction = ImeAction.Done
+                ), keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                }))
             }
             Button(onClick = {
                 GlobalScope.launch {
