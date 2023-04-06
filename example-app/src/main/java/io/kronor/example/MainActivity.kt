@@ -352,15 +352,23 @@ fun PaymentMethodsScreen(
                 val focusManager = LocalFocusManager.current
 
                 Text("Amount: ")
-                TextField(value = amount, onValueChange = {
-                    if (it.text.matches(pattern)) {
-                        amount = it
-                    }
-                }, keyboardOptions = KeyboardOptions.Default.copy(
-                    keyboardType = KeyboardType.Number, imeAction = ImeAction.Done
-                ), keyboardActions = KeyboardActions(onDone = {
-                    focusManager.clearFocus()
-                }))
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = {
+                        if (it.text.matches(pattern)) {
+                            amount = it
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                        }
+                    )
+                )
             }
             Button(onClick = {
                 GlobalScope.launch {
