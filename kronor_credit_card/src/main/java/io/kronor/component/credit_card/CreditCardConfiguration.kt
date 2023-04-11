@@ -3,6 +3,8 @@ package io.kronor.component.credit_card
 import android.net.Uri
 import androidx.annotation.DrawableRes
 import io.kronor.api.Environment
+import io.kronor.component.webview_payment_gateway.WebviewGatewayConfiguration
+import io.kronor.component.webview_payment_gateway.WebviewGatewayPaymentMethod
 
 data class CreditCardConfiguration(
     val sessionToken: String,
@@ -15,3 +17,17 @@ data class CreditCardConfiguration(
     val onPaymentFailure : () -> Unit,
     val onPaymentSuccess : (String) -> Unit
 )
+
+fun CreditCardConfiguration.toWebviewGatewayConfiguration() : WebviewGatewayConfiguration {
+    return WebviewGatewayConfiguration(
+        sessionToken = this.sessionToken,
+        environment = this.environment,
+        redirectUrl = this.redirectUrl,
+        appName = this.appName,
+        appVersion = this.appVersion,
+        merchantLogo = this.merchantLogo,
+        onPaymentFailure = this.onPaymentFailure,
+        onPaymentSuccess = this.onPaymentSuccess,
+        paymentMethod = WebviewGatewayPaymentMethod.CreditCard
+    )
+}

@@ -1,4 +1,4 @@
-package io.kronor.component.credit_card
+package io.kronor.component.webview_payment_gateway
 
 import android.net.Uri
 import android.util.Log
@@ -19,35 +19,35 @@ import kotlinx.coroutines.withContext
 
 private const val DelayBeforeCallback: Long = 2000 // 2000 milliseconds = 2 seconds
 
-class CreditCardViewModelFactory(
-    private val creditCardConfiguration: CreditCardConfiguration
+class WebviewGatewayViewModelFactory(
+    private val WebviewGatewayConfiguration: WebviewGatewayConfiguration
 ) : ViewModelProvider.NewInstanceFactory() {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return CreditCardViewModel(creditCardConfiguration) as T
+        return WebviewGatewayViewModel(WebviewGatewayConfiguration) as T
     }
 }
 
-class CreditCardViewModel(
-    private val creditCardConfiguration: CreditCardConfiguration
+class WebviewGatewayViewModel(
+    private val webviewGatewayConfiguration: WebviewGatewayConfiguration
 ) : ViewModel() {
     var deviceFingerprint: String? = null
 
     private val requests =
-        Requests(creditCardConfiguration.sessionToken, creditCardConfiguration.environment)
-    var stateMachine: StateMachine<CreditCardStatechart.Companion.State, CreditCardStatechart.Companion.Event, CreditCardStatechart.Companion.SideEffect> =
-        CreditCardStatechart().stateMachine
-    var creditCardState: CreditCardStatechart.Companion.State by mutableStateOf(CreditCardStatechart.Companion.State.Initializing)
+        Requests(webviewGatewayConfiguration.sessionToken, webviewGatewayConfiguration.environment)
+    var stateMachine: StateMachine<WebviewGatewayStatechart.Companion.State, WebviewGatewayStatechart.Companion.Event, WebviewGatewayStatechart.Companion.SideEffect> =
+        WebviewGatewayStatechart().stateMachine
+    var webviewGatewayState: WebviewGatewayStatechart.Companion.State by mutableStateOf(WebviewGatewayStatechart.Companion.State.Initializing)
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
     val paymentGatewayUrl : Uri = constructPaymentGatewayUrl(
-        environment = creditCardConfiguration.environment,
-        sessionToken = creditCardConfiguration.sessionToken,
-        paymentMethod = "creditCard",
-        merchantReturnUrl = creditCardConfiguration.redirectUrl
+        environment = webviewGatewayConfiguration.environment,
+        sessionToken = webviewGatewayConfiguration.sessionToken,
+        paymentMethod = webviewGatewayConfiguration.paymentMethod.toPaymentGatewayMethod(),
+        merchantReturnUrl= webviewGatewayConfiguration.redirectUrl
     )
 
-    fun transition(event: CreditCardStatechart.Companion.Event) {
+    fun transition(event: WebviewGatewayStatechart.Companion.Event) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 _transition(event)
@@ -55,18 +55,18 @@ class CreditCardViewModel(
         }
     }
 
-    private suspend fun _transition(event: CreditCardStatechart.Companion.Event) {
+    private suspend fun _transition(event: WebviewGatewayStatechart.Companion.Event) {
 
         when (val result = stateMachine.transition(event)) {
             is StateMachine.Transition.Valid -> {
-                creditCardState = result.toState
+                webviewGatewayState = result.toState
                 result.sideEffect?.let {
                     handleSideEffect(it)
                 }
             }
             is StateMachine.Transition.Invalid -> {
                 Log.d(
-                    "CreditCardViewModel", "Cannot transition to $event from ${result.fromState}"
+                    "WebviewGatewayViewModel", "Cannot transition to $event from ${result.fromState}"
                 )
             }
         }
@@ -74,51 +74,52 @@ class CreditCardViewModel(
 
     private suspend fun _transitionToError(t: Throwable?) {
         _transition(
-            CreditCardStatechart.Companion.Event.Error(
+            WebviewGatewayStatechart.Companion.Event.Error(
                 (t ?: KronorError.graphQlError(ApiError(emptyList(), emptyMap()))) as KronorError
             )
         )
     }
 
-    private suspend fun handleSideEffect(sideEffect: CreditCardStatechart.Companion.SideEffect) {
+    private suspend fun handleSideEffect(sideEffect: WebviewGatewayStatechart.Companion.SideEffect) {
         when (sideEffect) {
-            is CreditCardStatechart.Companion.SideEffect.CreatePaymentRequest -> {
-                Log.d("CreditCardViewModel", "Creating Payment Request")
+            is WebviewGatewayStatechart.Companion.SideEffect.CreatePaymentRequest -> {
+                Log.d("WebviewGatewayViewModel", "Creating Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
-                    creditCardInputData = CreditCardComponentInput(
-                        returnUrl = creditCardConfiguration.redirectUrl.toString(),
+                    webviewGatewayInputData = WebviewGatewayComponentInput(
+                        returnUrl = webviewGatewayConfiguration.redirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
-                        appName = creditCardConfiguration.appName,
-                        appVersion = creditCardConfiguration.appVersion
+                        appName = webviewGatewayConfiguration.appName,
+                        appVersion = webviewGatewayConfiguration.appVersion,
+                        paymentMethod = webviewGatewayConfiguration.paymentMethod
                     )
                 )
                 when {
                     waitToken.isFailure -> {
                         Log.d(
-                            "CreditCardViewModel",
+                            "WebviewGatewayViewModel",
                             "Error creating payment request: ${waitToken.exceptionOrNull()}"
                         )
                         _transitionToError(waitToken.exceptionOrNull())
                     }
                     waitToken.isSuccess -> {
                         _transition(
-                            CreditCardStatechart.Companion.Event.PaymentRequestCreated(
+                            WebviewGatewayStatechart.Companion.Event.PaymentRequestCreated(
                                 waitToken = waitToken.getOrNull()!!
                             )
                         )
                     }
                 }
             }
-            is CreditCardStatechart.Companion.SideEffect.ListenOnPaymentRequest -> {
+            is WebviewGatewayStatechart.Companion.SideEffect.ListenOnPaymentRequest -> {
                 this.waitToken = sideEffect.waitToken
             }
-            is CreditCardStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
-                Log.d("CreditCardViewModel", "Subscribing to Payment Requests")
+            is WebviewGatewayStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
+                Log.d("WebviewGatewayViewModel", "Subscribing to Payment Requests")
                 try {
                     requests.getPaymentRequests().collect { paymentRequestList ->
                         // If we have a waitToken set in our view model, get the payment request
                         // associated with that waitToken and in a status that is not initializing
-                        Log.d("CreditCardViewModel", "Inside Collect")
+                        Log.d("WebviewGatewayViewModel", "Inside Collect")
                         this.waitToken?.let {
                             this.paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
                                 (paymentRequest.waitToken == this.waitToken) and (paymentRequest.status?.all { paymentStatus ->
@@ -127,11 +128,11 @@ class CreditCardViewModel(
                             }
 
                             this.paymentRequest?.let { paymentRequest ->
-                                if (creditCardState is CreditCardStatechart.Companion.State.WaitingForPaymentRequest) {
-                                    _transition(CreditCardStatechart.Companion.Event.PaymentRequestInitialized)
+                                if (webviewGatewayState is WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest) {
+                                    _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
                                 }
-                                if (creditCardState is CreditCardStatechart.Companion.State.WaitingForSubscription) {
-                                    _transition(CreditCardStatechart.Companion.Event.PaymentRequestInitialized)
+                                if (webviewGatewayState is WebviewGatewayStatechart.Companion.State.WaitingForSubscription) {
+                                    _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
                                 }
 
                                 paymentRequest.status?.any {
@@ -139,7 +140,7 @@ class CreditCardViewModel(
                                 }?.let {
                                     if (it) {
                                         _transition(
-                                            CreditCardStatechart.Companion.Event.PaymentAuthorized(
+                                            WebviewGatewayStatechart.Companion.Event.PaymentAuthorized(
                                                 paymentRequest.resultingPaymentId!!
                                             )
                                         )
@@ -152,7 +153,7 @@ class CreditCardViewModel(
                                     ).contains(it.status)
                                 }?.let {
                                     if (it) {
-                                        _transition(CreditCardStatechart.Companion.Event.PaymentRejected)
+                                        _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
                                     }
                                 }
 
@@ -160,21 +161,21 @@ class CreditCardViewModel(
                                     it.status == PaymentStatusEnum.CANCELLED
                                 }?.let {
                                     if (it) {
-                                        _transition(CreditCardStatechart.Companion.Event.Retry)
+                                        _transition(WebviewGatewayStatechart.Companion.Event.Retry)
                                     }
                                 }
                             }
                             return@let waitToken
                         } ?: run {
                             // When no waitToken is set, we should create a new payment request
-                            Log.d("CreditCardViewModel", "${this.waitToken}")
-                            _transition(CreditCardStatechart.Companion.Event.Initialize)
+                            Log.d("WebviewGatewayViewModel", "${this.waitToken}")
+                            _transition(WebviewGatewayStatechart.Companion.Event.Initialize)
                         }
                     }
                 } catch (e: ApolloException) {
-                    Log.d("CreditCardViewModel", "Payment Subscription error: $e")
+                    Log.d("WebviewGatewayViewModel", "Payment Subscription error: $e")
                     _transition(
-                        CreditCardStatechart.Companion.Event.Error(
+                        WebviewGatewayStatechart.Companion.Event.Error(
                             KronorError.networkError(
                                 e
                             )
@@ -182,13 +183,13 @@ class CreditCardViewModel(
                     )
                 }
             }
-            is CreditCardStatechart.Companion.SideEffect.CancelPaymentRequest -> {
-                Log.d("CreditCardViewModel", "Reset payment flow")
+            is WebviewGatewayStatechart.Companion.SideEffect.CancelPaymentRequest -> {
+                Log.d("WebviewGatewayViewModel", "Reset payment flow")
                 val waitToken = requests.cancelPayment()
                 when {
                     waitToken.isFailure -> {
                         Log.d(
-                            "CreditCardViewModel",
+                            "WebviewGatewayViewModel",
                             "Failed to cancel payment request: ${waitToken.exceptionOrNull()}"
                         )
                         _transitionToError(waitToken.exceptionOrNull())
@@ -196,27 +197,27 @@ class CreditCardViewModel(
                     waitToken.isSuccess -> {}
                 }
             }
-            is CreditCardStatechart.Companion.SideEffect.ResetState -> {
+            is WebviewGatewayStatechart.Companion.SideEffect.ResetState -> {
 
             }
-            is CreditCardStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
+            is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
                 delay(DelayBeforeCallback)
-                creditCardConfiguration.onPaymentSuccess(sideEffect.paymentId)
+                webviewGatewayConfiguration.onPaymentSuccess(sideEffect.paymentId)
             }
-            is CreditCardStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
-                creditCardConfiguration.onPaymentFailure()
+            is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
+                webviewGatewayConfiguration.onPaymentFailure()
             }
-            is CreditCardStatechart.Companion.SideEffect.OpenEmbeddedSite -> {
+            is WebviewGatewayStatechart.Companion.SideEffect.OpenEmbeddedSite -> {
 
             }
-            is CreditCardStatechart.Companion.SideEffect.CancelAndNotifyFailure -> {
+            is WebviewGatewayStatechart.Companion.SideEffect.CancelAndNotifyFailure -> {
 
             }
-            is CreditCardStatechart.Companion.SideEffect.CancelAfterDeadline -> {
-               viewModelScope.launch {
-                   delay(DelayBeforeCallback)
-                   _transition(CreditCardStatechart.Companion.Event.Cancel)
-               }
+            is WebviewGatewayStatechart.Companion.SideEffect.CancelAfterDeadline -> {
+                viewModelScope.launch {
+                    delay(DelayBeforeCallback)
+                    _transition(WebviewGatewayStatechart.Companion.Event.Cancel)
+                }
             }
         }
     }

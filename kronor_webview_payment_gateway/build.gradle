@@ -1,35 +1,10 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
-    id 'maven-publish'
-}
-publishing {
-    publications {
-        release(MavenPublication) {
-            groupId 'io.kronor.component.credit_card'
-            artifactId 'kronor_credit_card'
-            version '1.0'
-
-            afterEvaluate {
-                from components.release
-            }
-
-            pom {
-                description = 'Kronor Credit Card Component for Kronor API.'
-            }
-        }
-    }
-
-    repositories {
-        maven {
-            name = "myrepo"
-            url = "${project.buildDir}/repo"
-        }
-    }
 }
 
 android {
-    namespace 'io.kronor.component.credit_card'
+    namespace 'io.kronor.component.webview_payment_gateway'
     compileSdk 33
 
     defaultConfig {
@@ -99,5 +74,4 @@ dependencies {
     implementation("com.apollographql.apollo3:apollo-runtime:3.7.3")
 
     implementation project(path: ':kronor_api')
-    implementation project(path: ':kronor_webview_payment_gateway')
 }

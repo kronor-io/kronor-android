@@ -26,17 +26,21 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import io.kronor.api.KronorError
+import io.kronor.component.webview_payment_gateway.WebviewGatewayConfiguration
+import io.kronor.component.webview_payment_gateway.WebviewGatewayStatechart
+import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModel
+import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModelFactory
 
 @Composable
-fun creditCardViewModel(creditCardConfiguration: CreditCardConfiguration): CreditCardViewModel {
-    return viewModel(factory = CreditCardViewModelFactory(creditCardConfiguration))
+fun creditCardViewModel(creditCardConfiguration: CreditCardConfiguration): WebviewGatewayViewModel {
+    return viewModel(factory = WebviewGatewayViewModelFactory(creditCardConfiguration.toWebviewGatewayConfiguration()))
 }
 
 @Composable
 fun GetCreditCardComponent(
     context: Context,
     creditCardConfiguration: CreditCardConfiguration,
-    viewModel: CreditCardViewModel = creditCardViewModel(creditCardConfiguration = creditCardConfiguration)
+    viewModel: WebviewGatewayViewModel = creditCardViewModel(creditCardConfiguration = creditCardConfiguration)
 ) {
 
     if (!LocalInspectionMode.current) {
@@ -54,8 +58,8 @@ fun GetCreditCardComponent(
 }
 
 @Composable
-fun CreditCardScreen(merchantLogo: Int?, viewModel: CreditCardViewModel) {
-    val state = viewModel.creditCardState
+fun CreditCardScreen(merchantLogo: Int?, viewModel: WebviewGatewayViewModel) {
+    val state = viewModel.webviewGatewayState
     val context = LocalContext.current
     var backPressedCount by remember { mutableStateOf(0) }
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -79,54 +83,54 @@ fun CreditCardScreen(merchantLogo: Int?, viewModel: CreditCardViewModel) {
     }
 
     LaunchedEffect(Unit) {
-        viewModel.transition(CreditCardStatechart.Companion.Event.SubscribeToPaymentStatus)
+        viewModel.transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
     }
 
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
     ) {
         when (state) {
-            CreditCardStatechart.Companion.State.WaitingForSubscription -> {
+            WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
                 CreditCardWrapper { CreditCardInitializing() }
             }
-            CreditCardStatechart.Companion.State.Initializing -> {
+            WebviewGatewayStatechart.Companion.State.Initializing -> {
                 CreditCardWrapper { CreditCardInitializing() }
             }
-            CreditCardStatechart.Companion.State.CreatingPaymentRequest -> {
+            WebviewGatewayStatechart.Companion.State.CreatingPaymentRequest -> {
                 CreditCardWrapper { CreditCardInitializing() }
             }
-            CreditCardStatechart.Companion.State.WaitingForPaymentRequest -> {
+            WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest -> {
                 CreditCardWrapper { CreditCardInitializing() }
             }
-            is CreditCardStatechart.Companion.State.Errored -> {
+            is WebviewGatewayStatechart.Companion.State.Errored -> {
                 CreditCardWrapper {
                     CreditCardErrored(error = state.error,
-                        onPaymentRetry = { viewModel.transition(CreditCardStatechart.Companion.Event.Retry) },
-                        onGoBack = { viewModel.transition(CreditCardStatechart.Companion.Event.CancelFlow) })
+                        onPaymentRetry = { viewModel.transition(WebviewGatewayStatechart.Companion.Event.Retry) },
+                        onGoBack = { viewModel.transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
                 }
             }
-            is CreditCardStatechart.Companion.State.PaymentRequestInitialized -> {
+            is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
                 PaymentGatewayView(gatewayUrl = viewModel.paymentGatewayUrl, onPaymentCancel = {
-                    viewModel.transition(CreditCardStatechart.Companion.Event.WaitForCancel)
+                    viewModel.transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                 })
             }
-            is CreditCardStatechart.Companion.State.WaitingForPayment -> {
+            is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
                 CreditCardWrapper {
                     CreditCardWaitingForPayment()
                 }
             }
-            is CreditCardStatechart.Companion.State.PaymentRejected -> {
+            is WebviewGatewayStatechart.Companion.State.PaymentRejected -> {
                 CreditCardWrapper {
                     CreditCardPaymentRejected(onPaymentRetry = {
                         viewModel.transition(
-                            CreditCardStatechart.Companion.Event.Retry
+                            WebviewGatewayStatechart.Companion.Event.Retry
                         )
                     }, onGoBack = {
-                        viewModel.transition(CreditCardStatechart.Companion.Event.CancelFlow)
+                        viewModel.transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
                     })
                 }
             }
-            is CreditCardStatechart.Companion.State.PaymentCompleted -> {
+            is WebviewGatewayStatechart.Companion.State.PaymentCompleted -> {
                 CreditCardWrapper {
                     CreditCardPaymentCompleted()
                 }

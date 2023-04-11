@@ -1,9 +1,9 @@
-package io.kronor.component.credit_card
+package io.kronor.component.webview_payment_gateway
 
 import com.tinder.StateMachine
 import io.kronor.api.KronorError
 
-class CreditCardStatechart {
+class WebviewGatewayStatechart {
     val stateMachine = StateMachine.create<State, Event, SideEffect> {
         initialState(State.WaitingForSubscription)
 
