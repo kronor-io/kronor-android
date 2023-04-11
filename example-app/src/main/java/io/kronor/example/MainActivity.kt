@@ -33,6 +33,8 @@ import io.kronor.example.ui.theme.KronorSDKTheme
 import io.kronor.api.Environment
 import io.kronor.component.credit_card.CreditCardConfiguration
 import io.kronor.component.credit_card.GetCreditCardComponent
+import io.kronor.component.mobilepay.GetMobilePayComponent
+import io.kronor.component.mobilepay.MobilePayConfiguration
 import io.kronor.component.swish.GetSwishComponent
 import io.kronor.component.swish.SwishConfiguration
 import kotlinx.coroutines.*
@@ -66,6 +68,8 @@ fun KronorTestApp() {
                     navController.navigate("swishScreen/${sessionToken}")
                 }, onNavigateToCreditCard = { sessionToken ->
                     navController.navigate("creditCardScreen/${sessionToken}")
+                }, onNavigateToMobilePay = { sessionToken ->
+                    navController.navigate("mobilePayScreen/${sessionToken}")
                 })
             }
             composable(
@@ -128,6 +132,35 @@ fun KronorTestApp() {
                     GetCreditCardComponent(LocalContext.current, creditCardConfiguration)
                 }
             }
+            composable(
+                "mobilePayScreen/{sessionToken}",
+                arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
+            ) {
+                val thisScope = rememberCoroutineScope()
+                it.arguments?.getString("sessionToken")?.let { sessionToken ->
+                    val mobilePayConfiguration = MobilePayConfiguration(sessionToken = sessionToken,
+                        merchantLogo = R.drawable.kronor_logo,
+                        environment = Environment.Staging,
+                        appName = "kronor-android-test",
+                        appVersion = "0.1.0",
+                        redirectUrl = Uri.parse("kronor-test://?"),
+                        onPaymentSuccess = {
+                            thisScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    navController.navigate("paymentMethods")
+                                }
+                            }
+                        },
+                        onPaymentFailure = {
+                            thisScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    navController.navigate("paymentMethods")
+                                }
+                            }
+                        })
+                    GetMobilePayComponent(LocalContext.current, mobilePayConfiguration)
+                }
+            }
         }
     }
 }
@@ -135,7 +168,9 @@ fun KronorTestApp() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun paymentMethodsScreen(
-    onNavigateToSwish: (String) -> Unit, onNavigateToCreditCard: (String) -> Unit
+    onNavigateToSwish: (String) -> Unit,
+    onNavigateToCreditCard: (String) -> Unit,
+    onNavigateToMobilePay: (String) -> Unit
 ) {
     var amount by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
@@ -186,6 +221,19 @@ fun paymentMethodsScreen(
                 }
             }) {
                 Text("Pay ${amount.text} with a Credit Card")
+            }
+            Button(onClick = {
+                GlobalScope.launch {
+                    withContext(Dispatchers.Main) {
+                        val sessionToken = createNewPaymentSession(amount.text)
+
+                        sessionToken?.let {
+                            onNavigateToMobilePay(it)
+                        }
+                    }
+                }
+            }) {
+                Text("Pay ${amount.text} with MobilePay")
             }
         }
     }
@@ -252,5 +300,7 @@ private fun getLocalAddress(): InetAddress? {
 @Preview(showBackground = true)
 @Composable
 fun DefaultPaymentMethodsPreview() {
-    paymentMethodsScreen(onNavigateToSwish = {}, onNavigateToCreditCard = {})
+    paymentMethodsScreen(onNavigateToSwish = {},
+        onNavigateToCreditCard = {},
+        onNavigateToMobilePay = {})
 }
