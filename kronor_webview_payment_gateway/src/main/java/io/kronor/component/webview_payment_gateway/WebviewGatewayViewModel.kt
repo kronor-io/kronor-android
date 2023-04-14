@@ -1,5 +1,6 @@
 package io.kronor.component.webview_payment_gateway
 
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -217,6 +218,16 @@ class WebviewGatewayViewModel(
                 viewModelScope.launch {
                     delay(DelayBeforeCallback)
                     _transition(WebviewGatewayStatechart.Companion.Event.Cancel)
+                }
+            }
+        }
+    }
+
+    suspend fun handleIntent(intent: Intent) {
+        intent.data?.let {uri ->
+            if (uri.scheme == "kronorcheckout" && uri.path == "mobilepay") {
+                if (uri.queryParameterNames.contains("cancel")) {
+                    _transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                 }
             }
         }

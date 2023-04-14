@@ -1,5 +1,6 @@
 package io.kronor.example
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -52,14 +53,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            KronorTestApp()
+            val newIntent by produceState(initialValue = null as Intent?) {
+                val consumer = androidx.core.util.Consumer<Intent> {
+                    this.value = it
+                }
+                addOnNewIntentListener(consumer)
+                awaitDispose {
+                    removeOnNewIntentListener(consumer)
+                }
+            }
+            KronorTestApp(null)
         }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun KronorTestApp() {
+fun KronorTestApp(newIntent : Intent?) {
     KronorSDKTheme {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = "paymentMethods") {
@@ -143,7 +153,7 @@ fun KronorTestApp() {
                         environment = Environment.Staging,
                         appName = "kronor-android-test",
                         appVersion = "0.1.0",
-                        redirectUrl = Uri.parse("kronor-test://?"),
+                        redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/mobilepay"),
                         onPaymentSuccess = {
                             thisScope.launch {
                                 withContext(Dispatchers.Main) {
@@ -158,7 +168,7 @@ fun KronorTestApp() {
                                 }
                             }
                         })
-                    GetMobilePayComponent(LocalContext.current, mobilePayConfiguration)
+                    GetMobilePayComponent(LocalContext.current, mobilePayConfiguration, newIntent = newIntent)
                 }
             }
         }

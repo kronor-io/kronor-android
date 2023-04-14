@@ -32,6 +32,8 @@ import io.kronor.api.KronorError
 import io.kronor.component.webview_payment_gateway.WebviewGatewayStatechart
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModel
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModelFactory
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun mobilePayViewModel(mobilePayConfiguration: MobilePayConfiguration): WebviewGatewayViewModel {
@@ -42,7 +44,8 @@ fun mobilePayViewModel(mobilePayConfiguration: MobilePayConfiguration): WebviewG
 fun GetMobilePayComponent(
     context: Context,
     mobilePayConfiguration: MobilePayConfiguration,
-    viewModel: WebviewGatewayViewModel = mobilePayViewModel(mobilePayConfiguration = mobilePayConfiguration)
+    viewModel: WebviewGatewayViewModel = mobilePayViewModel(mobilePayConfiguration = mobilePayConfiguration),
+    newIntent: Intent?
 ) {
 
     if (!LocalInspectionMode.current) {
@@ -51,6 +54,14 @@ fun GetMobilePayComponent(
             fingerprinterFactory.getFingerprint(version = Fingerprinter.Version.V_5, listener = {
                 viewModel.deviceFingerprint = it
             })
+        }
+
+        val currentIntent = rememberUpdatedState(newValue = newIntent)
+
+        LaunchedEffect(Unit) {
+            snapshotFlow { currentIntent.value }.filterNotNull().collect {
+                    viewModel.handleIntent(it)
+                }
         }
     }
 
@@ -186,9 +197,11 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
                             return false;
                         }
                         if (request.url.scheme == "mobilepayonline-test" || request.url.scheme == "mobilepayonline") {
-                            Intent(Intent.ACTION_VIEW, request.url).apply {
-                                startActivity(context, this, null)
-                            }
+                            startActivity(
+                                context, Intent(
+                                    Intent.ACTION_VIEW, request.url
+                                ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK), null
+                            )
                         }
                         return true;
                     }
