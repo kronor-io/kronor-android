@@ -12,6 +12,7 @@ import androidx.fragment.app.setFragmentResult
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import io.kronor.example.databinding.FragmentFirst2Binding
+import io.kronor.example.type.SupportedCurrencyEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -42,7 +43,8 @@ class First2Fragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
                     val sessionToken = createNewPaymentSession(
-                        binding.amountField.text.toString()
+                        binding.amountField.text.toString(),
+                        SupportedCurrencyEnum.SEK
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))

@@ -209,7 +209,7 @@ fun paymentMethodsScreen(
             Button(onClick = {
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
-                        val sessionToken = createNewPaymentSession(amount.text)
+                        val sessionToken = createNewPaymentSession(amount.text, SupportedCurrencyEnum.SEK)
 
                         sessionToken?.let {
                             onNavigateToSwish(it)
@@ -222,7 +222,7 @@ fun paymentMethodsScreen(
             Button(onClick = {
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
-                        val sessionToken = createNewPaymentSession(amount.text)
+                        val sessionToken = createNewPaymentSession(amount.text, SupportedCurrencyEnum.SEK)
 
                         sessionToken?.let {
                             onNavigateToCreditCard(it)
@@ -235,7 +235,7 @@ fun paymentMethodsScreen(
             Button(onClick = {
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
-                        val sessionToken = createNewPaymentSession(amount.text)
+                        val sessionToken = createNewPaymentSession(amount.text, SupportedCurrencyEnum.DKK)
 
                         sessionToken?.let {
                             onNavigateToMobilePay(it)
@@ -250,7 +250,7 @@ fun paymentMethodsScreen(
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-suspend fun createNewPaymentSession(amountToPay: String): String? {
+suspend fun createNewPaymentSession(amountToPay: String, currency: SupportedCurrencyEnum): String? {
     val expiresAt = LocalDateTime.now().plusMinutes(5)
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
     Log.d("NewPaymentSession", "test")
@@ -259,7 +259,7 @@ suspend fun createNewPaymentSession(amountToPay: String): String? {
             NewPaymentSessionMutation(
                 PaymentSessionInput(
                     amount = amountToPay.toInt(),
-                    currency = Optional.present(SupportedCurrencyEnum.SEK),
+                    currency = Optional.present(currency),
                     expiresAt = expiresAt,
                     idempotencyKey = UUID.randomUUID().toString(),
                     merchantReference = "android-reference",
