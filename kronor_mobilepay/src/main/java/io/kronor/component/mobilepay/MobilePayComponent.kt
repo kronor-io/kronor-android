@@ -33,7 +33,6 @@ import io.kronor.component.webview_payment_gateway.WebviewGatewayStatechart
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModel
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModelFactory
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
 
 @Composable
 fun mobilePayViewModel(mobilePayConfiguration: MobilePayConfiguration): WebviewGatewayViewModel {
@@ -188,7 +187,7 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
                     override fun shouldOverrideUrlLoading(
                         view: WebView?, request: WebResourceRequest
                     ): Boolean {
-                        Log.d("MobilePayComponent", request.url.toString())
+                        Log.d("MobilePayComponent", "Request URL received: ${request.url}")
                         if (request.url.queryParameterNames.contains("cancel")) {
                             onPaymentCancel()
                             return false;
@@ -202,6 +201,12 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
                                     Intent.ACTION_VIEW, request.url
                                 ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK), null
                             )
+                            return true;
+                        }
+                        if (request.url.scheme == "kronorcheckout" && request.url.path == "/mobilepay") {
+                            Log.d("KronorIntent", "${request.url}") // after successful payment we are here
+                            // the statechart has probably already transitioned in the background
+                            return true;
                         }
                         return true;
                     }

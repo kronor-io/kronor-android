@@ -53,16 +53,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val newIntent by produceState(initialValue = null as Intent?) {
-                val consumer = androidx.core.util.Consumer<Intent> {
-                    this.value = it
-                }
-                addOnNewIntentListener(consumer)
-                awaitDispose {
-                    removeOnNewIntentListener(consumer)
-                }
-            }
-            KronorTestApp(null)
+            val newIntent = intent
+            Log.d("IntentCheck", "Intent value: $newIntent")
+            KronorTestApp(newIntent)
         }
     }
 }
