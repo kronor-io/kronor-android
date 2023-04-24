@@ -38,6 +38,8 @@ import io.kronor.component.mobilepay.GetMobilePayComponent
 import io.kronor.component.mobilepay.MobilePayConfiguration
 import io.kronor.component.swish.GetSwishComponent
 import io.kronor.component.swish.SwishConfiguration
+import io.kronor.component.vipps.GetVippsComponent
+import io.kronor.component.vipps.VippsConfiguration
 import kotlinx.coroutines.*
 import java.io.IOException
 import java.net.InetAddress
@@ -73,6 +75,9 @@ fun KronorTestApp(newIntent : Intent?) {
                     navController.navigate("creditCardScreen/${sessionToken}")
                 }, onNavigateToMobilePay = { sessionToken ->
                     navController.navigate("mobilePayScreen/${sessionToken}")
+                }, onNavigateToVipps = { sessionToken ->
+                    navController.navigate("vippsScreen/$sessionToken")
+
                 })
             }
             composable(
@@ -164,6 +169,35 @@ fun KronorTestApp(newIntent : Intent?) {
                     GetMobilePayComponent(LocalContext.current, mobilePayConfiguration, newIntent = newIntent)
                 }
             }
+            composable(
+                "vippsScreen/{sessionToken}",
+                arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
+            ) {
+                val thisScope = rememberCoroutineScope()
+                it.arguments?.getString("sessionToken")?.let { sessionToken ->
+                    val vippsConfiguration = VippsConfiguration(sessionToken = sessionToken,
+                        merchantLogo = R.drawable.kronor_logo,
+                        environment = Environment.Staging,
+                        appName = "kronor-android-test",
+                        appVersion = "0.1.0",
+                        redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/vipps"),
+                        onPaymentSuccess = {
+                            thisScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    navController.navigate("paymentMethods")
+                                }
+                            }
+                        },
+                        onPaymentFailure = {
+                            thisScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    navController.navigate("paymentMethods")
+                                }
+                            }
+                        })
+                    GetVippsComponent(LocalContext.current, vippsConfiguration, newIntent = newIntent)
+                }
+            }
         }
     }
 }
@@ -173,7 +207,8 @@ fun KronorTestApp(newIntent : Intent?) {
 fun paymentMethodsScreen(
     onNavigateToSwish: (String) -> Unit,
     onNavigateToCreditCard: (String) -> Unit,
-    onNavigateToMobilePay: (String) -> Unit
+    onNavigateToMobilePay: (String) -> Unit,
+    onNavigateToVipps: (String) -> Unit
 ) {
     var amount by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
@@ -237,6 +272,19 @@ fun paymentMethodsScreen(
                 }
             }) {
                 Text("Pay ${amount.text} with MobilePay")
+            }
+            Button(onClick = {
+                GlobalScope.launch {
+                    withContext(Dispatchers.Main) {
+                        val sessionToken = createNewPaymentSession(amount.text, SupportedCurrencyEnum.NOK)
+
+                        sessionToken?.let {
+                            onNavigateToVipps(it)
+                        }
+                    }
+                }
+            }) {
+                Text("Pay ${amount.text} with Vipps")
             }
         }
     }
@@ -303,7 +351,10 @@ private fun getLocalAddress(): InetAddress? {
 @Preview(showBackground = true)
 @Composable
 fun DefaultPaymentMethodsPreview() {
-    paymentMethodsScreen(onNavigateToSwish = {},
+    paymentMethodsScreen(
+        onNavigateToSwish = {},
         onNavigateToCreditCard = {},
-        onNavigateToMobilePay = {})
+        onNavigateToMobilePay = {},
+        onNavigateToVipps = {}
+    )
 }
