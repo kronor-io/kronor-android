@@ -69,7 +69,7 @@ fun KronorTestApp(newIntent : Intent?) {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = "paymentMethods") {
             composable("paymentMethods") {
-                paymentMethodsScreen(onNavigateToSwish = { sessionToken ->
+                PaymentMethodsScreen(onNavigateToSwish = { sessionToken ->
                     navController.navigate("swishScreen/${sessionToken}")
                 }, onNavigateToCreditCard = { sessionToken ->
                     navController.navigate("creditCardScreen/${sessionToken}")
@@ -204,7 +204,7 @@ fun KronorTestApp(newIntent : Intent?) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun paymentMethodsScreen(
+fun PaymentMethodsScreen(
     onNavigateToSwish: (String) -> Unit,
     onNavigateToCreditCard: (String) -> Unit,
     onNavigateToMobilePay: (String) -> Unit,
@@ -351,7 +351,7 @@ private fun getLocalAddress(): InetAddress? {
 @Preview(showBackground = true)
 @Composable
 fun DefaultPaymentMethodsPreview() {
-    paymentMethodsScreen(
+    PaymentMethodsScreen(
         onNavigateToSwish = {},
         onNavigateToCreditCard = {},
         onNavigateToMobilePay = {},

@@ -64,13 +64,11 @@ fun GetMobilePayComponent(
         }
     }
 
-    MobilePayScreen(
-        merchantLogo = mobilePayConfiguration.merchantLogo, viewModel = viewModel
-    )
+    MobilePayScreen(viewModel = viewModel)
 }
 
 @Composable
-fun MobilePayScreen(merchantLogo: Int?, viewModel: WebviewGatewayViewModel) {
+fun MobilePayScreen(viewModel: WebviewGatewayViewModel) {
     val state = viewModel.webviewGatewayState
     val context = LocalContext.current
     var backPressedCount by remember { mutableStateOf(0) }

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">kronor_credit_card</string>
+    <string name="title_activity_mobile_pay_component">MobilePayComponent</string>
     <string name="secure_connection">Establishing secure connection</string>
     <string name="network_error">Could not process the payment due to a network error. Please ensure your phone is connected to the internet and press Try Again.</string>
     <string name="graphql_error">Could not complete the payment due to an error.</string>
