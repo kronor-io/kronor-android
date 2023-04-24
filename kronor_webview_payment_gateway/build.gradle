@@ -72,6 +72,7 @@ dependencies {
     implementation "com.github.fingerprintjs:fingerprint-android:2.0.0"
     implementation "com.tinder.statemachine:statemachine:0.2.0"
     implementation("com.apollographql.apollo3:apollo-runtime:3.7.3")
+    lintChecks("com.slack.lint.compose:compose-lint-checks:1.2.0")
 
     lintChecks "com.slack.lint.compose:compose-lint-checks:$compose_lint_version"
 
