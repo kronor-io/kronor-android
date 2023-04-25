@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("io.kronor.component.mobilepay.test", appContext.packageName)
+        assertEquals("io.kronor.component.vipps.test", appContext.packageName)
     }
 }
