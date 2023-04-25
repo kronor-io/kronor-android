@@ -70,9 +70,9 @@ data class ApiError(
 )
 
 sealed class KronorError : Throwable() {
-    data class networkError(val e: ApolloException) : KronorError()
+    data class NetworkError(val e: ApolloException) : KronorError()
 
-    data class graphQlError(val e: ApiError) : KronorError()
+    data class GraphQlError(val e: ApiError) : KronorError()
 }
 
 suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D> {
@@ -81,13 +81,13 @@ suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D
         response.data?.let {
             success(it)
         } ?: failure(
-            KronorError.graphQlError(
+            KronorError.GraphQlError(
                 ApiError(
                     response.errors ?: emptyList(), response.extensions
                 )
             )
         )
     } catch (e: ApolloException) {
-        failure(KronorError.networkError(e))
+        failure(KronorError.NetworkError(e))
     }
 }

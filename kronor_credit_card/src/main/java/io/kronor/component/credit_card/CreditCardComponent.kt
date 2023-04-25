@@ -26,7 +26,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
 import io.kronor.api.KronorError
-import io.kronor.component.webview_payment_gateway.WebviewGatewayConfiguration
 import io.kronor.component.webview_payment_gateway.WebviewGatewayStatechart
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModel
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModelFactory
@@ -159,11 +158,11 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
         AndroidView(factory = {
             object : WebView(it) {
                 override fun canGoBack(): Boolean {
-                    return false;
+                    return false
                 }
 
                 override fun canGoForward(): Boolean {
-                    return false;
+                    return false
                 }
             }.apply {
                 layoutParams = ViewGroup.LayoutParams(
@@ -176,12 +175,12 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
                     ): Boolean {
                         if (request.url.queryParameterNames.contains("cancel")) {
                             onPaymentCancel()
-                            return false;
+                            return false
                         }
                         if (request.url.scheme == "http" || request.url.scheme == "https") {
-                            return false;
+                            return false
                         }
-                        return true;
+                        return true
                     }
                 }
                 settings.javaScriptEnabled = true
@@ -203,12 +202,12 @@ fun CreditCardErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: 
     ) {
         Spacer(modifier = Modifier.height(100.dp))
         when (error) {
-            is KronorError.networkError -> {
+            is KronorError.NetworkError -> {
                 Text(
                     stringResource(R.string.network_error), textAlign = TextAlign.Center
                 )
             }
-            is KronorError.graphQlError -> {
+            is KronorError.GraphQlError -> {
                 Text(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
                 )

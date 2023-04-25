@@ -38,7 +38,7 @@ class SwishViewModel(
     var deviceFingerprint: String? = null
 
     private val requests = Requests(swishConfiguration.sessionToken, swishConfiguration.environment)
-    var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
+    private var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
         SwishStatechart().stateMachine
     var swishState: SwishStatechart.Companion.State by mutableStateOf(SwishStatechart.Companion.State.PromptingMethod)
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
@@ -73,7 +73,7 @@ class SwishViewModel(
     private suspend fun _transitionToError(t: Throwable?) {
         _transition(
             SwishStatechart.Companion.Event.Error(
-                (t ?: KronorError.graphQlError(ApiError(emptyList(), emptyMap()))) as KronorError
+                (t ?: KronorError.GraphQlError(ApiError(emptyList(), emptyMap()))) as KronorError
             )
         )
     }
@@ -201,7 +201,7 @@ class SwishViewModel(
                     }.collect()
                 } catch (e: ApolloException) {
                     Log.d("SwishViewModel", "Payment Subscription error: $e")
-                    _transition(SwishStatechart.Companion.Event.Error(KronorError.networkError(e)))
+                    _transition(SwishStatechart.Companion.Event.Error(KronorError.NetworkError(e)))
                 }
             }
             is SwishStatechart.Companion.SideEffect.CancelPaymentRequest -> {

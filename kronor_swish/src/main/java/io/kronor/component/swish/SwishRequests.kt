@@ -4,9 +4,7 @@ import android.os.Build
 import com.apollographql.apollo3.api.Optional
 import io.kronor.api.*
 import io.kronor.api.type.AddSessionDeviceInformationInput
-import io.kronor.api.type.PaymentCancelInput
 import io.kronor.api.type.SwishPaymentInput
-import kotlinx.coroutines.flow.*
 import java.util.UUID
 
 data class SwishComponentInput(

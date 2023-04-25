@@ -333,7 +333,7 @@ private fun getLocalAddress(): InetAddress? {
         val en: Enumeration<NetworkInterface> = NetworkInterface.getNetworkInterfaces()
         while (en.hasMoreElements()) {
             val intf: NetworkInterface = en.nextElement()
-            val enumIpAddr: Enumeration<InetAddress> = intf.getInetAddresses()
+            val enumIpAddr: Enumeration<InetAddress> = intf.inetAddresses
             while (enumIpAddr.hasMoreElements()) {
                 val inetAddress: InetAddress = enumIpAddr.nextElement()
                 if (!inetAddress.isLoopbackAddress) {

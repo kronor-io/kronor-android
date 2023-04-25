@@ -258,13 +258,13 @@ fun SwishPaymentErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack
     ) {
         Spacer(modifier = Modifier.height(100.dp))
         when (error) {
-            is KronorError.networkError -> {
+            is KronorError.NetworkError -> {
                 Text(
                     stringResource(R.string.network_error),
                     textAlign = TextAlign.Center
                 )
             }
-            is KronorError.graphQlError -> {
+            is KronorError.GraphQlError -> {
                 Text(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
                 )
@@ -499,7 +499,7 @@ fun PreviewSwishPaymentRejected() {
 fun PreviewSwishPaymentErrored() {
     SwishWrapper {
         SwishPaymentErrored(
-            error = KronorError.networkError(ApolloException()),
+            error = KronorError.NetworkError(ApolloException()),
             onPaymentRetry = { }) {}
     }
 }

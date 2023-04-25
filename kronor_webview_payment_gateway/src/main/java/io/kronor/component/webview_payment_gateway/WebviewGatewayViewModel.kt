@@ -36,10 +36,10 @@ class WebviewGatewayViewModel(
 
     private val requests =
         Requests(webviewGatewayConfiguration.sessionToken, webviewGatewayConfiguration.environment)
-    var stateMachine: StateMachine<WebviewGatewayStatechart.Companion.State, WebviewGatewayStatechart.Companion.Event, WebviewGatewayStatechart.Companion.SideEffect> =
+    private var stateMachine: StateMachine<WebviewGatewayStatechart.Companion.State, WebviewGatewayStatechart.Companion.Event, WebviewGatewayStatechart.Companion.SideEffect> =
         WebviewGatewayStatechart().stateMachine
     var webviewGatewayState: WebviewGatewayStatechart.Companion.State by mutableStateOf(WebviewGatewayStatechart.Companion.State.Initializing)
-    var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
+    private var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
     val paymentGatewayUrl : Uri = constructPaymentGatewayUrl(
         environment = webviewGatewayConfiguration.environment,
@@ -76,7 +76,7 @@ class WebviewGatewayViewModel(
     private suspend fun _transitionToError(t: Throwable?) {
         _transition(
             WebviewGatewayStatechart.Companion.Event.Error(
-                (t ?: KronorError.graphQlError(ApiError(emptyList(), emptyMap()))) as KronorError
+                (t ?: KronorError.GraphQlError(ApiError(emptyList(), emptyMap()))) as KronorError
             )
         )
     }
@@ -177,7 +177,7 @@ class WebviewGatewayViewModel(
                     Log.d("WebviewGatewayViewModel", "Payment Subscription error: $e")
                     _transition(
                         WebviewGatewayStatechart.Companion.Event.Error(
-                            KronorError.networkError(
+                            KronorError.NetworkError(
                                 e
                             )
                         )

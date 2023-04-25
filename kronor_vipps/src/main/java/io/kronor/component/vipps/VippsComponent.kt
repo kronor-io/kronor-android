@@ -181,11 +181,11 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
         AndroidView(factory = {
             object : WebView(it) {
                 override fun canGoBack(): Boolean {
-                    return false;
+                    return false
                 }
 
                 override fun canGoForward(): Boolean {
-                    return false;
+                    return false
                 }
             }.apply {
                 layoutParams = ViewGroup.LayoutParams(
@@ -198,17 +198,17 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
                     ): Boolean {
                         if (request.url.queryParameterNames.contains("cancel")) {
                             onPaymentCancel()
-                            return false;
+                            return false
                         }
                         if (request.url.scheme == "http" || request.url.scheme == "https") {
-                            return false;
+                            return false
                         }
                         startActivity(
                             context, Intent(
                                 Intent.ACTION_VIEW, request.url
                             ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK), null
                         )
-                        return true;
+                        return true
                     }
                 }
                 settings.javaScriptEnabled = true
@@ -230,13 +230,13 @@ fun VippsErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () ->
     ) {
         Spacer(modifier = Modifier.height(100.dp))
         when (error) {
-            is KronorError.networkError -> {
+            is KronorError.NetworkError -> {
                 Text(
                     stringResource(R.string.network_error), textAlign = TextAlign.Center
                 )
             }
 
-            is KronorError.graphQlError -> {
+            is KronorError.GraphQlError -> {
                 Text(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
                 )

@@ -170,11 +170,11 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
         AndroidView(factory = {
             object : WebView(it) {
                 override fun canGoBack(): Boolean {
-                    return false;
+                    return false
                 }
 
                 override fun canGoForward(): Boolean {
-                    return false;
+                    return false
                 }
             }.apply {
                 layoutParams = ViewGroup.LayoutParams(
@@ -188,10 +188,10 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
                         Log.d("MobilePayComponent", "Request URL received: ${request.url}")
                         if (request.url.queryParameterNames.contains("cancel")) {
                             onPaymentCancel()
-                            return false;
+                            return false
                         }
                         if (request.url.scheme == "http" || request.url.scheme == "https") {
-                            return false;
+                            return false
                         }
                         if (request.url.scheme == "mobilepayonline-test" || request.url.scheme == "mobilepayonline") {
                             startActivity(
@@ -199,14 +199,14 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
                                     Intent.ACTION_VIEW, request.url
                                 ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK), null
                             )
-                            return true;
+                            return true
                         }
                         if (request.url.scheme == "kronorcheckout" && request.url.path == "/mobilepay") {
                             Log.d("KronorIntent", "${request.url}") // after successful payment we are here
                             // the statechart has probably already transitioned in the background
-                            return true;
+                            return true
                         }
-                        return true;
+                        return true
                     }
                 }
                 settings.javaScriptEnabled = true
@@ -228,12 +228,13 @@ fun MobilePayErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: (
     ) {
         Spacer(modifier = Modifier.height(100.dp))
         when (error) {
-            is KronorError.networkError -> {
+            is KronorError.NetworkError -> {
                 Text(
                     stringResource(R.string.network_error), textAlign = TextAlign.Center
                 )
             }
-            is KronorError.graphQlError -> {
+
+            is KronorError.GraphQlError -> {
                 Text(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
                 )
