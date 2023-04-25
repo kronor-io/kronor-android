@@ -78,7 +78,6 @@ fun MobilePayScreen(
     paymentGatewayUrl: Uri,
     modifier: Modifier = Modifier
 ) {
-    val state = state
     val context = LocalContext.current
     var backPressedCount by remember { mutableStateOf(0) }
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -110,27 +109,27 @@ fun MobilePayScreen(
     ) {
         when (state) {
             WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
-                MobilePayWrapper({ MobilePayInitializing() }, Modifier)
+                MobilePayWrapper(content = { MobilePayInitializing() })
             }
 
             WebviewGatewayStatechart.Companion.State.Initializing -> {
-                MobilePayWrapper({ MobilePayInitializing() }, Modifier)
+                MobilePayWrapper(content = { MobilePayInitializing() })
             }
 
             WebviewGatewayStatechart.Companion.State.CreatingPaymentRequest -> {
-                MobilePayWrapper({ MobilePayInitializing() }, Modifier)
+                MobilePayWrapper(content = { MobilePayInitializing() })
             }
 
             WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest -> {
-                MobilePayWrapper({ MobilePayInitializing() }, Modifier)
+                MobilePayWrapper(content = { MobilePayInitializing() })
             }
 
             is WebviewGatewayStatechart.Companion.State.Errored -> {
-                MobilePayWrapper({
+                MobilePayWrapper(content = {
                     MobilePayErrored(error = state.error,
                         onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
                         onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
-                }, Modifier)
+                })
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
@@ -140,13 +139,13 @@ fun MobilePayScreen(
             }
 
             is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
-                MobilePayWrapper({
+                MobilePayWrapper(content = {
                     MobilePayWaitingForPayment()
-                }, Modifier)
+                })
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentRejected -> {
-                MobilePayWrapper({
+                MobilePayWrapper(content = {
                     MobilePayPaymentRejected(onPaymentRetry = {
                         transition(
                             WebviewGatewayStatechart.Companion.Event.Retry
@@ -154,13 +153,13 @@ fun MobilePayScreen(
                     }, onGoBack = {
                         transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
                     })
-                }, Modifier)
+                })
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentCompleted -> {
-                MobilePayWrapper({
+                MobilePayWrapper(content = {
                     MobilePayPaymentCompleted()
-                }, Modifier)
+                })
             }
         }
     }

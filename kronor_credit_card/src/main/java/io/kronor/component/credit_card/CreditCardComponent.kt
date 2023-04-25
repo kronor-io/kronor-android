@@ -52,13 +52,19 @@ fun GetCreditCardComponent(
     }
 
     CreditCardScreen(
-        merchantLogo = creditCardConfiguration.merchantLogo, viewModel = viewModel
+        { event -> viewModel.transition(event) },
+        viewModel.webviewGatewayState,
+        viewModel.paymentGatewayUrl
     )
 }
 
 @Composable
-fun CreditCardScreen(merchantLogo: Int?, viewModel: WebviewGatewayViewModel) {
-    val state = viewModel.webviewGatewayState
+fun CreditCardScreen(
+    transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
+    state: WebviewGatewayStatechart.Companion.State,
+    paymentGatewayUrl: Uri,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     var backPressedCount by remember { mutableStateOf(0) }
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -82,67 +88,73 @@ fun CreditCardScreen(merchantLogo: Int?, viewModel: WebviewGatewayViewModel) {
     }
 
     LaunchedEffect(Unit) {
-        viewModel.transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
+        transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
+        modifier = modifier.fillMaxSize(), color = MaterialTheme.colors.background
     ) {
         when (state) {
             WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
-                CreditCardWrapper { CreditCardInitializing() }
+                CreditCardWrapper(content = { CreditCardInitializing() })
             }
+
             WebviewGatewayStatechart.Companion.State.Initializing -> {
-                CreditCardWrapper { CreditCardInitializing() }
+                CreditCardWrapper(content = { CreditCardInitializing() })
             }
+
             WebviewGatewayStatechart.Companion.State.CreatingPaymentRequest -> {
-                CreditCardWrapper { CreditCardInitializing() }
+                CreditCardWrapper(content = { CreditCardInitializing() })
             }
+
             WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest -> {
-                CreditCardWrapper { CreditCardInitializing() }
+                CreditCardWrapper(content = { CreditCardInitializing() })
             }
+
             is WebviewGatewayStatechart.Companion.State.Errored -> {
-                CreditCardWrapper {
+                CreditCardWrapper(content = {
                     CreditCardErrored(error = state.error,
-                        onPaymentRetry = { viewModel.transition(WebviewGatewayStatechart.Companion.Event.Retry) },
-                        onGoBack = { viewModel.transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
-                }
-            }
-            is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
-                PaymentGatewayView(gatewayUrl = viewModel.paymentGatewayUrl, onPaymentCancel = {
-                    viewModel.transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
+                        onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
+                        onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
                 })
             }
-            is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
-                CreditCardWrapper {
-                    CreditCardWaitingForPayment()
-                }
+
+            is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
+                PaymentGatewayView(gatewayUrl = paymentGatewayUrl, onPaymentCancel = {
+                    transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
+                })
             }
+
+            is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
+                CreditCardWrapper(content = { CreditCardWaitingForPayment() })
+            }
+
             is WebviewGatewayStatechart.Companion.State.PaymentRejected -> {
-                CreditCardWrapper {
+                CreditCardWrapper(content = {
                     CreditCardPaymentRejected(onPaymentRetry = {
-                        viewModel.transition(
+                        transition(
                             WebviewGatewayStatechart.Companion.Event.Retry
                         )
                     }, onGoBack = {
-                        viewModel.transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
+                        transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
                     })
-                }
+                })
             }
+
             is WebviewGatewayStatechart.Companion.State.PaymentCompleted -> {
-                CreditCardWrapper {
+                CreditCardWrapper(content = {
                     CreditCardPaymentCompleted()
-                }
+                })
             }
         }
     }
 }
 
 @Composable
-fun CreditCardWrapper(content: @Composable () -> Unit) {
+fun CreditCardWrapper(content: @Composable () -> Unit, modifier: Modifier = Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(30.dp),
+        modifier = modifier.padding(30.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         content.invoke()
@@ -151,9 +163,13 @@ fun CreditCardWrapper(content: @Composable () -> Unit) {
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
+fun PaymentGatewayView(
+    gatewayUrl: Uri,
+    onPaymentCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
         AndroidView(factory = {
             object : WebView(it) {
@@ -194,9 +210,14 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
 }
 
 @Composable
-fun CreditCardErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+fun CreditCardErrored(
+    error: KronorError,
+    onPaymentRetry: () -> Unit,
+    onGoBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -207,6 +228,7 @@ fun CreditCardErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: 
                     stringResource(R.string.network_error), textAlign = TextAlign.Center
                 )
             }
+
             is KronorError.GraphQlError -> {
                 Text(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
@@ -228,9 +250,9 @@ fun CreditCardErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: 
 }
 
 @Composable
-fun CreditCardInitializing() {
+fun CreditCardInitializing(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -241,9 +263,9 @@ fun CreditCardInitializing() {
 }
 
 @Composable
-fun CreditCardWaitingForPayment() {
+fun CreditCardWaitingForPayment(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -254,20 +276,24 @@ fun CreditCardWaitingForPayment() {
 }
 
 @Composable
-fun CreditCardPaymentCompleted() {
+fun CreditCardPaymentCompleted(modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxHeight()
+        modifier = modifier.fillMaxHeight()
     ) {
         Text(stringResource(R.string.payment_completed))
     }
 }
 
 @Composable
-fun CreditCardPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+fun CreditCardPaymentRejected(
+    onPaymentRetry: () -> Unit,
+    onGoBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

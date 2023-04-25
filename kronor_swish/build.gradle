@@ -116,6 +116,8 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
 
+    lintChecks("com.slack.lint.compose:compose-lint-checks:1.2.0")
+
     // qr code library
     implementation "com.google.zxing:core:3.5.1"
     implementation "com.github.fingerprintjs:fingerprint-android:2.0.0"

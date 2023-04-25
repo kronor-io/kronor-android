@@ -42,8 +42,8 @@ fun vippsViewModel(vippsConfiguration: VippsConfiguration): WebviewGatewayViewMo
 fun GetVippsComponent(
     context: Context,
     vippsConfiguration: VippsConfiguration,
+    newIntent: Intent?,
     viewModel: WebviewGatewayViewModel = vippsViewModel(vippsConfiguration = vippsConfiguration),
-    newIntent: Intent?
 ) {
 
     if (!LocalInspectionMode.current) {
@@ -63,12 +63,20 @@ fun GetVippsComponent(
         }
     }
 
-    VippsScreen(viewModel = viewModel)
+    VippsScreen(
+        { event -> viewModel.transition(event) },
+        viewModel.webviewGatewayState,
+        viewModel.paymentGatewayUrl
+    )
 }
 
 @Composable
-fun VippsScreen(viewModel: WebviewGatewayViewModel) {
-    val state = viewModel.webviewGatewayState
+fun VippsScreen(
+    transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
+    state: WebviewGatewayStatechart.Companion.State,
+    paymentGatewayUrl: Uri,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     var backPressedCount by remember { mutableStateOf(0) }
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -92,75 +100,75 @@ fun VippsScreen(viewModel: WebviewGatewayViewModel) {
     }
 
     LaunchedEffect(Unit) {
-        viewModel.transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
+        transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
+        modifier = modifier.fillMaxSize(), color = MaterialTheme.colors.background
     ) {
         when (state) {
             WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
-                VippsWrapper { VippsInitializing() }
+                VippsWrapper({ VippsInitializing() })
             }
 
             WebviewGatewayStatechart.Companion.State.Initializing -> {
-                VippsWrapper { VippsInitializing() }
+                VippsWrapper({ VippsInitializing() })
             }
 
             WebviewGatewayStatechart.Companion.State.CreatingPaymentRequest -> {
-                VippsWrapper { VippsInitializing() }
+                VippsWrapper({ VippsInitializing() })
             }
 
             WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest -> {
-                VippsWrapper { VippsInitializing() }
+                VippsWrapper({ VippsInitializing() })
             }
 
             is WebviewGatewayStatechart.Companion.State.Errored -> {
-                VippsWrapper {
+                VippsWrapper({
                     VippsErrored(error = state.error,
-                        onPaymentRetry = { viewModel.transition(WebviewGatewayStatechart.Companion.Event.Retry) },
-                        onGoBack = { viewModel.transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
-                }
+                        onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
+                        onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
+                })
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
-                PaymentGatewayView(gatewayUrl = viewModel.paymentGatewayUrl, onPaymentCancel = {
-                    viewModel.transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
+                PaymentGatewayView(gatewayUrl = paymentGatewayUrl, onPaymentCancel = {
+                    transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                 })
             }
 
             is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
-                VippsWrapper {
+                VippsWrapper({
                     VippsWaitingForPayment()
-                }
+                })
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentRejected -> {
-                VippsWrapper {
+                VippsWrapper({
                     VippsPaymentRejected(onPaymentRetry = {
-                        viewModel.transition(
+                        transition(
                             WebviewGatewayStatechart.Companion.Event.Retry
                         )
                     }, onGoBack = {
-                        viewModel.transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
+                        transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
                     })
-                }
+                })
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentCompleted -> {
-                VippsWrapper {
+                VippsWrapper({
                     VippsPaymentCompleted()
-                }
+                })
             }
         }
     }
 }
 
 @Composable
-fun VippsWrapper(content: @Composable () -> Unit) {
+fun VippsWrapper(content: @Composable () -> Unit, modifier: Modifier = Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(30.dp),
+        modifier = modifier.padding(30.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         content.invoke()
@@ -169,9 +177,13 @@ fun VippsWrapper(content: @Composable () -> Unit) {
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
+fun PaymentGatewayView(
+    gatewayUrl: Uri,
+    onPaymentCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
         val context = LocalContext.current
         AndroidView(factory = {
@@ -218,9 +230,14 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
 }
 
 @Composable
-fun VippsErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+fun VippsErrored(
+    error: KronorError,
+    onPaymentRetry: () -> Unit,
+    onGoBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -253,9 +270,9 @@ fun VippsErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () ->
 }
 
 @Composable
-fun VippsInitializing() {
+fun VippsInitializing(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -266,9 +283,9 @@ fun VippsInitializing() {
 }
 
 @Composable
-fun VippsWaitingForPayment() {
+fun VippsWaitingForPayment(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -279,20 +296,24 @@ fun VippsWaitingForPayment() {
 }
 
 @Composable
-fun VippsPaymentCompleted() {
+fun VippsPaymentCompleted(modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxHeight()
+        modifier = modifier.fillMaxHeight()
     ) {
         Text(stringResource(R.string.payment_completed))
     }
 }
 
 @Composable
-fun VippsPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+fun VippsPaymentRejected(
+    onPaymentRetry: () -> Unit,
+    onGoBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
