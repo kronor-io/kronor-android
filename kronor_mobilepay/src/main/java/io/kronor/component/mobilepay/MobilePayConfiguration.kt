@@ -12,13 +12,12 @@ data class MobilePayConfiguration(
     val redirectUrl: Uri,
     val appName: String,
     val appVersion: String,
-    @DrawableRes
-    val merchantLogo: Int? = null,
-    val onPaymentFailure : () -> Unit,
-    val onPaymentSuccess : (String) -> Unit
+    @DrawableRes val merchantLogo: Int? = null,
+    val onPaymentFailure: () -> Unit,
+    val onPaymentSuccess: (String) -> Unit
 )
 
-fun MobilePayConfiguration.toWebviewGatewayConfiguration() : WebviewGatewayConfiguration {
+fun MobilePayConfiguration.toWebviewGatewayConfiguration(): WebviewGatewayConfiguration {
     return WebviewGatewayConfiguration(
         sessionToken = this.sessionToken,
         environment = this.environment,

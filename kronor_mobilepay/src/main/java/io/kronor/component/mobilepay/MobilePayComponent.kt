@@ -43,8 +43,8 @@ fun mobilePayViewModel(mobilePayConfiguration: MobilePayConfiguration): WebviewG
 fun GetMobilePayComponent(
     context: Context,
     mobilePayConfiguration: MobilePayConfiguration,
-    viewModel: WebviewGatewayViewModel = mobilePayViewModel(mobilePayConfiguration = mobilePayConfiguration),
-    newIntent: Intent?
+    newIntent: Intent?,
+    viewModel: WebviewGatewayViewModel = mobilePayViewModel(mobilePayConfiguration = mobilePayConfiguration)
 ) {
 
     if (!LocalInspectionMode.current) {
@@ -59,17 +59,26 @@ fun GetMobilePayComponent(
 
         LaunchedEffect(Unit) {
             snapshotFlow { currentIntent.value }.filterNotNull().collect {
-                    viewModel.handleIntent(it)
-                }
+                viewModel.handleIntent(it)
+            }
         }
     }
 
-    MobilePayScreen(viewModel = viewModel)
+    MobilePayScreen(
+        { event -> viewModel.transition(event) },
+        viewModel.webviewGatewayState,
+        viewModel.paymentGatewayUrl
+    )
 }
 
 @Composable
-fun MobilePayScreen(viewModel: WebviewGatewayViewModel) {
-    val state = viewModel.webviewGatewayState
+fun MobilePayScreen(
+    transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
+    state: WebviewGatewayStatechart.Companion.State,
+    paymentGatewayUrl: Uri,
+    modifier: Modifier = Modifier
+) {
+    val state = state
     val context = LocalContext.current
     var backPressedCount by remember { mutableStateOf(0) }
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -93,67 +102,75 @@ fun MobilePayScreen(viewModel: WebviewGatewayViewModel) {
     }
 
     LaunchedEffect(Unit) {
-        viewModel.transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
+        transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
+        modifier.fillMaxSize(), color = MaterialTheme.colors.background
     ) {
         when (state) {
             WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
-                MobilePayWrapper { MobilePayInitializing() }
+                MobilePayWrapper({ MobilePayInitializing() }, Modifier)
             }
+
             WebviewGatewayStatechart.Companion.State.Initializing -> {
-                MobilePayWrapper { MobilePayInitializing() }
+                MobilePayWrapper({ MobilePayInitializing() }, Modifier)
             }
+
             WebviewGatewayStatechart.Companion.State.CreatingPaymentRequest -> {
-                MobilePayWrapper { MobilePayInitializing() }
+                MobilePayWrapper({ MobilePayInitializing() }, Modifier)
             }
+
             WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest -> {
-                MobilePayWrapper { MobilePayInitializing() }
+                MobilePayWrapper({ MobilePayInitializing() }, Modifier)
             }
+
             is WebviewGatewayStatechart.Companion.State.Errored -> {
-                MobilePayWrapper {
+                MobilePayWrapper({
                     MobilePayErrored(error = state.error,
-                        onPaymentRetry = { viewModel.transition(WebviewGatewayStatechart.Companion.Event.Retry) },
-                        onGoBack = { viewModel.transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
-                }
+                        onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
+                        onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
+                }, Modifier)
             }
+
             is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
-                PaymentGatewayView(gatewayUrl = viewModel.paymentGatewayUrl, onPaymentCancel = {
-                    viewModel.transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
+                PaymentGatewayView(gatewayUrl = paymentGatewayUrl, onPaymentCancel = {
+                    transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                 })
             }
+
             is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
-                MobilePayWrapper {
+                MobilePayWrapper({
                     MobilePayWaitingForPayment()
-                }
+                }, Modifier)
             }
+
             is WebviewGatewayStatechart.Companion.State.PaymentRejected -> {
-                MobilePayWrapper {
+                MobilePayWrapper({
                     MobilePayPaymentRejected(onPaymentRetry = {
-                        viewModel.transition(
+                        transition(
                             WebviewGatewayStatechart.Companion.Event.Retry
                         )
                     }, onGoBack = {
-                        viewModel.transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
+                        transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
                     })
-                }
+                }, Modifier)
             }
+
             is WebviewGatewayStatechart.Companion.State.PaymentCompleted -> {
-                MobilePayWrapper {
+                MobilePayWrapper({
                     MobilePayPaymentCompleted()
-                }
+                }, Modifier)
             }
         }
     }
 }
 
 @Composable
-fun MobilePayWrapper(content: @Composable () -> Unit) {
+fun MobilePayWrapper(content: @Composable () -> Unit, modifier: Modifier = Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(30.dp),
+        modifier = modifier.padding(30.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         content.invoke()
@@ -162,9 +179,11 @@ fun MobilePayWrapper(content: @Composable () -> Unit) {
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
+fun PaymentGatewayView(
+    gatewayUrl: Uri, onPaymentCancel: () -> Unit, modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier.fillMaxSize()
     ) {
         val context = LocalContext.current
         AndroidView(factory = {
@@ -193,19 +212,11 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
                         if (request.url.scheme == "http" || request.url.scheme == "https") {
                             return false
                         }
-                        if (request.url.scheme == "mobilepayonline-test" || request.url.scheme == "mobilepayonline") {
-                            startActivity(
-                                context, Intent(
-                                    Intent.ACTION_VIEW, request.url
-                                ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK), null
-                            )
-                            return true
-                        }
-                        if (request.url.scheme == "kronorcheckout" && request.url.path == "/mobilepay") {
-                            Log.d("KronorIntent", "${request.url}") // after successful payment we are here
-                            // the statechart has probably already transitioned in the background
-                            return true
-                        }
+                        startActivity(
+                            context, Intent(
+                                Intent.ACTION_VIEW, request.url
+                            ).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK), null
+                        )
                         return true
                     }
                 }
@@ -220,9 +231,14 @@ fun PaymentGatewayView(gatewayUrl: Uri, onPaymentCancel: () -> Unit) {
 }
 
 @Composable
-fun MobilePayErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+fun MobilePayErrored(
+    error: KronorError,
+    onPaymentRetry: () -> Unit,
+    onGoBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -255,9 +271,9 @@ fun MobilePayErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: (
 }
 
 @Composable
-fun MobilePayInitializing() {
+fun MobilePayInitializing(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -268,37 +284,39 @@ fun MobilePayInitializing() {
 }
 
 @Composable
-fun MobilePayWaitingForPayment() {
+fun MobilePayWaitingForPayment(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(stringResource(R.string.waiting_for_payment))
-        Spacer(modifier = Modifier.height(30.dp))
+        Spacer(Modifier.height(30.dp))
         CircularProgressIndicator()
     }
 }
 
 @Composable
-fun MobilePayPaymentCompleted() {
+fun MobilePayPaymentCompleted(modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxHeight()
+        modifier = modifier.fillMaxHeight()
     ) {
         Text(stringResource(R.string.payment_completed))
     }
 }
 
 @Composable
-fun MobilePayPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+fun MobilePayPaymentRejected(
+    onPaymentRetry: () -> Unit, onGoBack: () -> Unit, modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(100.dp))
+        Spacer(Modifier.height(100.dp))
         Text(stringResource(R.string.payment_rejected))
         Button(onClick = {
             onPaymentRetry()

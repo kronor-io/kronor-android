@@ -63,15 +63,11 @@ fun GetVippsComponent(
         }
     }
 
-    VippsScreen(
-        merchantLogo = vippsConfiguration.merchantLogo, viewModel = viewModel
-    )
+    VippsScreen(viewModel = viewModel)
 }
 
 @Composable
-fun VippsScreen(
-    merchantLogo: Int?, viewModel: WebviewGatewayViewModel
-) {
+fun VippsScreen(viewModel: WebviewGatewayViewModel) {
     val state = viewModel.webviewGatewayState
     val context = LocalContext.current
     var backPressedCount by remember { mutableStateOf(0) }
