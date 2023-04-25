@@ -387,12 +387,23 @@ fun PaymentMethodsScreen(
 }
 
 
-//
-//@RequiresApi(Build.VERSION_CODES.O)
-//@Preview(showBackground = true)
-//@Composable
-//fun DefaultPaymentMethodsPreview() {
-//    paymentMethodsScreen(onNavigateToSwish = {},
-//        onNavigateToCreditCard = {},
-//        onNavigateToMobilePay = {})
-//}
+
+@Throws(IOException::class)
+private fun getLocalAddress(): InetAddress? {
+    try {
+        val en: Enumeration<NetworkInterface> = NetworkInterface.getNetworkInterfaces()
+        while (en.hasMoreElements()) {
+            val intf: NetworkInterface = en.nextElement()
+            val enumIpAddr: Enumeration<InetAddress> = intf.inetAddresses
+            while (enumIpAddr.hasMoreElements()) {
+                val inetAddress: InetAddress = enumIpAddr.nextElement()
+                if (!inetAddress.isLoopbackAddress) {
+                    return inetAddress
+                }
+            }
+        }
+    } catch (ex: SocketException) {
+        Log.e("Error", ex.toString())
+    }
+    return null
+}
