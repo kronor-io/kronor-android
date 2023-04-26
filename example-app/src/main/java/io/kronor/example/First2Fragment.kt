@@ -2,13 +2,14 @@ package io.kronor.example
 
 import android.os.Build
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.core.os.bundleOf
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import io.kronor.example.databinding.FragmentFirst2Binding
@@ -21,6 +22,7 @@ import kotlinx.coroutines.withContext
  */
 class First2Fragment : Fragment() {
 
+    private val viewModel: MainViewModel by viewModels()
     private var _binding: FragmentFirst2Binding? = null
 
     // This property is only valid between onCreateView and
@@ -28,8 +30,7 @@ class First2Fragment : Fragment() {
     private val binding get() = _binding!!
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentFirst2Binding.inflate(inflater, container, false)
         return binding.root
@@ -39,12 +40,41 @@ class First2Fragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.buttonFirst.setOnClickListener {
+        binding.buttonPayWithSwish.setOnClickListener {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
-                    val sessionToken = createNewPaymentSession(
-                        binding.amountField.text.toString(),
-                        SupportedCurrencyEnum.SEK
+                    val sessionToken = viewModel.createNewPaymentSession(
+                        binding.amountField.text.toString(), SupportedCurrencyEnum.SEK
+                    )
+                    sessionToken?.let {
+                        setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
+                        withContext(Dispatchers.Main) {
+                            findNavController().navigate(R.id.action_First2Fragment_to_Second2Fragment)
+                        }
+                    }
+                }
+            }
+        }
+        binding.buttonPayWithCreditCard.setOnClickListener {
+            lifecycleScope.launchWhenResumed {
+                withContext(Dispatchers.IO) {
+                    val sessionToken = viewModel.createNewPaymentSession(
+                        binding.amountField.text.toString(), SupportedCurrencyEnum.SEK
+                    )
+                    sessionToken?.let {
+                        setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
+                        withContext(Dispatchers.Main) {
+                            findNavController().navigate(R.id.action_First2Fragment_to_Second2Fragment)
+                        }
+                    }
+                }
+            }
+        }
+        binding.buttonPayWithMobilepay.setOnClickListener {
+            lifecycleScope.launchWhenResumed {
+                withContext(Dispatchers.IO) {
+                    val sessionToken = viewModel.createNewPaymentSession(
+                        binding.amountField.text.toString(), SupportedCurrencyEnum.DKK
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))

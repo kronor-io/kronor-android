@@ -12,9 +12,7 @@ data class WebviewGatewayConfiguration(
     val appVersion: String,
     val paymentMethod : WebviewGatewayPaymentMethod,
     @DrawableRes
-    val merchantLogo: Int? = null,
-    val onPaymentFailure : () -> Unit,
-    val onPaymentSuccess : (String) -> Unit
+    val merchantLogo: Int? = null
 )
 
 enum class WebviewGatewayPaymentMethod {

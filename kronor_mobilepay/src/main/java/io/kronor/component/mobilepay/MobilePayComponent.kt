@@ -1,7 +1,6 @@
 package io.kronor.component.mobilepay
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
@@ -19,12 +18,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Lifecycle.Event.*
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
@@ -32,7 +35,7 @@ import io.kronor.api.KronorError
 import io.kronor.component.webview_payment_gateway.WebviewGatewayStatechart
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModel
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModelFactory
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 
 @Composable
 fun mobilePayViewModel(mobilePayConfiguration: MobilePayConfiguration): WebviewGatewayViewModel {
@@ -40,32 +43,37 @@ fun mobilePayViewModel(mobilePayConfiguration: MobilePayConfiguration): WebviewG
 }
 
 @Composable
-fun GetMobilePayComponent(
-    context: Context,
-    mobilePayConfiguration: MobilePayConfiguration,
-    newIntent: Intent?,
-    viewModel: WebviewGatewayViewModel = mobilePayViewModel(mobilePayConfiguration = mobilePayConfiguration)
+fun MobilePayComponent(
+    viewModel: WebviewGatewayViewModel
 ) {
+    val context = LocalContext.current
 
     if (!LocalInspectionMode.current) {
         LaunchedEffect(Unit) {
             val fingerprinterFactory = FingerprinterFactory.create(context)
-            fingerprinterFactory.getFingerprint(version = Fingerprinter.Version.V_5, listener = {
-                viewModel.deviceFingerprint = it
-            })
+            fingerprinterFactory.getFingerprint(
+                version = Fingerprinter.Version.V_5,
+                listener = viewModel::setDeviceFingerPrint
+            )
         }
 
-        val currentIntent = rememberUpdatedState(newValue = newIntent)
+        val lifecycle = LocalLifecycleOwner.current.lifecycle
 
         LaunchedEffect(Unit) {
-            snapshotFlow { currentIntent.value }.filterNotNull().collect {
-                viewModel.handleIntent(it)
+            viewModel.transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
+            launch {
+                Log.d("GetMobilePayComponent", "lifecycle scope launched")
+                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    launch {
+                        viewModel.onSubscription()
+                    }
+                }
             }
         }
     }
 
     MobilePayScreen(
-        { event -> viewModel.transition(event) },
+        viewModel::transition,
         viewModel.webviewGatewayState,
         viewModel.paymentGatewayUrl
     )
@@ -74,11 +82,12 @@ fun GetMobilePayComponent(
 @Composable
 fun MobilePayScreen(
     transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
-    state: WebviewGatewayStatechart.Companion.State,
+    state: State<WebviewGatewayStatechart.Companion.State>,
     paymentGatewayUrl: Uri,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
     var backPressedCount by remember { mutableStateOf(0) }
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     DisposableEffect(key1 = backPressedDispatcher) {
@@ -105,47 +114,54 @@ fun MobilePayScreen(
     }
 
     Surface(
-        modifier.fillMaxSize(), color = MaterialTheme.colors.background
+        modifier = Modifier, color = MaterialTheme.colors.background
     ) {
-        when (state) {
+        when (state.value) {
             WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
-                MobilePayWrapper(content = { MobilePayInitializing() })
+                MobilePayWrapper { MobilePayInitializing() }
             }
 
             WebviewGatewayStatechart.Companion.State.Initializing -> {
-                MobilePayWrapper(content = { MobilePayInitializing() })
+                MobilePayWrapper { MobilePayInitializing() }
             }
 
             WebviewGatewayStatechart.Companion.State.CreatingPaymentRequest -> {
-                MobilePayWrapper(content = { MobilePayInitializing() })
+                MobilePayWrapper { MobilePayInitializing() }
             }
 
             WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest -> {
-                MobilePayWrapper(content = { MobilePayInitializing() })
+                MobilePayWrapper { MobilePayInitializing() }
             }
 
             is WebviewGatewayStatechart.Companion.State.Errored -> {
-                MobilePayWrapper(content = {
-                    MobilePayErrored(error = state.error,
+                MobilePayWrapper {
+                    MobilePayErrored(error = (state as WebviewGatewayStatechart.Companion.State.Errored).error,
                         onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
                         onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
+                }
+            }
+
+            is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
+                Log.d("MobilePayWrapper", "PaymentGatewayView Starting")
+                PaymentGatewayView(gatewayUrl = paymentGatewayUrl.toString(), onPaymentCancel = {
+                    transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                 })
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
-                PaymentGatewayView(gatewayUrl = paymentGatewayUrl, onPaymentCancel = {
+                PaymentGatewayView(gatewayUrl = paymentGatewayUrl.toString(), onPaymentCancel = {
                     transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                 })
             }
 
             is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
-                MobilePayWrapper(content = {
+                MobilePayWrapper {
                     MobilePayWaitingForPayment()
-                })
+                }
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentRejected -> {
-                MobilePayWrapper(content = {
+                MobilePayWrapper {
                     MobilePayPaymentRejected(onPaymentRetry = {
                         transition(
                             WebviewGatewayStatechart.Companion.Event.Retry
@@ -153,24 +169,24 @@ fun MobilePayScreen(
                     }, onGoBack = {
                         transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
                     })
-                })
+                }
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentCompleted -> {
-                MobilePayWrapper(content = {
+                MobilePayWrapper {
                     MobilePayPaymentCompleted()
-                })
+                }
             }
         }
     }
 }
 
 @Composable
-fun MobilePayWrapper(content: @Composable () -> Unit, modifier: Modifier = Modifier) {
+fun MobilePayWrapper(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(30.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.SpaceBetween,
+        modifier = modifier
     ) {
         content.invoke()
     }
@@ -179,26 +195,20 @@ fun MobilePayWrapper(content: @Composable () -> Unit, modifier: Modifier = Modif
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun PaymentGatewayView(
-    gatewayUrl: Uri, onPaymentCancel: () -> Unit, modifier: Modifier = Modifier
+    gatewayUrl: String, onPaymentCancel: () -> Unit, modifier: Modifier = Modifier
 ) {
     Column(
         modifier.fillMaxSize()
     ) {
+
         val context = LocalContext.current
         AndroidView(factory = {
-            object : WebView(it) {
-                override fun canGoBack(): Boolean {
-                    return false
-                }
-
-                override fun canGoForward(): Boolean {
-                    return false
-                }
-            }.apply {
+            WebView(it).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
+
                 webViewClient = object : WebViewClient() {
                     override fun shouldOverrideUrlLoading(
                         view: WebView?, request: WebResourceRequest
@@ -221,10 +231,9 @@ fun PaymentGatewayView(
                 }
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
-                loadUrl(gatewayUrl.toString())
             }
         }, update = {
-            it.loadUrl(gatewayUrl.toString())
+            it.loadUrl(gatewayUrl)
         })
     }
 }

@@ -13,9 +13,7 @@ data class VippsConfiguration(
     val appName: String,
     val appVersion: String,
     @DrawableRes
-    val merchantLogo: Int? = null,
-    val onPaymentFailure : () -> Unit,
-    val onPaymentSuccess : (String) -> Unit
+    val merchantLogo: Int? = null
 )
 
 fun VippsConfiguration.toWebviewGatewayConfiguration() : WebviewGatewayConfiguration {
@@ -26,8 +24,6 @@ fun VippsConfiguration.toWebviewGatewayConfiguration() : WebviewGatewayConfigura
         appName = this.appName,
         appVersion = this.appVersion,
         merchantLogo = this.merchantLogo,
-        onPaymentFailure = this.onPaymentFailure,
-        onPaymentSuccess = this.onPaymentSuccess,
         paymentMethod = WebviewGatewayPaymentMethod.Vipps
     )
 }

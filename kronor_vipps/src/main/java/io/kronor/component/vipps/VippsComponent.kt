@@ -1,7 +1,6 @@
 package io.kronor.component.vipps
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.view.ViewGroup
@@ -31,7 +30,6 @@ import io.kronor.api.KronorError
 import io.kronor.component.webview_payment_gateway.WebviewGatewayStatechart
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModel
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModelFactory
-import kotlinx.coroutines.flow.filterNotNull
 
 @Composable
 fun vippsViewModel(vippsConfiguration: VippsConfiguration): WebviewGatewayViewModel {
@@ -39,27 +37,18 @@ fun vippsViewModel(vippsConfiguration: VippsConfiguration): WebviewGatewayViewMo
 }
 
 @Composable
-fun GetVippsComponent(
-    context: Context,
-    vippsConfiguration: VippsConfiguration,
-    newIntent: Intent?,
-    viewModel: WebviewGatewayViewModel = vippsViewModel(vippsConfiguration = vippsConfiguration),
+fun VippsComponent(
+    viewModel: WebviewGatewayViewModel
 ) {
+    val context = LocalContext.current
 
     if (!LocalInspectionMode.current) {
         LaunchedEffect(Unit) {
             val fingerprinterFactory = FingerprinterFactory.create(context)
-            fingerprinterFactory.getFingerprint(version = Fingerprinter.Version.V_5, listener = {
-                viewModel.deviceFingerprint = it
-            })
-        }
-
-        val currentIntent = rememberUpdatedState(newValue = newIntent)
-
-        LaunchedEffect(Unit) {
-            snapshotFlow { currentIntent.value }.filterNotNull().collect {
-                viewModel.handleIntent(it)
-            }
+            fingerprinterFactory.getFingerprint(
+                version = Fingerprinter.Version.V_5,
+                listener = viewModel::setDeviceFingerPrint
+            )
         }
     }
 
@@ -73,7 +62,7 @@ fun GetVippsComponent(
 @Composable
 fun VippsScreen(
     transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
-    state: WebviewGatewayStatechart.Companion.State,
+    state: State<WebviewGatewayStatechart.Companion.State>,
     paymentGatewayUrl: Uri,
     modifier: Modifier = Modifier
 ) {
@@ -104,9 +93,9 @@ fun VippsScreen(
     }
 
     Surface(
-        modifier = modifier.fillMaxSize(), color = MaterialTheme.colors.background
+        modifier = modifier, color = MaterialTheme.colors.background
     ) {
-        when (state) {
+        when (state.value) {
             WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
                 VippsWrapper({ VippsInitializing() })
             }
@@ -125,7 +114,7 @@ fun VippsScreen(
 
             is WebviewGatewayStatechart.Companion.State.Errored -> {
                 VippsWrapper({
-                    VippsErrored(error = state.error,
+                    VippsErrored(error = (state.value as WebviewGatewayStatechart.Companion.State.Errored).error,
                         onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
                         onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
                 })
@@ -168,7 +157,7 @@ fun VippsScreen(
 fun VippsWrapper(content: @Composable () -> Unit, modifier: Modifier = Modifier) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(30.dp),
+        modifier = modifier,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         content.invoke()
@@ -183,19 +172,11 @@ fun PaymentGatewayView(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
     ) {
         val context = LocalContext.current
         AndroidView(factory = {
-            object : WebView(it) {
-                override fun canGoBack(): Boolean {
-                    return false
-                }
-
-                override fun canGoForward(): Boolean {
-                    return false
-                }
-            }.apply {
+            WebView(it).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -237,7 +218,7 @@ fun VippsErrored(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxHeight(),
+        modifier = modifier,
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -272,7 +253,7 @@ fun VippsErrored(
 @Composable
 fun VippsInitializing(modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxHeight(),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -285,7 +266,7 @@ fun VippsInitializing(modifier: Modifier = Modifier) {
 @Composable
 fun VippsWaitingForPayment(modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxHeight(),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -300,7 +281,7 @@ fun VippsPaymentCompleted(modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.fillMaxHeight()
+        modifier = modifier
     ) {
         Text(stringResource(R.string.payment_completed))
     }
@@ -313,7 +294,7 @@ fun VippsPaymentRejected(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxHeight(),
+        modifier = modifier,
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
