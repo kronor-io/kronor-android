@@ -40,6 +40,12 @@ class WebviewGatewayViewModel(
 ) : ViewModel() {
     private var _deviceFingerprint: String? = null
     val deviceFingerprint: String? = _deviceFingerprint
+    val constructedRedirectUrl  : Uri =
+        webviewGatewayConfiguration.redirectUrl
+            .buildUpon()
+            .appendQueryParameter("paymentMethod", webviewGatewayConfiguration.paymentMethod.toRedirectMethod())
+            .appendQueryParameter("sessionToken", webviewGatewayConfiguration.sessionToken)
+            .build()
 
     val requests =
         Requests(webviewGatewayConfiguration.sessionToken, webviewGatewayConfiguration.environment)
@@ -56,11 +62,11 @@ class WebviewGatewayViewModel(
         environment = webviewGatewayConfiguration.environment,
         sessionToken = webviewGatewayConfiguration.sessionToken,
         paymentMethod = webviewGatewayConfiguration.paymentMethod.toPaymentGatewayMethod(),
-        merchantReturnUrl = webviewGatewayConfiguration.redirectUrl
+        merchantReturnUrl = this.constructedRedirectUrl
     )
 
-    private val _events = MutableSharedFlow<CreditCardEvent>()
-    val events: Flow<CreditCardEvent> = _events
+    private val _events = MutableSharedFlow<PaymentEvent>()
+    val events: Flow<PaymentEvent> = _events
 
     fun transition(event: WebviewGatewayStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -108,7 +114,7 @@ class WebviewGatewayViewModel(
                 Log.d("WebviewGatewayViewModel", "Creating Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
                     webviewGatewayInputData = WebviewGatewayComponentInput(
-                        returnUrl = webviewGatewayConfiguration.redirectUrl.toString(),
+                        returnUrl = this.constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = webviewGatewayConfiguration.appName,
                         appVersion = webviewGatewayConfiguration.appVersion,
@@ -166,13 +172,13 @@ class WebviewGatewayViewModel(
 //                delay(DelayBeforeCallback)
 //                webviewGatewayConfiguration.onPaymentSuccess(sideEffect.paymentId)
                 Log.d("WebviewGatewayViewModel", "Emitting success")
-                _events.emit(CreditCardEvent.PaymentSuccess(sideEffect.paymentId))
+                _events.emit(PaymentEvent.PaymentSuccess(sideEffect.paymentId))
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
 //                webviewGatewayConfiguration.onPaymentFailure()
                 Log.d("WebviewGatewayViewModel", "Emitting failure")
-                _events.emit(CreditCardEvent.PaymentFailure)
+                _events.emit(PaymentEvent.PaymentFailure)
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.OpenEmbeddedSite -> {
@@ -192,7 +198,7 @@ class WebviewGatewayViewModel(
         }
     }
 
-    suspend fun onSubscription() {
+    suspend fun subscription() {
         // If we have a waitToken set in our view model, get the payment request
         // associated with that waitToken and in a status that is not initializing
 
@@ -263,7 +269,7 @@ class WebviewGatewayViewModel(
 
     suspend fun handleIntent(intent: Intent) {
         intent.data?.let { uri ->
-            if (uri.scheme == "kronorcheckout" && uri.path == "/mobilepay") {
+            if (uri.scheme == "kronorcheckout" && uri.getQueryParameter("paymentMethod") == this.webviewGatewayConfiguration.paymentMethod.toRedirectMethod()) {
                 if (uri.queryParameterNames.contains("cancel")) {
                     _transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                 }
@@ -272,9 +278,9 @@ class WebviewGatewayViewModel(
     }
 }
 
-sealed class CreditCardEvent {
-    data class PaymentSuccess(val paymentId: String) : CreditCardEvent()
-    object PaymentFailure : CreditCardEvent()
+sealed class PaymentEvent {
+    data class PaymentSuccess(val paymentId: String) : PaymentEvent()
+    object PaymentFailure : PaymentEvent()
 }
 
 fun constructPaymentGatewayUrl(

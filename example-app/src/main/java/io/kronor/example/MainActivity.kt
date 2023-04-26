@@ -39,7 +39,7 @@ import io.kronor.component.swish.SwishConfiguration
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.VippsConfiguration
 import io.kronor.component.vipps.vippsViewModel
-import io.kronor.component.webview_payment_gateway.CreditCardEvent
+import io.kronor.component.webview_payment_gateway.PaymentEvent
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
 import kotlinx.coroutines.*
@@ -64,7 +64,6 @@ class MainActivity : ComponentActivity() {
                     removeOnNewIntentListener(consumer)
                 }
             }
-//            Log.d("onCreate", "${newIntent?.data}")
             KronorTestApp(viewModel, newIntent)
         }
     }
@@ -131,9 +130,34 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 environment = Environment.Staging,
                                 appName = "kronor-android-test",
                                 appVersion = "0.1.0",
-                                redirectUrl = Uri.parse("kronor-test://?")
+                                redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
                             )
                         )
+
+                    val lifecycle = LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(Unit) {
+                        launch {
+                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                launch {
+                                    ccvm.events.collect {
+                                        when (it) {
+                                            PaymentEvent.PaymentFailure -> {
+                                                withContext(Dispatchers.Main) {
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+
+                                            is PaymentEvent.PaymentSuccess -> {
+                                                withContext(Dispatchers.Main) {
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     CreditCardComponent(ccvm)
                 }
             }
@@ -150,7 +174,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/mobilepay")
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
                         )
                     )
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -159,13 +183,14 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                                 launch {
                                     mpvm.events.collect {
-                                        when(it) {
-                                            CreditCardEvent.PaymentFailure -> {
+                                        when (it) {
+                                            PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
-                                            is CreditCardEvent.PaymentSuccess -> {
+
+                                            is PaymentEvent.PaymentSuccess -> {
                                                 withContext(Dispatchers.Main) {
                                                     navController.navigate("paymentMethods")
                                                 }
@@ -198,9 +223,39 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/vipps")
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
                         )
                     )
+                    val lifecycle = LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(Unit) {
+                        launch {
+                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                launch {
+                                    vvm.events.collect {
+                                        when (it) {
+                                            PaymentEvent.PaymentFailure -> {
+                                                withContext(Dispatchers.Main) {
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+
+                                            is PaymentEvent.PaymentSuccess -> {
+                                                withContext(Dispatchers.Main) {
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    LaunchedEffect(newIntent.value?.data) {
+                        newIntent.value?.let {
+                            Log.d("VippsComponent", "${it.data}")
+                            vvm.handleIntent(it)
+                        }
+                    }
                     VippsComponent(vvm)
                 }
             }

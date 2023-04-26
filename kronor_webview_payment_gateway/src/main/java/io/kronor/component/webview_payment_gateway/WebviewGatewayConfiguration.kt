@@ -19,6 +19,14 @@ enum class WebviewGatewayPaymentMethod {
     CreditCard, MobilePay, Vipps
 }
 
+fun WebviewGatewayPaymentMethod.toRedirectMethod() : String {
+    return when(this) {
+        WebviewGatewayPaymentMethod.CreditCard -> "creditcard"
+        WebviewGatewayPaymentMethod.MobilePay -> "mobilepay"
+        WebviewGatewayPaymentMethod.Vipps -> "vipps"
+    }
+}
+
 fun WebviewGatewayPaymentMethod.toPaymentGatewayMethod() : String {
     return when (this) {
         WebviewGatewayPaymentMethod.CreditCard -> "creditCard"
