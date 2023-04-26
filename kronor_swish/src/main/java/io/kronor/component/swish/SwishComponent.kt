@@ -101,7 +101,7 @@ fun GetSwishComponent(
         transition = viewModel::transition,
         state = viewModel.swishState,
         selectedMethod = viewModel.selectedMethod,
-//        setSelectedMethod = viewModel::setSelectedMethod,
+        updateSelectedMethod = viewModel::updateSelectedMethod,
         paymentRequest = viewModel.paymentRequest,
         merchantLogo = merchantLogo
     )
@@ -112,7 +112,8 @@ fun GetSwishComponent(
 fun SwishScreen(
     transition: (SwishStatechart.Companion.Event) -> Unit,
     state: State<SwishStatechart.Companion.State>,
-    selectedMethod: SelectedMethod?,
+    selectedMethod: State<SelectedMethod?>,
+    updateSelectedMethod: (SelectedMethod) -> Unit,
 //    setSelectedMethod: (SelectedMethod) -> Unit,
     paymentRequest: PaymentStatusSubscription.PaymentRequest?,
     @DrawableRes merchantLogo: Int? = null
@@ -130,13 +131,13 @@ fun SwishScreen(
 
             SwishStatechart.Companion.State.PromptingMethod -> {
                 SwishPromptMethods(onAppOpen = {
-//                    setSelectedMethod(SelectedMethod.SwishApp)
+                    updateSelectedMethod(SelectedMethod.SwishApp)
                     transition(SwishStatechart.Companion.Event.UseSwishApp)
                 }, onQrCode = {
-//                    setSelectedMethod(SelectedMethod.QrCode)
+                    updateSelectedMethod(SelectedMethod.QrCode)
                     transition(SwishStatechart.Companion.Event.UseQR)
                 }, onPhoneNumber = {
-//                    setSelectedMethod(SelectedMethod.PhoneNumber)
+                    updateSelectedMethod(SelectedMethod.PhoneNumber)
                     transition(SwishStatechart.Companion.Event.UsePhoneNumber)
                 })
             }
@@ -154,7 +155,7 @@ fun SwishScreen(
             is SwishStatechart.Companion.State.CreatingPaymentRequest -> SwishCreatingPaymentRequest()
             is SwishStatechart.Companion.State.WaitingForPaymentRequest -> SwishCreatingPaymentRequest()
             is SwishStatechart.Companion.State.PaymentRequestInitialized -> {
-                when (selectedMethod) {
+                when (selectedMethod.value) {
                     SelectedMethod.QrCode -> {
                         val qrToken = paymentRequest?.transactionSwishDetails?.first()?.qrCode
                         SwishPaymentWithQrCode(qrToken, onCancelPayment = {

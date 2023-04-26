@@ -47,15 +47,11 @@ class SwishViewModel(
         mutableStateOf(
             SwishStatechart.Companion.State.PromptingMethod
         )
-    var swishState: State<SwishStatechart.Companion.State> = _swishState
+    val swishState: State<SwishStatechart.Companion.State> = _swishState
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
-//    private var _selectedMethod: SelectedMethod? = null
-    var selectedMethod: SelectedMethod? = null
-
-//    fun setSelectedMethod(selected: SelectedMethod) {
-//        this.selectedMethod = selected
-//    }
+    private var _selectedMethod: MutableState<SelectedMethod?> = mutableStateOf(null)
+    val selectedMethod: State<SelectedMethod?> = _selectedMethod
 
     private val _events = MutableSharedFlow<SwishEvent>()
     val events: Flow<SwishEvent> = _events
@@ -70,6 +66,10 @@ class SwishViewModel(
 
     fun setDeviceFingerPrint(fingerprint: String) {
         this._deviceFingerprint = fingerprint
+    }
+
+    fun updateSelectedMethod(selected: SelectedMethod) {
+        _selectedMethod.value = selected
     }
 
     private suspend fun _transition(event: SwishStatechart.Companion.Event) {
@@ -128,8 +128,6 @@ class SwishViewModel(
                         )
                     }
                 }
-                // this is wrong.
-                this.selectedMethod = SelectedMethod.QrCode
             }
 
             is SwishStatechart.Companion.SideEffect.CreateEcomPaymentRequest -> {
@@ -160,8 +158,6 @@ class SwishViewModel(
                         )
                     }
                 }
-                // this is wrong
-                this.selectedMethod = SelectedMethod.PhoneNumber
             }
 
             is SwishStatechart.Companion.SideEffect.ListenOnPaymentRequest -> {
@@ -192,7 +188,6 @@ class SwishViewModel(
             }
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
-//                delay(DelayBeforeCallback)
                 _events.emit(SwishEvent.PaymentSuccess(sideEffect.paymentId))
             }
 
@@ -222,8 +217,7 @@ class SwishViewModel(
                     }
 
                     this.paymentRequest?.let { paymentRequest ->
-                        Log.d("SwishViewModle", "after initializing: $selectedMethod and ${this.selectedMethod} and ${_swishState.value}")
-                        val selected : SelectedMethod = this.selectedMethod ?: run {
+                        val selected : SelectedMethod = selectedMethod.value ?: run {
                             when (paymentRequest.paymentFlow) {
                                 "mcom" -> SelectedMethod.QrCode
                                 "ecom" -> SelectedMethod.PhoneNumber
@@ -270,12 +264,12 @@ class SwishViewModel(
                     return@let waitToken
                 } ?: run {
                     // When no waitToken is set, we should create a new payment request
-                    Log.d("WebviewGatewayViewModel", "${this.waitToken}")
+                    Log.d("SwishViewModel", "${this.waitToken}")
                     _transition(SwishStatechart.Companion.Event.Prompt)
                 }
             }
         } catch (e: ApolloException) {
-            Log.d("WebviewGatewayViewModel", "Payment Subscription error: $e")
+            Log.d("SwishViewModel", "Payment Subscription error: $e")
             _transition(
                 SwishStatechart.Companion.Event.Error(KronorError.NetworkError(e))
             )
