@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,6 +43,7 @@ import io.kronor.component.mobilepay.mobilePayViewModel
 import io.kronor.component.mobilepay.mobilePayViewModel
 import io.kronor.component.swish.GetSwishComponent
 import io.kronor.component.swish.SwishConfiguration
+import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.VippsConfiguration
@@ -111,32 +111,19 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                 "swishScreen/{sessionToken}",
                 arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
             ) {
-                val thisScope = rememberCoroutineScope()
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val swishConfiguration = SwishConfiguration(sessionToken = sessionToken,
-                        merchantLogo = R.drawable.kronor_logo,
-                        environment = Environment.Staging,
-                        appName = "kronor-android-test",
-                        appVersion = "0.1.0",
-                        locale = Locale("en_US"),
-                        redirectUrl = Uri.parse("kronor_test://"),
-                        onPaymentSuccess = {
-                            thisScope.launch {
-                                withContext(Dispatchers.Main) {
-                                    viewModel.resetPaymentState()
-                                    navController.navigate("paymentMethods")
-                                }
-                            }
-                        },
-                        onPaymentFailure = {
-                            thisScope.launch {
-                                withContext(Dispatchers.Main) {
-                                    viewModel.resetPaymentState()
-                                    navController.navigate("paymentMethods")
-                                }
-                            }
-                        })
-                    GetSwishComponent(LocalContext.current, swishConfiguration)
+                    val svm = swishViewModel(
+                        SwishConfiguration(
+                            sessionToken = sessionToken,
+                            merchantLogo = R.drawable.kronor_logo,
+                            environment = Environment.Staging,
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            locale = Locale("en_US"),
+                            redirectUrl = Uri.parse("kronor_test://"),
+                        )
+                    )
+                    GetSwishComponent(svm)
                 }
             }
             composable(
@@ -162,7 +149,6 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                 "mobilePayScreen/{sessionToken}",
                 arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
             ) {
-                val thisScope = rememberCoroutineScope()
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val mpvm = mobilePayViewModel(
                         mobilePayConfiguration = MobilePayConfiguration(
@@ -211,7 +197,6 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                 "vippsScreen/{sessionToken}",
                 arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
             ) {
-                val thisScope = rememberCoroutineScope()
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val vvm = vippsViewModel(
                         VippsConfiguration(

@@ -13,9 +13,7 @@ data class SwishConfiguration(
     val swishFlow: SupportedSwishFlows = SupportedSwishFlows.All,
     val appName: String,
     val appVersion: String,
-    @DrawableRes val merchantLogo: Int? = null,
-    val onPaymentFailure : () -> Unit,
-    val onPaymentSuccess : (String) -> Unit
+    @DrawableRes val merchantLogo: Int? = null
 )
 
 enum class SupportedSwishFlows {

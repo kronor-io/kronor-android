@@ -39,33 +39,19 @@ class Second2Fragment : Fragment() {
             sessionToken = bundle.getString("sessionToken")
         }
         return ComposeView(requireContext()).apply {
-            setContent {
-                if (sessionToken != null) {
-                    val swishConfiguration = SwishConfiguration(sessionToken = sessionToken!!,
-                        merchantLogo = R.drawable.kronor_logo,
-                        environment = Environment.Staging,
-                        appName = "kronor-android-test",
-                        appVersion = "0.1.0",
-                        locale = Locale("en_US"),
-                        redirectUrl = Uri.parse("kronor_test://"),
-                        onPaymentSuccess = {
-                            Log.d("Second2Fragment", "Payment id: $it")
-                            lifecycleScope.launchWhenResumed {
-                                withContext(Dispatchers.Main) {
-                                    findNavController().navigate(R.id.action_Second2Fragment_to_First2Fragment)
-                                }
-                            }
-                        },
-                        onPaymentFailure = {
-                            lifecycleScope.launchWhenResumed {
-                                withContext(Dispatchers.Main) {
-                                    findNavController().navigate(R.id.action_Second2Fragment_to_First2Fragment)
-                                }
-                            }
-                        })
-                    GetSwishComponent(LocalContext.current, swishConfiguration)
-                }
-            }
+//            setContent {
+//                if (sessionToken != null) {
+//                    val swishConfiguration = SwishConfiguration(sessionToken = sessionToken!!,
+//                        merchantLogo = R.drawable.kronor_logo,
+//                        environment = Environment.Staging,
+//                        appName = "kronor-android-test",
+//                        appVersion = "0.1.0",
+//                        locale = Locale("en_US"),
+//                        redirectUrl = Uri.parse("kronor_test://"),
+//                        )
+//                    GetSwishComponent(LocalContext.current, swishConfiguration)
+//                }
+//            }
 
         }
     }

@@ -148,7 +148,6 @@ class WebviewGatewayViewModel(
             is WebviewGatewayStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
             }
 
-            is WebviewGatewayStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {}
             is WebviewGatewayStatechart.Companion.SideEffect.CancelPaymentRequest -> {
                 val waitToken = requests.cancelPayment()
                 when {
