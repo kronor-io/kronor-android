@@ -170,7 +170,6 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
-                                            CreditCardEvent.PaymentWaiting -> {}
                                         }
                                     }
                                 }
