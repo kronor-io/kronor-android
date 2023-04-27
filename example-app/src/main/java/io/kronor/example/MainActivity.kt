@@ -148,7 +148,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             }
                         }
                     }
-                    GetSwishComponent(svm)
+                    GetSwishComponent(svm, R.drawable.kronor_logo)
                 }
             }
             composable(
