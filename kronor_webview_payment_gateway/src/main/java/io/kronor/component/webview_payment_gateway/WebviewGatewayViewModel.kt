@@ -329,7 +329,7 @@ fun constructPaymentGatewayUrl(
         .appendQueryParameter("env", toGatewayEnvName(environment))
         .appendQueryParameter("paymentMethod", paymentMethod)
         .appendQueryParameter("token", sessionToken)
-        .appendQueryParameter("merchantReturnUrl", merchantReturnUrl.toString()).build()
+        .appendQueryParameter("merchantReturnUrl", Uri.encode(merchantReturnUrl.toString())).build()
 }
 
 fun toGatewayEnvName(environment: Environment): String {
