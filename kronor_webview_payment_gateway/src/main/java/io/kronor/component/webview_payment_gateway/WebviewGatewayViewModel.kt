@@ -182,14 +182,11 @@ class WebviewGatewayViewModel(
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
-//                delay(DelayBeforeCallback)
-//                webviewGatewayConfiguration.onPaymentSuccess(sideEffect.paymentId)
                 Log.d("WebviewGatewayViewModel", "Emitting success")
                 _events.emit(PaymentEvent.PaymentSuccess(sideEffect.paymentId))
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
-//                webviewGatewayConfiguration.onPaymentFailure()
                 Log.d("WebviewGatewayViewModel", "Emitting failure")
                 _events.emit(PaymentEvent.PaymentFailure)
             }
