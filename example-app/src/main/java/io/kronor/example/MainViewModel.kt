@@ -1,8 +1,12 @@
 package io.kronor.example
 
+import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.apollographql.apollo3.api.Optional
@@ -23,6 +27,9 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
     var paymentSessionToken: String?
         get() = savedStateHandle.get<String>("sessionToken")
         set(value) = savedStateHandle.set("sessionToken", value)
+    
+    private var _paymentMethodSelected : MutableState<String?> = mutableStateOf(null)
+    val paymentMethodSelected: State<String?> = _paymentMethodSelected
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun createNewPaymentSession(
@@ -83,5 +90,29 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
             Log.e("Error", ex.toString())
         }
         return null
+    }
+
+    fun handleIntent(intent: Intent): Unit {
+        intent.data?.let { uri ->
+            uri.getQueryParameter("sessionToken")?.let { st ->
+                this.paymentSessionToken = st
+                uri.getQueryParameter("paymentMethod")?.let {
+                    if (it == "swish") {
+                        this._paymentMethodSelected.value = "swish"
+                    } else if (it == "creditcard") {
+                        this._paymentMethodSelected.value = "creditcard"
+                    } else if (it == "mobilepay") {
+                        this._paymentMethodSelected.value = "mobilepay"
+                    } else if (it == "vipps") {
+                        this._paymentMethodSelected.value = "vipps"
+                    }
+                }
+            }
+        }
+    }
+
+    fun resetPaymentState() : Unit {
+        this._paymentMethodSelected.value = null
+        this.paymentSessionToken = null
     }
 }

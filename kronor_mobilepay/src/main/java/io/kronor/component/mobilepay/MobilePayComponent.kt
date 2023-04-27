@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle.Event.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.kronor.component.webview_payment_gateway.WebviewGatewayComponent
@@ -20,7 +21,8 @@ fun mobilePayViewModel(mobilePayConfiguration: MobilePayConfiguration): MobilePa
 @SuppressLint("ComposeViewModelForwarding")
 @Composable
 fun MobilePayComponent(
-    viewModel: MobilePayViewModel
+    viewModel: MobilePayViewModel,
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
-    WebviewGatewayComponent(viewModel = viewModel)
+    WebviewGatewayComponent(viewModel = viewModel, modifier = modifier)
 }

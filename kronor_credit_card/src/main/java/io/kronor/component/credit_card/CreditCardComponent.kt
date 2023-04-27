@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.kronor.component.webview_payment_gateway.*
 
@@ -17,7 +18,8 @@ fun creditCardViewModel(creditCardConfiguration: CreditCardConfiguration): Credi
 @SuppressLint("ComposeViewModelForwarding")
 @Composable
 fun CreditCardComponent(
-    viewModel: CreditCardViewModel
+    viewModel: CreditCardViewModel,
+    modifier : Modifier = Modifier.fillMaxSize()
 ) {
-    WebviewGatewayComponent(viewModel = viewModel)
+    WebviewGatewayComponent(viewModel = viewModel, modifier = modifier)
 }

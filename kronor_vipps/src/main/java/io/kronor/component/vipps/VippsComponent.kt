@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.kronor.component.webview_payment_gateway.WebviewGatewayComponent
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModel
@@ -19,7 +20,8 @@ fun vippsViewModel(vippsConfiguration: VippsConfiguration): VippsViewModel {
 @SuppressLint("ComposeViewModelForwarding")
 @Composable
 fun VippsComponent(
-    viewModel: VippsViewModel
+    viewModel: VippsViewModel,
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
-    WebviewGatewayComponent(viewModel = viewModel)
+    WebviewGatewayComponent(viewModel = viewModel, modifier = modifier)
 }

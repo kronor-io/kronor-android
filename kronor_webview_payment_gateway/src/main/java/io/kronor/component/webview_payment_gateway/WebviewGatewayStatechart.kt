@@ -23,6 +23,15 @@ class WebviewGatewayStatechart {
                     sideEffect = SideEffect.OpenEmbeddedSite
                 )
             }
+            on<Event.PaymentAuthorized> {
+                transitionTo(
+                    state = State.PaymentCompleted,
+                    sideEffect = SideEffect.NotifyPaymentSuccess(paymentId = it.paymentId)
+                )
+            }
+            on<Event.PaymentRejected> {
+                transitionTo(state = State.PaymentRejected)
+            }
             on<Event.Error> {
                 transitionTo(
                     state = State.Errored(it.error)

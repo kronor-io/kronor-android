@@ -38,6 +38,7 @@ class WebviewGatewayViewModelFactory(
 class WebviewGatewayViewModel(
     val webviewGatewayConfiguration: WebviewGatewayConfiguration
 ) : ViewModel() {
+    private var intentReceived: Boolean = false;
     private var _deviceFingerprint: String? = null
     val deviceFingerprint: String? = _deviceFingerprint
     val constructedRedirectUrl  : Uri =
@@ -225,13 +226,6 @@ class WebviewGatewayViewModel(
                     }
 
                     this.paymentRequest?.let { paymentRequest ->
-                        if (_webviewGatewayState.value is WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest) {
-                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
-                        }
-                        if (_webviewGatewayState.value is WebviewGatewayStatechart.Companion.State.WaitingForSubscription) {
-                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
-                        }
-
                         paymentRequest.status?.any {
                             it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED
                         }?.let {
@@ -261,12 +255,37 @@ class WebviewGatewayViewModel(
                                 _transition(WebviewGatewayStatechart.Companion.Event.Retry)
                             }
                         }
+
+                        if (_webviewGatewayState.value is WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest) {
+                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
+                        }
+                        if (_webviewGatewayState.value is WebviewGatewayStatechart.Companion.State.WaitingForSubscription) {
+                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
+                        }
                     }
                     return@let waitToken
                 } ?: run {
                     // When no waitToken is set, we should create a new payment request
                     Log.d("WebviewGatewayViewModel", "${this.waitToken}")
-                    _transition(WebviewGatewayStatechart.Companion.Event.Initialize)
+                    Log.d("WebviewGatewayViewModel", "intentReceived : ${this.intentReceived}")
+                    this.paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
+                        paymentRequest.status?.any {
+                            it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED
+                        } ?: false
+                    }
+                    this.paymentRequest?.let { paymentRequest ->
+                        _transition(
+                            WebviewGatewayStatechart.Companion.Event.PaymentAuthorized(
+                                paymentRequest.resultingPaymentId!!
+                            )
+                        )
+                    } ?: run {
+                        if (this.intentReceived) {
+                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
+                        } else {
+                            _transition(WebviewGatewayStatechart.Companion.Event.Initialize)
+                        }
+                    }
                 }
             }
         } catch (e: ApolloException) {
@@ -279,7 +298,8 @@ class WebviewGatewayViewModel(
 
     suspend fun handleIntent(intent: Intent) {
         intent.data?.let { uri ->
-            if (uri.scheme == "kronorcheckout" && uri.getQueryParameter("paymentMethod") == this.webviewGatewayConfiguration.paymentMethod.toRedirectMethod()) {
+            if (uri.getQueryParameter("paymentMethod") == this.webviewGatewayConfiguration.paymentMethod.toRedirectMethod()) {
+                this.intentReceived = true
                 if (uri.queryParameterNames.contains("cancel")) {
                     _transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                 }

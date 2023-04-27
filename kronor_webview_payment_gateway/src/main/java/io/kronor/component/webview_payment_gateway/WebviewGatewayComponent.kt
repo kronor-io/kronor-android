@@ -34,7 +34,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun WebviewGatewayComponent(
-    viewModel: WebviewGatewayViewModel
+    viewModel: WebviewGatewayViewModel,
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
     val context = LocalContext.current
 
@@ -64,7 +65,8 @@ fun WebviewGatewayComponent(
         viewModel::transition,
         viewModel.webviewGatewayState,
         viewModel.paymentGatewayUrl,
-        viewModel.webviewGatewayConfiguration.paymentMethod
+        viewModel.webviewGatewayConfiguration.paymentMethod,
+        modifier = modifier
     )
 }
 
@@ -104,30 +106,31 @@ fun WebviewGatewayScreen(
     }
 
     Surface(
-        modifier = Modifier, color = MaterialTheme.colors.background
+        modifier = modifier, color = MaterialTheme.colors.background
     ) {
         when (state.value) {
             WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
-                WebviewGatewayWrapper { WebviewGatewayInitializing() }
+                WebviewGatewayWrapper { WebviewGatewayInitializing(modifier = Modifier.fillMaxSize()) }
             }
 
             WebviewGatewayStatechart.Companion.State.Initializing -> {
-                WebviewGatewayWrapper { WebviewGatewayInitializing() }
+                WebviewGatewayWrapper { WebviewGatewayInitializing(modifier = Modifier.fillMaxSize()) }
             }
 
             WebviewGatewayStatechart.Companion.State.CreatingPaymentRequest -> {
-                WebviewGatewayWrapper { WebviewGatewayInitializing() }
+                WebviewGatewayWrapper { WebviewGatewayInitializing(modifier = Modifier.fillMaxSize()) }
             }
 
             WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest -> {
-                WebviewGatewayWrapper { WebviewGatewayInitializing() }
+                WebviewGatewayWrapper { WebviewGatewayInitializing(modifier = Modifier.fillMaxSize()) }
             }
 
             is WebviewGatewayStatechart.Companion.State.Errored -> {
                 WebviewGatewayWrapper {
                     WebviewGatewayErrored(error = (state as WebviewGatewayStatechart.Companion.State.Errored).error,
                         onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
-                        onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) })
+                        onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) }
+                    , modifier = Modifier.fillMaxSize())
                 }
             }
 
@@ -136,12 +139,13 @@ fun WebviewGatewayScreen(
                     paymentMethod = paymentMethod,
                     onPaymentCancel = {
                         transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
-                    })
+                    },
+                modifier = Modifier.fillMaxSize())
             }
 
             is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
                 WebviewGatewayWrapper {
-                    WebviewGatewayWaitingForPayment()
+                    WebviewGatewayWaitingForPayment(modifier = Modifier.fillMaxSize())
                 }
             }
 
@@ -153,13 +157,13 @@ fun WebviewGatewayScreen(
                         )
                     }, onGoBack = {
                         transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
-                    })
+                    }, modifier = Modifier.fillMaxSize())
                 }
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentCompleted -> {
                 WebviewGatewayWrapper {
-                    WebviewGatewayPaymentCompleted()
+                    WebviewGatewayPaymentCompleted(modifier = Modifier.fillMaxSize())
                 }
             }
         }

@@ -57,8 +57,10 @@ class MainActivity : ComponentActivity() {
             val newIntent = produceState(initialValue = null as Intent?) {
                 val consumer = androidx.core.util.Consumer<Intent> {
                     this.value = it
+                    viewModel.handleIntent(it)
                 }
                 this.value = intent
+                viewModel.handleIntent(intent)
                 addOnNewIntentListener(consumer)
                 awaitDispose {
                     removeOnNewIntentListener(consumer)
@@ -66,6 +68,11 @@ class MainActivity : ComponentActivity() {
             }
             KronorTestApp(viewModel, newIntent)
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        intent?.let(viewModel::handleIntent)
+        super.onNewIntent(intent)
     }
 }
 
@@ -84,7 +91,6 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                     navController.navigate("mobilePayScreen/${sessionToken}")
                 }, onNavigateToVipps = { sessionToken ->
                     navController.navigate("vippsScreen/$sessionToken")
-
                 })
             }
             composable(
@@ -103,6 +109,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                         onPaymentSuccess = {
                             thisScope.launch {
                                 withContext(Dispatchers.Main) {
+                                    viewModel.resetPaymentState()
                                     navController.navigate("paymentMethods")
                                 }
                             }
@@ -110,6 +117,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                         onPaymentFailure = {
                             thisScope.launch {
                                 withContext(Dispatchers.Main) {
+                                    viewModel.resetPaymentState()
                                     navController.navigate("paymentMethods")
                                 }
                             }
@@ -122,17 +130,16 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                 arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
             ) {
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val ccvm =
-                        creditCardViewModel(
-                            creditCardConfiguration = CreditCardConfiguration(
-                                sessionToken = sessionToken,
-                                merchantLogo = R.drawable.kronor_logo,
-                                environment = Environment.Staging,
-                                appName = "kronor-android-test",
-                                appVersion = "0.1.0",
-                                redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
-                            )
+                    val ccvm = creditCardViewModel(
+                        creditCardConfiguration = CreditCardConfiguration(
+                            sessionToken = sessionToken,
+                            merchantLogo = R.drawable.kronor_logo,
+                            environment = Environment.Staging,
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
                         )
+                    )
 
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
                     LaunchedEffect(Unit) {
@@ -143,12 +150,14 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                         when (it) {
                                             PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
 
                                             is PaymentEvent.PaymentSuccess -> {
                                                 withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
@@ -186,12 +195,14 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                         when (it) {
                                             PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
 
                                             is PaymentEvent.PaymentSuccess -> {
                                                 withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
@@ -235,12 +246,14 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                         when (it) {
                                             PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
 
                                             is PaymentEvent.PaymentSuccess -> {
                                                 withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
@@ -271,10 +284,22 @@ fun PaymentMethodsScreen(
     onNavigateToCreditCard: (String) -> Unit,
     onNavigateToMobilePay: (String) -> Unit,
     onNavigateToVipps: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier.fillMaxSize()
 ) {
     var amount by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
+    }
+
+    LaunchedEffect(viewModel.paymentMethodSelected) {
+        if (viewModel.paymentMethodSelected.value == "swish") {
+            onNavigateToSwish(viewModel.paymentSessionToken!!)
+        } else if (viewModel.paymentMethodSelected.value == "creditcard") {
+            onNavigateToCreditCard(viewModel.paymentSessionToken!!)
+        } else if (viewModel.paymentMethodSelected.value == "mobilepay") {
+            onNavigateToMobilePay(viewModel.paymentSessionToken!!)
+        } else if (viewModel.paymentMethodSelected.value == "vipps") {
+            onNavigateToVipps(viewModel.paymentSessionToken!!)
+        }
     }
 
     Surface(
@@ -301,8 +326,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text,
-                            SupportedCurrencyEnum.SEK
+                            amount.text, SupportedCurrencyEnum.SEK
                         )
 
                         sessionToken?.let {
@@ -317,8 +341,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text,
-                            SupportedCurrencyEnum.SEK
+                            amount.text, SupportedCurrencyEnum.SEK
                         )
 
                         sessionToken?.let {
@@ -333,8 +356,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text,
-                            SupportedCurrencyEnum.DKK
+                            amount.text, SupportedCurrencyEnum.DKK
                         )
 
                         sessionToken?.let {
@@ -349,8 +371,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text,
-                            SupportedCurrencyEnum.NOK
+                            amount.text, SupportedCurrencyEnum.NOK
                         )
 
                         sessionToken?.let {
