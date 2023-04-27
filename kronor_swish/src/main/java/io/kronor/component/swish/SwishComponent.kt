@@ -114,7 +114,6 @@ fun SwishScreen(
     state: State<SwishStatechart.Companion.State>,
     selectedMethod: State<SelectedMethod?>,
     updateSelectedMethod: (SelectedMethod) -> Unit,
-//    setSelectedMethod: (SelectedMethod) -> Unit,
     paymentRequest: PaymentStatusSubscription.PaymentRequest?,
     @DrawableRes merchantLogo: Int? = null
 ) {

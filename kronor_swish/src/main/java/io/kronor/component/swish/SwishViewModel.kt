@@ -188,10 +188,12 @@ class SwishViewModel(
             }
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
+                Log.d("SwishViewModel", "Emitting success")
                 _events.emit(SwishEvent.PaymentSuccess(sideEffect.paymentId))
             }
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
+                Log.d("SwishViewModel", "Emitting failure")
                 _events.emit(SwishEvent.PaymentFailure)
             }
 

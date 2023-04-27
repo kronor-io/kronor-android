@@ -43,6 +43,7 @@ import io.kronor.component.mobilepay.mobilePayViewModel
 import io.kronor.component.mobilepay.mobilePayViewModel
 import io.kronor.component.swish.GetSwishComponent
 import io.kronor.component.swish.SwishConfiguration
+import io.kronor.component.swish.SwishEvent
 import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.VippsComponent
@@ -120,9 +121,33 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
                             locale = Locale("en_US"),
-                            redirectUrl = Uri.parse("kronor_test://"),
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
                         )
                     )
+                    val lifecycle = LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(Unit) {
+                        launch {
+                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                launch {
+                                    svm.events.collect {event ->
+                                        when (event) {
+                                            SwishEvent.PaymentFailure -> {
+                                                withContext(Dispatchers.Main) {
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+
+                                            is SwishEvent.PaymentSuccess -> {
+                                                withContext(Dispatchers.Main) {
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     GetSwishComponent(svm)
                 }
             }
