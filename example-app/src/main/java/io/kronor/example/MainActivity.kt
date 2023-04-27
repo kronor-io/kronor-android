@@ -262,14 +262,19 @@ fun PaymentMethodsScreen(
     }
 
     LaunchedEffect(viewModel.paymentMethodSelected) {
-        if (viewModel.paymentMethodSelected.value == "swish") {
-            onNavigateToSwish(viewModel.paymentSessionToken!!)
-        } else if (viewModel.paymentMethodSelected.value == "creditcard") {
-            onNavigateToCreditCard(viewModel.paymentSessionToken!!)
-        } else if (viewModel.paymentMethodSelected.value == "mobilepay") {
-            onNavigateToMobilePay(viewModel.paymentSessionToken!!)
-        } else if (viewModel.paymentMethodSelected.value == "vipps") {
-            onNavigateToVipps(viewModel.paymentSessionToken!!)
+        when (viewModel.paymentMethodSelected.value) {
+            "swish" -> {
+                onNavigateToSwish(viewModel.paymentSessionToken!!)
+            }
+            "creditcard" -> {
+                onNavigateToCreditCard(viewModel.paymentSessionToken!!)
+            }
+            "mobilepay" -> {
+                onNavigateToMobilePay(viewModel.paymentSessionToken!!)
+            }
+            "vipps" -> {
+                onNavigateToVipps(viewModel.paymentSessionToken!!)
+            }
         }
     }
 

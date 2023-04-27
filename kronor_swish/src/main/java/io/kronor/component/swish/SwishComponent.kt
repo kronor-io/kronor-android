@@ -92,7 +92,7 @@ fun GetSwishComponent(
             Log.d("GetSwishComponent", "lifecycle scope launched")
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.onSubscription()
+                    viewModel.subscription()
                 }
             }
         }

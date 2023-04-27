@@ -39,22 +39,19 @@ class SwishViewModelFactory(
 class SwishViewModel(
     private val swishConfiguration: SwishConfiguration
 ) : ViewModel() {
+    private var intentReceived: Boolean = false;
     private var _deviceFingerprint: String? = null
     val deviceFingerprint: String? = _deviceFingerprint
-    val constructedRedirectUrl  : Uri =
-        swishConfiguration.redirectUrl
-            .buildUpon()
-            .appendQueryParameter("paymentMethod", "swish")
-            .appendQueryParameter("sessionToken", swishConfiguration.sessionToken)
-            .build()
+    val constructedRedirectUrl: Uri =
+        swishConfiguration.redirectUrl.buildUpon().appendQueryParameter("paymentMethod", "swish")
+            .appendQueryParameter("sessionToken", swishConfiguration.sessionToken).build()
 
     private val requests = Requests(swishConfiguration.sessionToken, swishConfiguration.environment)
     private var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
         SwishStatechart().stateMachine
-    private var _swishState: MutableState<SwishStatechart.Companion.State> =
-        mutableStateOf(
-            SwishStatechart.Companion.State.PromptingMethod
-        )
+    private var _swishState: MutableState<SwishStatechart.Companion.State> = mutableStateOf(
+        SwishStatechart.Companion.State.PromptingMethod
+    )
     val swishState: State<SwishStatechart.Companion.State> = _swishState
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
@@ -210,7 +207,7 @@ class SwishViewModel(
         }
     }
 
-    suspend fun onSubscription() {
+    suspend fun subscription() {
         // If we have a waitToken set in our view model, get the payment request
         // associated with that waitToken and in a status that is not initializing
 
@@ -227,20 +224,6 @@ class SwishViewModel(
                     }
 
                     this.paymentRequest?.let { paymentRequest ->
-                        val selected : SelectedMethod = selectedMethod.value ?: run {
-                            when (paymentRequest.paymentFlow) {
-                                "mcom" -> SelectedMethod.QrCode
-                                "ecom" -> SelectedMethod.PhoneNumber
-                                else -> SelectedMethod.QrCode
-                            }
-                        }
-                        if (_swishState.value is SwishStatechart.Companion.State.WaitingForPaymentRequest) {
-                            _transition(SwishStatechart.Companion.Event.PaymentRequestInitialized(selected))
-                        }
-                        if (_swishState.value is SwishStatechart.Companion.State.WaitingForSubscription) {
-                            _transition(SwishStatechart.Companion.Event.PaymentRequestInitialized(selected))
-                        }
-
                         paymentRequest.status?.any {
                             it.status == PaymentStatusEnum.PAID
                         }?.let {
@@ -270,12 +253,51 @@ class SwishViewModel(
                                 _transition(SwishStatechart.Companion.Event.Retry)
                             }
                         }
+                        val selected: SelectedMethod = selectedMethod.value ?: run {
+                            when (paymentRequest.paymentFlow) {
+                                "mcom" -> SelectedMethod.QrCode
+                                "ecom" -> SelectedMethod.PhoneNumber
+                                else -> SelectedMethod.QrCode
+                            }
+                        }
+                        if (_swishState.value is SwishStatechart.Companion.State.WaitingForPaymentRequest) {
+                            _transition(
+                                SwishStatechart.Companion.Event.PaymentRequestInitialized(
+                                    selected
+                                )
+                            )
+                        }
+                        if (_swishState.value is SwishStatechart.Companion.State.WaitingForSubscription) {
+                            _transition(
+                                SwishStatechart.Companion.Event.PaymentRequestInitialized(
+                                    selected
+                                )
+                            )
+                        }
                     }
                     return@let waitToken
                 } ?: run {
                     // When no waitToken is set, we should create a new payment request
                     Log.d("SwishViewModel", "${this.waitToken}")
-                    _transition(SwishStatechart.Companion.Event.Prompt)
+                    Log.d("SwishViewModel", "intentReceived : ${this.intentReceived}")
+                    this.paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
+                        paymentRequest.status?.any {
+                            it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED
+                        } ?: false
+                    }
+                    this.paymentRequest?.let { paymentRequest ->
+                        _transition(
+                            SwishStatechart.Companion.Event.PaymentAuthorized(
+                                paymentRequest.resultingPaymentId!!
+                            )
+                        )
+                    } ?: run {
+                        if (this.intentReceived) {
+                            _transition(SwishStatechart.Companion.Event.PaymentRejected)
+                        } else {
+                            _transition(SwishStatechart.Companion.Event.Prompt)
+                        }
+                    }
                 }
             }
         } catch (e: ApolloException) {
@@ -285,12 +307,11 @@ class SwishViewModel(
             )
         }
     }
+
     suspend fun handleIntent(intent: Intent) {
         intent.data?.let { uri ->
-            if (uri.scheme == "kronorcheckout" && uri.getQueryParameter("paymentMethod") == "swish") {
-//                if (uri.queryParameterNames.contains("cancel")) {
-//                    _transition(SwishStatechart.Companion.Event.C)
-//                }
+            if (uri.getQueryParameter("paymentMethod") == "swish") {
+                this.intentReceived = true
             }
         }
     }
