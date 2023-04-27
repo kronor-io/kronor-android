@@ -75,7 +75,5 @@ dependencies {
 
     lintChecks "com.slack.lint.compose:compose-lint-checks:$compose_lint_version"
 
-    lintChecks "com.slack.lint.compose:compose-lint-checks:$compose_lint_version"
-
     implementation project(path: ':kronor_api')
 }

@@ -70,7 +70,6 @@ fun swishViewModel(swishConfiguration: SwishConfiguration): SwishViewModel {
 @Composable
 fun GetSwishComponent(
     viewModel: SwishViewModel,
-    @DrawableRes merchantLogo: Int? = null
 ) {
     val context = LocalContext.current
 
@@ -104,7 +103,7 @@ fun GetSwishComponent(
         selectedMethod = viewModel.selectedMethod,
         updateSelectedMethod = viewModel::updateSelectedMethod,
         paymentRequest = viewModel.paymentRequest,
-        merchantLogo = merchantLogo
+        merchantLogo = viewModel.merchantLogo()
     )
 }
 

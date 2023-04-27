@@ -3,6 +3,7 @@ package io.kronor.component.swish
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.annotation.DrawableRes
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -67,6 +68,10 @@ class SwishViewModel(
                 _transition(event)
             }
         }
+    }
+
+    fun merchantLogo() : Int? {
+        return swishConfiguration.merchantLogo
     }
 
     fun setDeviceFingerPrint(fingerprint: String) {
@@ -308,7 +313,7 @@ class SwishViewModel(
         }
     }
 
-    suspend fun handleIntent(intent: Intent) {
+    fun handleIntent(intent: Intent) {
         intent.data?.let { uri ->
             if (uri.getQueryParameter("paymentMethod") == "swish") {
                 this.intentReceived = true
