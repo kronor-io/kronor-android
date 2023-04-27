@@ -149,7 +149,6 @@ class WebviewGatewayViewModel(
 
             is WebviewGatewayStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {}
             is WebviewGatewayStatechart.Companion.SideEffect.CancelPaymentRequest -> {
-                Log.d("WebviewGatewayViewModel", "Reset payment flow")
                 val waitToken = requests.cancelPayment()
                 when {
                     waitToken.isFailure -> {
@@ -165,7 +164,21 @@ class WebviewGatewayViewModel(
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.ResetState -> {
+                Log.d("WebviewGatewayViewModel", "Reset payment flow")
+                val waitToken = requests.cancelPayment()
+                when {
+                    waitToken.isFailure -> {
+                        Log.d(
+                            "WebviewGatewayViewModel",
+                            "Failed to cancel payment request: ${waitToken.exceptionOrNull()}"
+                        )
+                        _transitionToError(waitToken.exceptionOrNull())
+                    }
 
+                    waitToken.isSuccess -> {
+                        this.waitToken = null
+                    }
+                }
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
