@@ -148,6 +148,12 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             }
                         }
                     }
+                    LaunchedEffect(newIntent.value?.data) {
+                        newIntent.value?.let {
+                            Log.d("SwishComponent", "${it.data}")
+                            svm.handleIntent(it)
+                        }
+                    }
                     GetSwishComponent(svm, R.drawable.kronor_logo)
                 }
             }

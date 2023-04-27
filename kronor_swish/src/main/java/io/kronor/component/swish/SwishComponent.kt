@@ -9,6 +9,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -476,8 +477,10 @@ fun SwishQrCode(qrToken: String) {
 
 @Composable
 fun SwishLogo() {
+    val swishLogo = if (isSystemInDarkTheme()) R.drawable.swish_dark else R.drawable.swish_light
+
     Image(
-        painter = painterResource(id = R.drawable.swish_light),
+        painter = painterResource(id = swishLogo),
         contentDescription = "Swish logo",
         modifier = Modifier
             .padding(end = 10.dp)

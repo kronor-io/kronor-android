@@ -1,5 +1,7 @@
 package io.kronor.component.swish
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -39,6 +41,12 @@ class SwishViewModel(
 ) : ViewModel() {
     private var _deviceFingerprint: String? = null
     val deviceFingerprint: String? = _deviceFingerprint
+    val constructedRedirectUrl  : Uri =
+        swishConfiguration.redirectUrl
+            .buildUpon()
+            .appendQueryParameter("paymentMethod", "swish")
+            .appendQueryParameter("sessionToken", swishConfiguration.sessionToken)
+            .build()
 
     private val requests = Requests(swishConfiguration.sessionToken, swishConfiguration.environment)
     private var stateMachine: StateMachine<SwishStatechart.Companion.State, SwishStatechart.Companion.Event, SwishStatechart.Companion.SideEffect> =
@@ -105,7 +113,7 @@ class SwishViewModel(
                 val waitToken = requests.makeNewPaymentRequest(
                     swishInputData = SwishComponentInput(
                         customerSwishNumber = null,
-                        returnUrl = swishConfiguration.redirectUrl.toString(),
+                        returnUrl = constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
                         appVersion = swishConfiguration.appVersion
@@ -135,7 +143,7 @@ class SwishViewModel(
                 val waitToken = requests.makeNewPaymentRequest(
                     swishInputData = SwishComponentInput(
                         customerSwishNumber = sideEffect.phoneNumber,
-                        returnUrl = swishConfiguration.redirectUrl.toString(),
+                        returnUrl = constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
                         appVersion = swishConfiguration.appVersion
@@ -277,6 +285,16 @@ class SwishViewModel(
             )
         }
     }
+    suspend fun handleIntent(intent: Intent) {
+        intent.data?.let { uri ->
+            if (uri.scheme == "kronorcheckout" && uri.getQueryParameter("paymentMethod") == "swish") {
+//                if (uri.queryParameterNames.contains("cancel")) {
+//                    _transition(SwishStatechart.Companion.Event.C)
+//                }
+            }
+        }
+    }
+
 }
 
 sealed class SwishEvent {
