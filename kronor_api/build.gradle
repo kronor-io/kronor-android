@@ -11,7 +11,7 @@ publishing {
         release(MavenPublication) {
             groupId 'io.kronor'
             artifactId 'api'
-            version '2.0'
+            version rootProject.ext['version']
 
             afterEvaluate {
                 from components.release

@@ -9,7 +9,7 @@ publishing {
         release(MavenPublication) {
             groupId 'io.kronor.component'
             artifactId 'credit_card'
-            version '2.0'
+            version rootProject.ext['version']
 
             afterEvaluate {
                 from components.release
