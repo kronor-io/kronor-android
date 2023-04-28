@@ -2,7 +2,7 @@ name: Publish to MavenCentral
 on:
   push:
     branches:
-      - mavenCi
+      - release
 
 # Cancel previous runs of this workflow on new commits
 concurrency:
