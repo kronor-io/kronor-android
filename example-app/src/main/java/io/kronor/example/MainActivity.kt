@@ -16,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -28,18 +27,19 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.kronor.api.Environment
+import io.kronor.api.PaymentEvent
 import io.kronor.component.credit_card.CreditCardComponent
 import io.kronor.component.credit_card.CreditCardConfiguration
 import io.kronor.component.credit_card.creditCardViewModel
 import io.kronor.component.mobilepay.MobilePayComponent
 import io.kronor.component.mobilepay.MobilePayConfiguration
 import io.kronor.component.mobilepay.mobilePayViewModel
-import io.kronor.component.swish.GetSwishComponent
+import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.SwishConfiguration
+import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.VippsConfiguration
 import io.kronor.component.vipps.vippsViewModel
-import io.kronor.component.webview_payment_gateway.PaymentEvent
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
 import kotlinx.coroutines.*
@@ -94,40 +94,61 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                 })
             }
             composable(
-                "swishScreen/{sessionToken}",
-                arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
+                "swishScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
+                    type = NavType.StringType
+                })
             ) {
-                val thisScope = rememberCoroutineScope()
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val swishConfiguration = SwishConfiguration(sessionToken = sessionToken,
-                        merchantLogo = R.drawable.kronor_logo,
-                        environment = Environment.Staging,
-                        appName = "kronor-android-test",
-                        appVersion = "0.1.0",
-                        locale = Locale("en_US"),
-                        redirectUrl = Uri.parse("kronor_test://"),
-                        onPaymentSuccess = {
-                            thisScope.launch {
-                                withContext(Dispatchers.Main) {
-                                    viewModel.resetPaymentState()
-                                    navController.navigate("paymentMethods")
+                    val svm = swishViewModel(
+                        SwishConfiguration(
+                            sessionToken = sessionToken,
+                            merchantLogo = R.drawable.kronor_logo,
+                            environment = Environment.Staging,
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            locale = Locale("en_US"),
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
+                        )
+                    )
+                    val lifecycle = LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(Unit) {
+                        launch {
+                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                launch {
+                                    svm.events.collect { event ->
+                                        when (event) {
+                                            PaymentEvent.PaymentFailure -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+
+                                            is PaymentEvent.PaymentSuccess -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                        },
-                        onPaymentFailure = {
-                            thisScope.launch {
-                                withContext(Dispatchers.Main) {
-                                    viewModel.resetPaymentState()
-                                    navController.navigate("paymentMethods")
-                                }
-                            }
-                        })
-                    GetSwishComponent(LocalContext.current, swishConfiguration)
+                        }
+                    }
+                    LaunchedEffect(newIntent.value?.data) {
+                        newIntent.value?.let {
+                            Log.d("SwishComponent", "${it.data}")
+                            svm.handleIntent(it)
+                        }
+                    }
+                    SwishComponent(svm)
                 }
             }
             composable(
-                "creditCardScreen/{sessionToken}",
-                arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
+                "creditCardScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
+                    type = NavType.StringType
+                })
             ) {
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val ccvm = creditCardViewModel(
@@ -171,10 +192,10 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                 }
             }
             composable(
-                "mobilePayScreen/{sessionToken}",
-                arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
+                "mobilePayScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
+                    type = NavType.StringType
+                })
             ) {
-                val thisScope = rememberCoroutineScope()
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val mpvm = mobilePayViewModel(
                         mobilePayConfiguration = MobilePayConfiguration(
@@ -222,10 +243,10 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                 }
             }
             composable(
-                "vippsScreen/{sessionToken}",
-                arguments = listOf(navArgument("sessionToken") { type = NavType.StringType })
+                "vippsScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
+                    type = NavType.StringType
+                })
             ) {
-                val thisScope = rememberCoroutineScope()
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val vvm = vippsViewModel(
                         VippsConfiguration(
@@ -237,6 +258,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
                         )
                     )
+
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
                     LaunchedEffect(Unit) {
                         launch {
@@ -276,6 +298,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
     }
 }
 
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PaymentMethodsScreen(
@@ -284,26 +307,34 @@ fun PaymentMethodsScreen(
     onNavigateToCreditCard: (String) -> Unit,
     onNavigateToMobilePay: (String) -> Unit,
     onNavigateToVipps: (String) -> Unit,
-    modifier: Modifier = Modifier.fillMaxSize()
+    modifier: Modifier = Modifier
 ) {
     var amount by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
 
     LaunchedEffect(viewModel.paymentMethodSelected) {
-        if (viewModel.paymentMethodSelected.value == "swish") {
-            onNavigateToSwish(viewModel.paymentSessionToken!!)
-        } else if (viewModel.paymentMethodSelected.value == "creditcard") {
-            onNavigateToCreditCard(viewModel.paymentSessionToken!!)
-        } else if (viewModel.paymentMethodSelected.value == "mobilepay") {
-            onNavigateToMobilePay(viewModel.paymentSessionToken!!)
-        } else if (viewModel.paymentMethodSelected.value == "vipps") {
-            onNavigateToVipps(viewModel.paymentSessionToken!!)
+        when (viewModel.paymentMethodSelected.value) {
+            "swish" -> {
+                onNavigateToSwish(viewModel.paymentSessionToken!!)
+            }
+
+            "creditcard" -> {
+                onNavigateToCreditCard(viewModel.paymentSessionToken!!)
+            }
+
+            "mobilepay" -> {
+                onNavigateToMobilePay(viewModel.paymentSessionToken!!)
+            }
+
+            "vipps" -> {
+                onNavigateToVipps(viewModel.paymentSessionToken!!)
+            }
         }
     }
 
     Surface(
-        modifier = modifier, color = MaterialTheme.colors.background
+        modifier = modifier.fillMaxSize(), color = MaterialTheme.colors.background
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

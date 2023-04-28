@@ -38,12 +38,10 @@ val swishConfiguration = SwishConfiguration(
     appName = "your_app_name",
     appVersion = "your_app_version",
     locale = Locale("en_US"),
-    redirectUrl = Uri.parse("your_app_uri"),
-    onPaymentSuccess = { /* success callback */ },
-    onPaymentFailure = { /* failure callback */ }
+    redirectUrl = Uri.parse("your_app_uri")
 )
 
-GetSwishComponent(LocalContext.current, swishConfiguration)
+SwishComponent(LocalContext.current, swishConfiguration)
 ```
 
 You can also refer to the [example-app](example-app) for reference. `Second2Fragment` files shows using the swish component in traditional android views

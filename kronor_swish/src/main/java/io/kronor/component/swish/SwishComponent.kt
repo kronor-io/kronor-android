@@ -9,17 +9,39 @@ import android.net.Uri
 import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Divider
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,6 +50,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apollographql.apollo3.exception.ApolloException
 import com.fingerprintjs.android.fingerprint.Fingerprinter
@@ -36,6 +60,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.KronorError
 import io.kronor.api.PaymentStatusSubscription
+import kotlinx.coroutines.launch
 
 @Composable
 fun swishViewModel(swishConfiguration: SwishConfiguration): SwishViewModel {
@@ -43,106 +68,140 @@ fun swishViewModel(swishConfiguration: SwishConfiguration): SwishViewModel {
 }
 
 @Composable
-fun GetSwishComponent(
-    context: Context,
-    swishConfiguration: SwishConfiguration,
-    viewModel: SwishViewModel = swishViewModel(swishConfiguration)
+fun SwishComponent(
+    viewModel: SwishViewModel,
 ) {
+    val context = LocalContext.current
 
     if (!LocalInspectionMode.current) {
         LaunchedEffect(Unit) {
             val fingerprinterFactory = FingerprinterFactory.create(context)
-            fingerprinterFactory.getFingerprint(version = Fingerprinter.Version.V_5, listener = {
-                viewModel.deviceFingerprint = it
-            })
+            fingerprinterFactory.getFingerprint(
+                version = Fingerprinter.Version.V_5, listener = viewModel::setDeviceFingerPrint
+            )
+        }
+    }
+
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+
+    LaunchedEffect(Unit) {
+        viewModel.transition(SwishStatechart.Companion.Event.SubscribeToPaymentStatus)
+        launch {
+            Log.d("GetSwishComponent", "lifecycle scope launched")
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.subscription()
+                }
+            }
         }
     }
 
     SwishScreen(
-        merchantLogo = swishConfiguration.merchantLogo, viewModel = viewModel
+        transition = viewModel::transition,
+        state = viewModel.swishState,
+        selectedMethod = viewModel.selectedMethod,
+        updateSelectedMethod = viewModel::updateSelectedMethod,
+        paymentRequest = viewModel.paymentRequest,
+        merchantLogo = viewModel.merchantLogo()
     )
 }
 
 
 @Composable
 fun SwishScreen(
-    @DrawableRes merchantLogo: Int? = null, viewModel: SwishViewModel
+    transition: (SwishStatechart.Companion.Event) -> Unit,
+    state: State<SwishStatechart.Companion.State>,
+    selectedMethod: State<SelectedMethod?>,
+    updateSelectedMethod: (SelectedMethod) -> Unit,
+    paymentRequest: PaymentStatusSubscription.PaymentRequest?,
+    @DrawableRes merchantLogo: Int? = null
 ) {
-    val state = viewModel.swishState
-    val paymentRequest: PaymentStatusSubscription.PaymentRequest? = viewModel.paymentRequest
 
     LaunchedEffect(Unit) {
-        viewModel.transition(SwishStatechart.Companion.Event.SubscribeToPaymentStatus)
+        transition(SwishStatechart.Companion.Event.SubscribeToPaymentStatus)
     }
 
     SwishWrapper(merchantLogo) {
-        when (state) {
+        when (state.value) {
             SwishStatechart.Companion.State.WaitingForSubscription -> {
                 SwishInitializing()
             }
+
             SwishStatechart.Companion.State.PromptingMethod -> {
                 SwishPromptMethods(onAppOpen = {
-                    viewModel.selectedMethod = SelectedMethod.SwishApp
-                    viewModel.transition(SwishStatechart.Companion.Event.UseSwishApp)
+                    updateSelectedMethod(SelectedMethod.SwishApp)
+                    transition(SwishStatechart.Companion.Event.UseSwishApp)
                 }, onQrCode = {
-                    viewModel.selectedMethod = SelectedMethod.QrCode
-                    viewModel.transition(SwishStatechart.Companion.Event.UseQR)
+                    updateSelectedMethod(SelectedMethod.QrCode)
+                    transition(SwishStatechart.Companion.Event.UseQR)
                 }, onPhoneNumber = {
-                    viewModel.selectedMethod = SelectedMethod.PhoneNumber
-                    viewModel.transition(SwishStatechart.Companion.Event.UsePhoneNumber)
+                    updateSelectedMethod(SelectedMethod.PhoneNumber)
+                    transition(SwishStatechart.Companion.Event.UsePhoneNumber)
                 })
             }
+
             SwishStatechart.Companion.State.InsertingPhoneNumber -> {
                 SwishPromptPhoneNumber(onPayNow = { phoneNumber ->
-                    viewModel.transition(
+                    transition(
                         SwishStatechart.Companion.Event.PhoneNumberInserted(
                             phoneNumber
                         )
                     )
                 })
             }
+
             is SwishStatechart.Companion.State.CreatingPaymentRequest -> SwishCreatingPaymentRequest()
             is SwishStatechart.Companion.State.WaitingForPaymentRequest -> SwishCreatingPaymentRequest()
             is SwishStatechart.Companion.State.PaymentRequestInitialized -> {
-                when (state.selected) {
+                when (selectedMethod.value) {
                     SelectedMethod.QrCode -> {
                         val qrToken = paymentRequest?.transactionSwishDetails?.first()?.qrCode
                         SwishPaymentWithQrCode(qrToken, onCancelPayment = {
-                            viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
+                            transition(SwishStatechart.Companion.Event.CancelFlow)
                         })
                     }
+
                     SelectedMethod.SwishApp -> {
                         val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
                         OpenSwishApp(context = LocalContext.current,
                             returnUrl = returnUrl,
                             onAppOpened = {
-                                viewModel.transition(SwishStatechart.Companion.Event.SwishAppOpened)
+                                transition(SwishStatechart.Companion.Event.SwishAppOpened)
                             })
                     }
+
                     SelectedMethod.PhoneNumber -> {
                         SwishWaitingForPayment(onCancelPayment = {
-                            viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
+                            transition(SwishStatechart.Companion.Event.CancelFlow)
                         })
                     }
+
+                    else -> {}
                 }
             }
+
             is SwishStatechart.Companion.State.PaymentCompleted -> {
                 SwishPaymentCompleted()
             }
+
             SwishStatechart.Companion.State.PaymentRejected -> {
-                SwishPaymentRejected(onPaymentRetry = { viewModel.transition(SwishStatechart.Companion.Event.Retry) },
-                    onGoBack = { viewModel.transition(SwishStatechart.Companion.Event.CancelFlow) })
+                SwishPaymentRejected(onPaymentRetry = { transition(SwishStatechart.Companion.Event.Retry) },
+                    onGoBack = { transition(SwishStatechart.Companion.Event.CancelFlow) })
             }
+
             is SwishStatechart.Companion.State.Errored -> {
-                SwishPaymentErrored(state.error, onPaymentRetry = {
-                    viewModel.transition(SwishStatechart.Companion.Event.Retry)
-                }, onGoBack = {
-                    viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
-                })
+                SwishPaymentErrored(
+                    // this used to be `state.error`. the below line is wrong
+                    error = KronorError.NetworkError(ApolloException()), onPaymentRetry = {
+                        transition(SwishStatechart.Companion.Event.Retry)
+                    }, onGoBack = {
+                        transition(SwishStatechart.Companion.Event.CancelFlow)
+                    })
             }
+
             SwishStatechart.Companion.State.WaitingForPayment -> {
                 SwishWaitingForPayment(onCancelPayment = {
-                    viewModel.transition(SwishStatechart.Companion.Event.CancelFlow)
+                    transition(SwishStatechart.Companion.Event.CancelFlow)
                 })
             }
         }
@@ -260,10 +319,10 @@ fun SwishPaymentErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack
         when (error) {
             is KronorError.NetworkError -> {
                 Text(
-                    stringResource(R.string.network_error),
-                    textAlign = TextAlign.Center
+                    stringResource(R.string.network_error), textAlign = TextAlign.Center
                 )
             }
+
             is KronorError.GraphQlError -> {
                 Text(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
@@ -413,8 +472,10 @@ fun SwishQrCode(qrToken: String) {
 
 @Composable
 fun SwishLogo() {
+    val swishLogo = if (isSystemInDarkTheme()) R.drawable.swish_dark else R.drawable.swish_light
+
     Image(
-        painter = painterResource(id = R.drawable.swish_light),
+        painter = painterResource(id = swishLogo),
         contentDescription = "Swish logo",
         modifier = Modifier
             .padding(end = 10.dp)

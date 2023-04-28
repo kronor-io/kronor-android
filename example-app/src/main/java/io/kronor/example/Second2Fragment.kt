@@ -1,8 +1,6 @@
 package io.kronor.example
 
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -11,16 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.setFragmentResultListener
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
-import io.kronor.api.Environment
-import io.kronor.component.swish.GetSwishComponent
-import io.kronor.component.swish.SwishConfiguration
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.util.*
 
 /**
  * A simple [Fragment] subclass as the second destination in the navigation.
@@ -39,33 +28,19 @@ class Second2Fragment : Fragment() {
             sessionToken = bundle.getString("sessionToken")
         }
         return ComposeView(requireContext()).apply {
-            setContent {
-                if (sessionToken != null) {
-                    val swishConfiguration = SwishConfiguration(sessionToken = sessionToken!!,
-                        merchantLogo = R.drawable.kronor_logo,
-                        environment = Environment.Staging,
-                        appName = "kronor-android-test",
-                        appVersion = "0.1.0",
-                        locale = Locale("en_US"),
-                        redirectUrl = Uri.parse("kronor_test://"),
-                        onPaymentSuccess = {
-                            Log.d("Second2Fragment", "Payment id: $it")
-                            lifecycleScope.launchWhenResumed {
-                                withContext(Dispatchers.Main) {
-                                    findNavController().navigate(R.id.action_Second2Fragment_to_First2Fragment)
-                                }
-                            }
-                        },
-                        onPaymentFailure = {
-                            lifecycleScope.launchWhenResumed {
-                                withContext(Dispatchers.Main) {
-                                    findNavController().navigate(R.id.action_Second2Fragment_to_First2Fragment)
-                                }
-                            }
-                        })
-                    GetSwishComponent(LocalContext.current, swishConfiguration)
-                }
-            }
+//            setContent {
+//                if (sessionToken != null) {
+//                    val swishConfiguration = SwishConfiguration(sessionToken = sessionToken!!,
+//                        merchantLogo = R.drawable.kronor_logo,
+//                        environment = Environment.Staging,
+//                        appName = "kronor-android-test",
+//                        appVersion = "0.1.0",
+//                        locale = Locale("en_US"),
+//                        redirectUrl = Uri.parse("kronor_test://"),
+//                        )
+//                    GetSwishComponent(LocalContext.current, swishConfiguration)
+//                }
+//            }
 
         }
     }
