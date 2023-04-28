@@ -91,7 +91,7 @@ fun SwishComponent(
     LaunchedEffect(Unit) {
         viewModel.transition(SwishStatechart.Companion.Event.SubscribeToPaymentStatus)
         launch {
-            Log.d("GetSwishComponent", "lifecycle scope launched")
+            Log.d("SwishComponent", "lifecycle scope launched")
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.subscription()
@@ -196,8 +196,7 @@ private fun SwishScreen(
 
             is SwishStatechart.Companion.State.Errored -> {
                 SwishPaymentErrored(
-                    // this used to be `state.error`. the below line is wrong
-                    error = KronorError.NetworkError(ApolloException()), onPaymentRetry = {
+                    error = (state.value as SwishStatechart.Companion.State.Errored).error, onPaymentRetry = {
                         transition(SwishStatechart.Companion.Event.Retry)
                     }, onGoBack = {
                         transition(SwishStatechart.Companion.Event.CancelFlow)

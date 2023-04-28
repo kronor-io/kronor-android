@@ -2,28 +2,47 @@ plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'maven-publish'
+    id 'signing'
 }
 publishing {
     publications {
         release(MavenPublication) {
-            groupId 'io.kronor.component.vipps'
-            artifactId 'mobilepay'
-            version '1.0'
+            groupId 'io.kronor.component'
+            artifactId 'vipps'
+            version '2.0'
 
             afterEvaluate {
                 from components.release
             }
 
             pom {
-                description = 'Kronor Vipps Component for Kronor API.'
+                name = 'swish'
+                description = 'Kronor Vipps Component for Kronor API'
+                url = 'https://github.com/kronor-io/kronor-android'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://github.com/kronor-io/kronor-android/blob/main/LICENSE'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'iAmMrinal0'
+                        name = 'Mrinal Purohit'
+                        email = 'mrinal@kronor.io'
+                    }
+                    developer {
+                        id = 'pranaysashank'
+                        name = 'Pranay Sashank'
+                        email = 'pranay.sashank@kronor.io'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:github.com/kronor-io/kronor-android.git'
+                    developerConnection = 'scm:git:ssh://github.com/kronor-io/kronor-android.git'
+                    url = 'https://github.com/kronor-io/kronor-android/tree/main'
+                }
             }
-        }
-    }
-
-    repositories {
-        maven {
-            name = "myrepo"
-            url = "${project.buildDir}/repo"
         }
     }
 }
@@ -40,9 +59,6 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
-
-        versionCode 1
-        versionName "1.0"
 
         aarMetadata {
             minCompileSdk = 21
@@ -103,3 +119,5 @@ dependencies {
     implementation project(path: ':kronor_api')
     implementation project(path: ':kronor_webview_payment_gateway')
 }
+
+apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
