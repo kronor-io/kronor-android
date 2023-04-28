@@ -1,8 +1,6 @@
 package io.kronor.example
 
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -11,16 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.setFragmentResultListener
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
-import io.kronor.api.Environment
-import io.kronor.component.swish.GetSwishComponent
-import io.kronor.component.swish.SwishConfiguration
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.util.*
 
 /**
  * A simple [Fragment] subclass as the second destination in the navigation.

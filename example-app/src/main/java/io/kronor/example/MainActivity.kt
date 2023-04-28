@@ -33,7 +33,7 @@ import io.kronor.component.credit_card.creditCardViewModel
 import io.kronor.component.mobilepay.MobilePayComponent
 import io.kronor.component.mobilepay.MobilePayConfiguration
 import io.kronor.component.mobilepay.mobilePayViewModel
-import io.kronor.component.swish.GetSwishComponent
+import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.SwishConfiguration
 import io.kronor.component.swish.SwishEvent
 import io.kronor.component.swish.swishViewModel
@@ -143,7 +143,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             svm.handleIntent(it)
                         }
                     }
-                    GetSwishComponent(svm)
+                    SwishComponent(svm)
                 }
             }
             composable(

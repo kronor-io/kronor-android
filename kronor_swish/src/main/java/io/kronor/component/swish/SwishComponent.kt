@@ -68,7 +68,7 @@ fun swishViewModel(swishConfiguration: SwishConfiguration): SwishViewModel {
 }
 
 @Composable
-fun GetSwishComponent(
+fun SwishComponent(
     viewModel: SwishViewModel,
 ) {
     val context = LocalContext.current
@@ -77,8 +77,7 @@ fun GetSwishComponent(
         LaunchedEffect(Unit) {
             val fingerprinterFactory = FingerprinterFactory.create(context)
             fingerprinterFactory.getFingerprint(
-                version = Fingerprinter.Version.V_5,
-                listener = viewModel::setDeviceFingerPrint
+                version = Fingerprinter.Version.V_5, listener = viewModel::setDeviceFingerPrint
             )
         }
     }
@@ -164,8 +163,7 @@ fun SwishScreen(
 
                     SelectedMethod.SwishApp -> {
                         val returnUrl = paymentRequest?.transactionSwishDetails?.first()?.returnUrl
-                        OpenSwishApp(
-                            context = LocalContext.current,
+                        OpenSwishApp(context = LocalContext.current,
                             returnUrl = returnUrl,
                             onAppOpened = {
                                 transition(SwishStatechart.Companion.Event.SwishAppOpened)
@@ -194,11 +192,9 @@ fun SwishScreen(
             is SwishStatechart.Companion.State.Errored -> {
                 SwishPaymentErrored(
                     // this used to be `state.error`. the below line is wrong
-                    error = KronorError.NetworkError(ApolloException()),
-                    onPaymentRetry = {
+                    error = KronorError.NetworkError(ApolloException()), onPaymentRetry = {
                         transition(SwishStatechart.Companion.Event.Retry)
-                    },
-                    onGoBack = {
+                    }, onGoBack = {
                         transition(SwishStatechart.Companion.Event.CancelFlow)
                     })
             }
@@ -563,7 +559,8 @@ fun PreviewSwishPaymentRejected() {
 @Composable
 fun PreviewSwishPaymentErrored() {
     SwishWrapper {
-        SwishPaymentErrored(error = KronorError.NetworkError(ApolloException()),
+        SwishPaymentErrored(
+            error = KronorError.NetworkError(ApolloException()),
             onPaymentRetry = { }) {}
     }
 }
