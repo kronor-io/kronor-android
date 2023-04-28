@@ -10,7 +10,7 @@ publishing {
         release(MavenPublication) {
             groupId 'io.kronor.component'
             artifactId 'swish'
-            version '2.0'
+            version rootProject.ext['version']
 
             afterEvaluate {
                 from components.release
