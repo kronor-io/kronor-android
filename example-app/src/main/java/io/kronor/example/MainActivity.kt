@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.kronor.api.Environment
+import io.kronor.api.PaymentEvent
 import io.kronor.component.credit_card.CreditCardComponent
 import io.kronor.component.credit_card.CreditCardConfiguration
 import io.kronor.component.credit_card.creditCardViewModel
@@ -35,12 +36,10 @@ import io.kronor.component.mobilepay.MobilePayConfiguration
 import io.kronor.component.mobilepay.mobilePayViewModel
 import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.SwishConfiguration
-import io.kronor.component.swish.SwishEvent
 import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.VippsConfiguration
 import io.kronor.component.vipps.vippsViewModel
-import io.kronor.component.webview_payment_gateway.PaymentEvent
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
 import kotlinx.coroutines.*
@@ -118,14 +117,14 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 launch {
                                     svm.events.collect { event ->
                                         when (event) {
-                                            SwishEvent.PaymentFailure -> {
+                                            PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
                                                     viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
                                                 }
                                             }
 
-                                            is SwishEvent.PaymentSuccess -> {
+                                            is PaymentEvent.PaymentSuccess -> {
                                                 withContext(Dispatchers.Main) {
                                                     viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")

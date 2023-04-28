@@ -3,7 +3,6 @@ package io.kronor.component.swish
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import androidx.annotation.DrawableRes
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -16,6 +15,7 @@ import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.ApiError
 import io.kronor.api.KronorError
+import io.kronor.api.PaymentEvent
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
 import io.kronor.api.type.PaymentStatusEnum
@@ -23,10 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-
-private val DelayBeforeCallback: Duration = 2.seconds
 
 class SwishViewModelFactory(
     private val swishConfiguration: SwishConfiguration
@@ -40,10 +36,9 @@ class SwishViewModelFactory(
 class SwishViewModel(
     private val swishConfiguration: SwishConfiguration
 ) : ViewModel() {
-    private var intentReceived: Boolean = false;
-    private var _deviceFingerprint: String? = null
-    val deviceFingerprint: String? = _deviceFingerprint
-    val constructedRedirectUrl: Uri =
+    private var intentReceived: Boolean = false
+    private var deviceFingerprint: String? = null
+    private val constructedRedirectUrl: Uri =
         swishConfiguration.redirectUrl.buildUpon().appendQueryParameter("paymentMethod", "swish")
             .appendQueryParameter("sessionToken", swishConfiguration.sessionToken).build()
 
@@ -59,8 +54,8 @@ class SwishViewModel(
     private var _selectedMethod: MutableState<SelectedMethod?> = mutableStateOf(null)
     val selectedMethod: State<SelectedMethod?> = _selectedMethod
 
-    private val _events = MutableSharedFlow<SwishEvent>()
-    val events: Flow<SwishEvent> = _events
+    private val _events = MutableSharedFlow<PaymentEvent>()
+    val events: Flow<PaymentEvent> = _events
 
     fun transition(event: SwishStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -70,12 +65,12 @@ class SwishViewModel(
         }
     }
 
-    fun merchantLogo() : Int? {
+    fun merchantLogo(): Int? {
         return swishConfiguration.merchantLogo
     }
 
     fun setDeviceFingerPrint(fingerprint: String) {
-        this._deviceFingerprint = fingerprint
+        this.deviceFingerprint = fingerprint
     }
 
     fun updateSelectedMethod(selected: SelectedMethod) {
@@ -199,12 +194,12 @@ class SwishViewModel(
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
                 Log.d("SwishViewModel", "Emitting success")
-                _events.emit(SwishEvent.PaymentSuccess(sideEffect.paymentId))
+                _events.emit(PaymentEvent.PaymentSuccess(sideEffect.paymentId))
             }
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 Log.d("SwishViewModel", "Emitting failure")
-                _events.emit(SwishEvent.PaymentFailure)
+                _events.emit(PaymentEvent.PaymentFailure)
             }
 
             SwishStatechart.Companion.SideEffect.OpenSwishApp -> {
@@ -321,9 +316,4 @@ class SwishViewModel(
         }
     }
 
-}
-
-sealed class SwishEvent {
-    data class PaymentSuccess(val paymentId: String) : SwishEvent()
-    object PaymentFailure : SwishEvent()
 }

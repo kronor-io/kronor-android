@@ -38,19 +38,18 @@ class WebviewGatewayViewModelFactory(
 class WebviewGatewayViewModel(
     val webviewGatewayConfiguration: WebviewGatewayConfiguration
 ) : ViewModel() {
-    private var intentReceived: Boolean = false;
-    private var _deviceFingerprint: String? = null
-    val deviceFingerprint: String? = _deviceFingerprint
-    val constructedRedirectUrl  : Uri =
+    private var intentReceived: Boolean = false
+    private var deviceFingerprint: String? = null
+    private val constructedRedirectUrl  : Uri =
         webviewGatewayConfiguration.redirectUrl
             .buildUpon()
             .appendQueryParameter("paymentMethod", webviewGatewayConfiguration.paymentMethod.toRedirectMethod())
             .appendQueryParameter("sessionToken", webviewGatewayConfiguration.sessionToken)
             .build()
 
-    val requests =
+    private val requests =
         Requests(webviewGatewayConfiguration.sessionToken, webviewGatewayConfiguration.environment)
-    val stateMachine: StateMachine<WebviewGatewayStatechart.Companion.State, WebviewGatewayStatechart.Companion.Event, WebviewGatewayStatechart.Companion.SideEffect> =
+    private val stateMachine: StateMachine<WebviewGatewayStatechart.Companion.State, WebviewGatewayStatechart.Companion.Event, WebviewGatewayStatechart.Companion.SideEffect> =
         WebviewGatewayStatechart().stateMachine
     private var _webviewGatewayState: MutableState<WebviewGatewayStatechart.Companion.State> =
         mutableStateOf(
@@ -79,7 +78,7 @@ class WebviewGatewayViewModel(
     }
 
     fun setDeviceFingerPrint(fingerprint: String) {
-        this._deviceFingerprint = fingerprint
+        this.deviceFingerprint = fingerprint
     }
 
     private suspend fun _transition(event: WebviewGatewayStatechart.Companion.Event) {
@@ -305,11 +304,6 @@ class WebviewGatewayViewModel(
             }
         }
     }
-}
-
-sealed class PaymentEvent {
-    data class PaymentSuccess(val paymentId: String) : PaymentEvent()
-    object PaymentFailure : PaymentEvent()
 }
 
 fun constructPaymentGatewayUrl(
