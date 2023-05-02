@@ -48,16 +48,16 @@ class SwishViewModel(
     private var _swishState: MutableState<SwishStatechart.Companion.State> = mutableStateOf(
         SwishStatechart.Companion.State.PromptingMethod
     )
-    val swishState: State<SwishStatechart.Companion.State> = _swishState
+    internal val swishState: State<SwishStatechart.Companion.State> = _swishState
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
     private var _selectedMethod: MutableState<SelectedMethod?> = mutableStateOf(null)
-    val selectedMethod: State<SelectedMethod?> = _selectedMethod
+    internal val selectedMethod: State<SelectedMethod?> = _selectedMethod
 
     private val _events = MutableSharedFlow<PaymentEvent>()
     val events: Flow<PaymentEvent> = _events
 
-    fun transition(event: SwishStatechart.Companion.Event) {
+    internal fun transition(event: SwishStatechart.Companion.Event) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 _transition(event)
@@ -73,7 +73,7 @@ class SwishViewModel(
         this.deviceFingerprint = fingerprint
     }
 
-    fun updateSelectedMethod(selected: SelectedMethod) {
+    internal fun updateSelectedMethod(selected: SelectedMethod) {
         _selectedMethod.value = selected
     }
 
@@ -207,7 +207,7 @@ class SwishViewModel(
         }
     }
 
-    suspend fun subscription() {
+    internal suspend fun subscription() {
         // If we have a waitToken set in our view model, get the payment request
         // associated with that waitToken and in a status that is not initializing
 

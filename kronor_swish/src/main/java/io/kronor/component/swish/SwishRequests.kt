@@ -7,7 +7,7 @@ import io.kronor.api.type.AddSessionDeviceInformationInput
 import io.kronor.api.type.SwishPaymentInput
 import java.util.UUID
 
-data class SwishComponentInput(
+internal data class SwishComponentInput(
     val customerSwishNumber: String? = null,
     val returnUrl: String,
     val deviceFingerprint: String,
@@ -15,7 +15,7 @@ data class SwishComponentInput(
     val appVersion: String,
 )
 
-suspend fun Requests.makeNewPaymentRequest(
+internal suspend fun Requests.makeNewPaymentRequest(
     swishInputData: SwishComponentInput
 ): Result<String> {
     val androidVersion = java.lang.Double.parseDouble(

@@ -112,7 +112,7 @@ fun SwishComponent(
 
 
 @Composable
-fun SwishScreen(
+private fun SwishScreen(
     transition: (SwishStatechart.Companion.Event) -> Unit,
     state: State<SwishStatechart.Companion.State>,
     selectedMethod: State<SelectedMethod?>,
@@ -214,7 +214,7 @@ fun SwishScreen(
 }
 
 @Composable
-fun SwishInitializing() {
+private fun SwishInitializing() {
     Column(
         modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -225,7 +225,7 @@ fun SwishInitializing() {
 }
 
 @Composable
-fun SwishWrapper(@DrawableRes merchantLogo: Int? = null, content: @Composable () -> Unit) {
+private fun SwishWrapper(@DrawableRes merchantLogo: Int? = null, content: @Composable () -> Unit) {
     // A surface container using the 'background' color from the theme
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background,
@@ -257,7 +257,7 @@ fun SwishWrapper(@DrawableRes merchantLogo: Int? = null, content: @Composable ()
 }
 
 @Composable
-fun SwishPromptPhoneNumber(onPayNow: (String) -> Unit) {
+private fun SwishPromptPhoneNumber(onPayNow: (String) -> Unit) {
     var phoneNumber by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
@@ -293,7 +293,7 @@ fun SwishPromptPhoneNumber(onPayNow: (String) -> Unit) {
 }
 
 @Composable
-fun SwishPaymentCompleted() {
+private fun SwishPaymentCompleted() {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -304,7 +304,7 @@ fun SwishPaymentCompleted() {
 }
 
 @Composable
-fun SwishPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+private fun SwishPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
@@ -327,7 +327,7 @@ fun SwishPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
 }
 
 @Composable
-fun SwishPaymentErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+private fun SwishPaymentErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
@@ -362,7 +362,7 @@ fun SwishPaymentErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack
 }
 
 @Composable
-fun SwishPaymentWithQrCode(qrToken: String?, onCancelPayment: () -> Unit) {
+private fun SwishPaymentWithQrCode(qrToken: String?, onCancelPayment: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -383,7 +383,7 @@ fun SwishPaymentWithQrCode(qrToken: String?, onCancelPayment: () -> Unit) {
 }
 
 @Composable
-fun SwishWaitingForPayment(onCancelPayment: () -> Unit) {
+private fun SwishWaitingForPayment(onCancelPayment: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceEvenly,
@@ -400,7 +400,7 @@ fun SwishWaitingForPayment(onCancelPayment: () -> Unit) {
 }
 
 @Composable
-fun SwishCreatingPaymentRequest() {
+private fun SwishCreatingPaymentRequest() {
     Column(
         modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -410,7 +410,7 @@ fun SwishCreatingPaymentRequest() {
     }
 }
 
-fun swishAppExists(context: Context): Boolean {
+private fun swishAppExists(context: Context): Boolean {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("swish://"))
     val appIntentMatch = context.packageManager.queryIntentActivities(
         intent, MATCH_DEFAULT_ONLY
@@ -421,7 +421,7 @@ fun swishAppExists(context: Context): Boolean {
 }
 
 @Composable
-fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
+private fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
     val doesSwishAppExist: Boolean = if (LocalInspectionMode.current) {
         true
     } else {
@@ -456,7 +456,7 @@ fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumbe
 }
 
 @Composable
-fun OpenSwishApp(context: Context, returnUrl: String?, onAppOpened: () -> Unit) {
+private fun OpenSwishApp(context: Context, returnUrl: String?, onAppOpened: () -> Unit) {
     val swishUrl = Uri.parse(returnUrl)
     val intent = Intent(Intent.ACTION_VIEW, swishUrl)
     val appIntentMatch = context.packageManager.queryIntentActivities(intent, MATCH_DEFAULT_ONLY)
@@ -475,7 +475,7 @@ fun OpenSwishApp(context: Context, returnUrl: String?, onAppOpened: () -> Unit) 
 }
 
 @Composable
-fun SwishQrCode(qrToken: String) {
+private fun SwishQrCode(qrToken: String) {
     val size = 512
     val qrBits = QRCodeWriter().encode(qrToken, BarcodeFormat.QR_CODE, size, size)
     val qrBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565).also {
@@ -489,7 +489,7 @@ fun SwishQrCode(qrToken: String) {
 }
 
 @Composable
-fun SwishLogo() {
+private fun SwishLogo() {
     val swishLogo = if (isSystemInDarkTheme()) R.drawable.swish_dark else R.drawable.swish_light
 
     Image(
@@ -504,7 +504,7 @@ fun SwishLogo() {
 }
 
 @Composable
-fun MerchantLogo(@DrawableRes merchantDrawable: Int) {
+private fun MerchantLogo(@DrawableRes merchantDrawable: Int) {
     Image(
         painter = painterResource(id = merchantDrawable),
         contentDescription = "Merchant logo",
@@ -519,7 +519,7 @@ fun MerchantLogo(@DrawableRes merchantDrawable: Int) {
 
 @Preview
 @Composable
-fun PreviewPromptMethods() {
+private fun PreviewPromptMethods() {
     SwishWrapper {
         SwishPromptMethods(onAppOpen = { }, onQrCode = { }, onPhoneNumber = { })
     }
@@ -527,7 +527,7 @@ fun PreviewPromptMethods() {
 
 @Preview
 @Composable
-fun PreviewInsertingPhoneNumber() {
+private fun PreviewInsertingPhoneNumber() {
     SwishWrapper {
         SwishPromptPhoneNumber(onPayNow = {})
     }
@@ -535,7 +535,7 @@ fun PreviewInsertingPhoneNumber() {
 
 @Preview
 @Composable
-fun PreviewCreatingPaymentRequest() {
+private fun PreviewCreatingPaymentRequest() {
     SwishWrapper {
         SwishCreatingPaymentRequest()
     }
@@ -543,7 +543,7 @@ fun PreviewCreatingPaymentRequest() {
 
 @Preview
 @Composable
-fun PreviewQrCodeScreen() {
+private fun PreviewQrCodeScreen() {
     SwishWrapper {
         SwishPaymentWithQrCode("DpXc79mMZT7CJCMiLoLYzQ6FjHV46bk6p", onCancelPayment = {})
     }
@@ -551,7 +551,7 @@ fun PreviewQrCodeScreen() {
 
 @Preview
 @Composable
-fun PreviewWaitingForPaymentScreen() {
+private fun PreviewWaitingForPaymentScreen() {
     SwishWrapper {
         SwishWaitingForPayment(onCancelPayment = {})
     }
@@ -559,7 +559,7 @@ fun PreviewWaitingForPaymentScreen() {
 
 @Preview
 @Composable
-fun PreviewSwishPaymentCompleted() {
+private fun PreviewSwishPaymentCompleted() {
     SwishWrapper {
         SwishPaymentCompleted()
     }
@@ -567,7 +567,7 @@ fun PreviewSwishPaymentCompleted() {
 
 @Preview
 @Composable
-fun PreviewSwishPaymentRejected() {
+private fun PreviewSwishPaymentRejected() {
     SwishWrapper {
         SwishPaymentRejected({}) {}
     }
@@ -575,7 +575,7 @@ fun PreviewSwishPaymentRejected() {
 
 @Preview
 @Composable
-fun PreviewSwishPaymentErrored() {
+private fun PreviewSwishPaymentErrored() {
     SwishWrapper {
         SwishPaymentErrored(
             error = KronorError.NetworkError(ApolloException()),

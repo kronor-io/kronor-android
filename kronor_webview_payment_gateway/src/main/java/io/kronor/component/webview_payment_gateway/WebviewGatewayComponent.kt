@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun WebviewGatewayComponent(
     viewModel: WebviewGatewayViewModel,
-    modifier: Modifier = Modifier.fillMaxSize()
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
@@ -71,7 +71,7 @@ fun WebviewGatewayComponent(
 }
 
 @Composable
-fun WebviewGatewayScreen(
+private fun WebviewGatewayScreen(
     transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
     state: State<WebviewGatewayStatechart.Companion.State>,
     paymentGatewayUrl: Uri,
@@ -171,7 +171,7 @@ fun WebviewGatewayScreen(
 }
 
 @Composable
-fun WebviewGatewayWrapper(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun WebviewGatewayWrapper(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
@@ -183,7 +183,7 @@ fun WebviewGatewayWrapper(modifier: Modifier = Modifier, content: @Composable ()
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun PaymentGatewayView(
+private fun PaymentGatewayView(
     gatewayUrl: String,
     paymentMethod: WebviewGatewayPaymentMethod,
     onPaymentCancel: () -> Unit,
@@ -234,7 +234,7 @@ fun PaymentGatewayView(
 }
 
 @Composable
-fun WebviewGatewayErrored(
+private fun WebviewGatewayErrored(
     error: KronorError,
     onPaymentRetry: () -> Unit,
     onGoBack: () -> Unit,
@@ -274,7 +274,7 @@ fun WebviewGatewayErrored(
 }
 
 @Composable
-fun WebviewGatewayInitializing(modifier: Modifier = Modifier) {
+private fun WebviewGatewayInitializing(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -287,7 +287,7 @@ fun WebviewGatewayInitializing(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun WebviewGatewayWaitingForPayment(modifier: Modifier = Modifier) {
+private fun WebviewGatewayWaitingForPayment(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -300,7 +300,7 @@ fun WebviewGatewayWaitingForPayment(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun WebviewGatewayPaymentCompleted(modifier: Modifier = Modifier) {
+private fun WebviewGatewayPaymentCompleted(modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -311,7 +311,7 @@ fun WebviewGatewayPaymentCompleted(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun WebviewGatewayPaymentRejected(
+private fun WebviewGatewayPaymentRejected(
     onPaymentRetry: () -> Unit, onGoBack: () -> Unit, modifier: Modifier = Modifier
 ) {
     Column(

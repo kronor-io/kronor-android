@@ -10,12 +10,7 @@ data class SwishConfiguration(
     val environment: Environment,
     val locale: Locale,
     val redirectUrl: Uri,
-    val swishFlow: SupportedSwishFlows = SupportedSwishFlows.All,
     val appName: String,
     val appVersion: String,
     @DrawableRes val merchantLogo: Int? = null
 )
-
-enum class SupportedSwishFlows {
-    SwishApp, SwishQr, PayWithSwishNumber, All
-}

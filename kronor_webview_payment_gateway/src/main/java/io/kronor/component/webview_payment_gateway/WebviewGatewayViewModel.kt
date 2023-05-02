@@ -55,7 +55,7 @@ class WebviewGatewayViewModel(
         mutableStateOf(
             WebviewGatewayStatechart.Companion.State.Initializing
         )
-    val webviewGatewayState: State<WebviewGatewayStatechart.Companion.State> = _webviewGatewayState
+    internal val webviewGatewayState: State<WebviewGatewayStatechart.Companion.State> = _webviewGatewayState
     private var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
     val paymentGatewayUrl: Uri = constructPaymentGatewayUrl(
@@ -68,7 +68,7 @@ class WebviewGatewayViewModel(
     private val _events = MutableSharedFlow<PaymentEvent>()
     val events: Flow<PaymentEvent> = _events
 
-    fun transition(event: WebviewGatewayStatechart.Companion.Event) {
+    internal fun transition(event: WebviewGatewayStatechart.Companion.Event) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 _transition(event)
@@ -207,7 +207,7 @@ class WebviewGatewayViewModel(
         }
     }
 
-    suspend fun subscription() {
+    internal suspend fun subscription() {
         // If we have a waitToken set in our view model, get the payment request
         // associated with that waitToken and in a status that is not initializing
 
@@ -306,7 +306,7 @@ class WebviewGatewayViewModel(
     }
 }
 
-fun constructPaymentGatewayUrl(
+private fun constructPaymentGatewayUrl(
     environment: Environment, sessionToken: String, paymentMethod: String, merchantReturnUrl: Uri
 ): Uri {
     val paymentGatewayHost = when (environment) {
@@ -325,7 +325,7 @@ fun constructPaymentGatewayUrl(
         .appendQueryParameter("merchantReturnUrl", Uri.encode(merchantReturnUrl.toString())).build()
 }
 
-fun toGatewayEnvName(environment: Environment): String {
+private fun toGatewayEnvName(environment: Environment): String {
     return when (environment) {
         Environment.Staging -> {
             "staging"
