@@ -3,13 +3,13 @@ package io.kronor.component.swish
 import com.tinder.StateMachine
 import io.kronor.api.KronorError
 
-enum class SelectedMethod {
+internal enum class SelectedMethod {
     SwishApp,
     QrCode,
     PhoneNumber
 }
 
-class SwishStatechart {
+internal class SwishStatechart {
     val stateMachine = StateMachine.create<State, Event, SideEffect> {
         initialState(State.WaitingForSubscription)
 

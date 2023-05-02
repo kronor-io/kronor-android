@@ -16,7 +16,7 @@ data class VippsConfiguration(
     val merchantLogo: Int? = null
 )
 
-fun VippsConfiguration.toWebviewGatewayConfiguration() : WebviewGatewayConfiguration {
+internal fun VippsConfiguration.toWebviewGatewayConfiguration() : WebviewGatewayConfiguration {
     return WebviewGatewayConfiguration(
         sessionToken = this.sessionToken,
         environment = this.environment,

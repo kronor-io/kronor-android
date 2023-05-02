@@ -16,7 +16,7 @@ data class CreditCardConfiguration(
     val merchantLogo: Int? = null
 )
 
-fun CreditCardConfiguration.toWebviewGatewayConfiguration(): WebviewGatewayConfiguration {
+internal fun CreditCardConfiguration.toWebviewGatewayConfiguration(): WebviewGatewayConfiguration {
     return WebviewGatewayConfiguration(
         sessionToken = this.sessionToken,
         environment = this.environment,

@@ -2,10 +2,15 @@ package io.kronor.component.webview_payment_gateway
 
 
 import android.os.Build
-import com.apollographql.apollo3.api.Optional
-import io.kronor.api.*
-import io.kronor.api.type.*
-import kotlinx.coroutines.flow.*
+import io.kronor.api.CreditCardPaymentMutation
+import io.kronor.api.MobilePayPaymentMutation
+import io.kronor.api.Requests
+import io.kronor.api.VippsPaymentMutation
+import io.kronor.api.executeMapKronorError
+import io.kronor.api.type.AddSessionDeviceInformationInput
+import io.kronor.api.type.CreditCardPaymentInput
+import io.kronor.api.type.MobilePayPaymentInput
+import io.kronor.api.type.VippsPaymentInput
 import java.util.UUID
 
 data class WebviewGatewayComponentInput(
@@ -16,7 +21,7 @@ data class WebviewGatewayComponentInput(
     val paymentMethod: WebviewGatewayPaymentMethod
 )
 
-suspend fun Requests.makeNewPaymentRequest(
+internal suspend fun Requests.makeNewPaymentRequest(
     webviewGatewayInputData: WebviewGatewayComponentInput
 ): Result<String> {
     val androidVersion = java.lang.Double.parseDouble(
@@ -40,6 +45,7 @@ suspend fun Requests.makeNewPaymentRequest(
                 )
             ).executeMapKronorError().map { it.newCreditCardPayment.waitToken }
         }
+
         WebviewGatewayPaymentMethod.MobilePay -> {
             kronorApolloClient.mutation(
                 MobilePayPaymentMutation(
@@ -57,6 +63,7 @@ suspend fun Requests.makeNewPaymentRequest(
                 )
             ).executeMapKronorError().map { it.newMobilePayPayment.waitToken }
         }
+
         WebviewGatewayPaymentMethod.Vipps -> {
             kronorApolloClient.mutation(
                 VippsPaymentMutation(

@@ -3,7 +3,7 @@ package io.kronor.component.webview_payment_gateway
 import com.tinder.StateMachine
 import io.kronor.api.KronorError
 
-class WebviewGatewayStatechart {
+internal class WebviewGatewayStatechart {
     val stateMachine = StateMachine.create<State, Event, SideEffect> {
         initialState(State.WaitingForSubscription)
 

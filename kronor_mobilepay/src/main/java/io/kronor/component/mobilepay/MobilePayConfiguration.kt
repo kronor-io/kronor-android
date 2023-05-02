@@ -15,7 +15,7 @@ data class MobilePayConfiguration(
     @DrawableRes val merchantLogo: Int? = null
 )
 
-fun MobilePayConfiguration.toWebviewGatewayConfiguration(): WebviewGatewayConfiguration {
+internal fun MobilePayConfiguration.toWebviewGatewayConfiguration(): WebviewGatewayConfiguration {
     return WebviewGatewayConfiguration(
         sessionToken = this.sessionToken,
         environment = this.environment,
