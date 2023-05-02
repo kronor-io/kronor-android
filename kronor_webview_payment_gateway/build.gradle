@@ -9,6 +9,7 @@ publishing {
     publications {
         release(MavenPublication) {
             groupId 'io.kronor.component'
+            artifactId 'webview_payment_gateway'
             version rootProject.ext['version']
 
             afterEvaluate {

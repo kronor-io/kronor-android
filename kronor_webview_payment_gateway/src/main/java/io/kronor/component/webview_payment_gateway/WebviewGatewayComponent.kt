@@ -127,7 +127,7 @@ private fun WebviewGatewayScreen(
 
             is WebviewGatewayStatechart.Companion.State.Errored -> {
                 WebviewGatewayWrapper {
-                    WebviewGatewayErrored(error = (state as WebviewGatewayStatechart.Companion.State.Errored).error,
+                    WebviewGatewayErrored(error = (state.value as WebviewGatewayStatechart.Companion.State.Errored).error,
                         onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
                         onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) }
                     , modifier = Modifier.fillMaxSize())
@@ -212,9 +212,9 @@ private fun PaymentGatewayView(
                         }
                         if (request.url.scheme == "http" || request.url.scheme == "https") {
                             if (paymentMethod == WebviewGatewayPaymentMethod.CreditCard) {
-                                return true;
+                                return true
                             }
-                            return false;
+                            return false
                         }
                         startActivity(
                             context, Intent(
