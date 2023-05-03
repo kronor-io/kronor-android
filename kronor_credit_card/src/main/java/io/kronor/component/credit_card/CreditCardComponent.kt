@@ -6,13 +6,14 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.kronor.api.PaymentConfiguration
 import io.kronor.component.webview_payment_gateway.*
 
 typealias CreditCardViewModel = WebviewGatewayViewModel
 
 @Composable
-fun creditCardViewModel(creditCardConfiguration: CreditCardConfiguration): CreditCardViewModel {
-    return viewModel(factory = WebviewGatewayViewModelFactory(creditCardConfiguration.toWebviewGatewayConfiguration()))
+fun creditCardViewModel(creditCardConfiguration: PaymentConfiguration): CreditCardViewModel {
+    return viewModel(factory = WebviewGatewayViewModelFactory(creditCardConfiguration))
 }
 
 @SuppressLint("ComposeViewModelForwarding")

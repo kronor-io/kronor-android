@@ -15,6 +15,7 @@ import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.ApiError
 import io.kronor.api.KronorError
+import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentEvent
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
@@ -25,7 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class SwishViewModelFactory(
-    private val swishConfiguration: SwishConfiguration
+    private val swishConfiguration: PaymentConfiguration
 ) : ViewModelProvider.NewInstanceFactory() {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -34,7 +35,7 @@ class SwishViewModelFactory(
 }
 
 class SwishViewModel(
-    private val swishConfiguration: SwishConfiguration
+    private val swishConfiguration: PaymentConfiguration
 ) : ViewModel() {
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null

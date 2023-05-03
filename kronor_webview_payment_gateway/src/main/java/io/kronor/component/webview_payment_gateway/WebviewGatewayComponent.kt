@@ -35,6 +35,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.Event.*
 import androidx.lifecycle.repeatOnLifecycle
 import io.kronor.api.KronorError
+import io.kronor.api.PaymentMethod
 import kotlinx.coroutines.launch
 import java.lang.Exception
 import java.security.MessageDigest
@@ -80,7 +81,7 @@ private fun WebviewGatewayScreen(
     transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
     state: State<WebviewGatewayStatechart.Companion.State>,
     paymentGatewayUrl: Uri,
-    paymentMethod: WebviewGatewayPaymentMethod,
+    paymentMethod: PaymentMethod,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -190,7 +191,7 @@ private fun WebviewGatewayWrapper(modifier: Modifier = Modifier, content: @Compo
 @Composable
 private fun PaymentGatewayView(
     gatewayUrl: String,
-    paymentMethod: WebviewGatewayPaymentMethod,
+    paymentMethod: PaymentMethod,
     onPaymentCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -216,7 +217,7 @@ private fun PaymentGatewayView(
                             return false
                         }
                         if (request.url.scheme == "http" || request.url.scheme == "https") {
-                            if (paymentMethod == WebviewGatewayPaymentMethod.CreditCard) {
+                            if (paymentMethod == PaymentMethod.CreditCard) {
                                 return true
                             }
                             return false

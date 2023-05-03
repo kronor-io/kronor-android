@@ -71,6 +71,7 @@ import com.apollographql.apollo3.exception.ApolloException
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.KronorError
+import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentStatusSubscription
 import kotlinx.coroutines.launch
 import java.lang.Exception
@@ -78,7 +79,7 @@ import java.security.MessageDigest
 import java.util.UUID
 
 @Composable
-fun swishViewModel(swishConfiguration: SwishConfiguration): SwishViewModel {
+fun swishViewModel(swishConfiguration: PaymentConfiguration): SwishViewModel {
     return viewModel(factory = SwishViewModelFactory(swishConfiguration))
 }
 

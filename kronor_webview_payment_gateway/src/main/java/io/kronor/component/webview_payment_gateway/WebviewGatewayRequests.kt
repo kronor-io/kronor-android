@@ -4,6 +4,7 @@ package io.kronor.component.webview_payment_gateway
 import android.os.Build
 import io.kronor.api.CreditCardPaymentMutation
 import io.kronor.api.MobilePayPaymentMutation
+import io.kronor.api.PaymentMethod
 import io.kronor.api.Requests
 import io.kronor.api.VippsPaymentMutation
 import io.kronor.api.executeMapKronorError
@@ -18,7 +19,7 @@ data class WebviewGatewayComponentInput(
     val deviceFingerprint: String,
     val appName: String,
     val appVersion: String,
-    val paymentMethod: WebviewGatewayPaymentMethod
+    val paymentMethod: PaymentMethod
 )
 
 internal suspend fun Requests.makeNewPaymentRequest(
@@ -28,7 +29,7 @@ internal suspend fun Requests.makeNewPaymentRequest(
         java.lang.String(Build.VERSION.RELEASE).replaceAll("(\\d+[.]\\d+)(.*)", "$1")
     )
     return when (webviewGatewayInputData.paymentMethod) {
-        WebviewGatewayPaymentMethod.CreditCard -> {
+        PaymentMethod.CreditCard -> {
             kronorApolloClient.mutation(
                 CreditCardPaymentMutation(
                     payment = CreditCardPaymentInput(
@@ -46,7 +47,7 @@ internal suspend fun Requests.makeNewPaymentRequest(
             ).executeMapKronorError().map { it.newCreditCardPayment.waitToken }
         }
 
-        WebviewGatewayPaymentMethod.MobilePay -> {
+        PaymentMethod.MobilePay -> {
             kronorApolloClient.mutation(
                 MobilePayPaymentMutation(
                     payment = MobilePayPaymentInput(
@@ -64,7 +65,7 @@ internal suspend fun Requests.makeNewPaymentRequest(
             ).executeMapKronorError().map { it.newMobilePayPayment.waitToken }
         }
 
-        WebviewGatewayPaymentMethod.Vipps -> {
+        PaymentMethod.Vipps -> {
             kronorApolloClient.mutation(
                 VippsPaymentMutation(
                     payment = VippsPaymentInput(
@@ -81,5 +82,7 @@ internal suspend fun Requests.makeNewPaymentRequest(
                 )
             ).executeMapKronorError().map { it.newVippsPayment.waitToken }
         }
+
+        PaymentMethod.Swish -> TODO()
     }
 }

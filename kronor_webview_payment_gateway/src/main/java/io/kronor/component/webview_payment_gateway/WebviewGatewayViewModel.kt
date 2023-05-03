@@ -27,7 +27,7 @@ import kotlin.time.Duration.Companion.seconds
 private val DelayBeforeCallback: Duration = 2.seconds // 2000 milliseconds = 2 seconds
 
 class WebviewGatewayViewModelFactory(
-    private val WebviewGatewayConfiguration: WebviewGatewayConfiguration
+    private val WebviewGatewayConfiguration: PaymentConfiguration
 ) : ViewModelProvider.NewInstanceFactory() {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -36,7 +36,7 @@ class WebviewGatewayViewModelFactory(
 }
 
 class WebviewGatewayViewModel(
-    val webviewGatewayConfiguration: WebviewGatewayConfiguration
+    val webviewGatewayConfiguration: PaymentConfiguration
 ) : ViewModel() {
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null
