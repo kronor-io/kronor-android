@@ -30,18 +30,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.kronor.api.Environment
+import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentMethod
 import io.kronor.component.credit_card.CreditCardComponent
-import io.kronor.component.credit_card.CreditCardConfiguration
 import io.kronor.component.credit_card.creditCardViewModel
 import io.kronor.component.mobilepay.MobilePayComponent
-import io.kronor.component.mobilepay.MobilePayConfiguration
 import io.kronor.component.mobilepay.mobilePayViewModel
 import io.kronor.component.swish.SwishComponent
-import io.kronor.component.swish.SwishConfiguration
 import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
-import io.kronor.component.vipps.VippsConfiguration
 import io.kronor.component.vipps.vippsViewModel
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
@@ -103,13 +101,14 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
             ) {
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val svm = swishViewModel(
-                        SwishConfiguration(
+                        PaymentConfiguration(
                             sessionToken = sessionToken,
                             merchantLogo = R.drawable.kronor_logo,
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
                             locale = Locale("en_US"),
+                            paymentMethod = PaymentMethod.Swish,
                             redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
                         )
                     )
@@ -155,13 +154,15 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
             ) {
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val ccvm = creditCardViewModel(
-                        creditCardConfiguration = CreditCardConfiguration(
+                        creditCardConfiguration = PaymentConfiguration(
                             sessionToken = sessionToken,
                             merchantLogo = R.drawable.kronor_logo,
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
+                            paymentMethod = PaymentMethod.CreditCard,
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
+                            locale = Locale("en_US")
                         )
                     )
 
@@ -201,13 +202,15 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
             ) {
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val mpvm = mobilePayViewModel(
-                        mobilePayConfiguration = MobilePayConfiguration(
+                        mobilePayConfiguration = PaymentConfiguration(
                             sessionToken = sessionToken,
                             merchantLogo = R.drawable.kronor_logo,
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
+                            locale = Locale("en_US"),
+                            paymentMethod = PaymentMethod.MobilePay
                         )
                     )
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -252,13 +255,15 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
             ) {
                 it.arguments?.getString("sessionToken")?.let { sessionToken ->
                     val vvm = vippsViewModel(
-                        VippsConfiguration(
+                        PaymentConfiguration(
                             sessionToken = sessionToken,
                             merchantLogo = R.drawable.kronor_logo,
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/")
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
+                            locale = Locale("en_US"),
+                            paymentMethod = PaymentMethod.Vipps
                         )
                     )
 
