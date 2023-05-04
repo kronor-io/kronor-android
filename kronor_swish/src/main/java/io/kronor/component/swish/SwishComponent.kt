@@ -1,5 +1,6 @@
 package io.kronor.component.swish
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
@@ -465,8 +466,13 @@ private fun OpenSwishApp(context: Context, returnUrl: String?, onAppOpened: () -
     }
 
     if (doesSwishAppExist) {
-        startActivity(context, intent, null)
-        onAppOpened()
+        try {
+            startActivity(context, intent, null)
+            onAppOpened()
+        } catch (e: ActivityNotFoundException) {
+            Text("No Swish App Found")
+            Log.d("SwishApp", "No Swish app")
+        }
     } else {
         Text("No Swish App Found")
         Log.d("SwishApp", "No Swish app")

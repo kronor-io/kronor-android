@@ -1,6 +1,7 @@
 package io.kronor.component.webview_payment_gateway
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
@@ -216,12 +217,16 @@ private fun PaymentGatewayView(
                             }
                             return false
                         }
-                        startActivity(
-                            context, Intent(
-                                Intent.ACTION_VIEW, request.url
-                            ), null
-                        )
-                        return true
+                        return try {
+                            startActivity(
+                                context, Intent(
+                                    Intent.ACTION_VIEW, request.url
+                                ), null
+                            )
+                            true
+                        } catch (e : ActivityNotFoundException) {
+                            true
+                        }
                     }
                 }
                 settings.javaScriptEnabled = true
