@@ -122,10 +122,6 @@ private fun SwishScreen(
     @DrawableRes merchantLogo: Int? = null
 ) {
 
-    LaunchedEffect(Unit) {
-        transition(SwishStatechart.Companion.Event.SubscribeToPaymentStatus)
-    }
-
     SwishWrapper(merchantLogo) {
         when (state.value) {
             SwishStatechart.Companion.State.WaitingForSubscription -> {
