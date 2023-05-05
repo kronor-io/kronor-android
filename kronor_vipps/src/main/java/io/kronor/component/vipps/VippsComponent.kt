@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.kronor.api.PaymentConfiguration
+import io.kronor.api.PaymentMethod
 import io.kronor.component.webview_payment_gateway.WebviewGatewayComponent
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModel
 import io.kronor.component.webview_payment_gateway.WebviewGatewayViewModelFactory
@@ -15,7 +16,7 @@ typealias VippsViewModel = WebviewGatewayViewModel
 
 @Composable
 fun vippsViewModel(vippsConfiguration: PaymentConfiguration): VippsViewModel {
-    return viewModel(factory = WebviewGatewayViewModelFactory(vippsConfiguration))
+    return viewModel(factory = WebviewGatewayViewModelFactory(vippsConfiguration, PaymentMethod.Vipps))
 }
 
 @SuppressLint("ComposeViewModelForwarding")

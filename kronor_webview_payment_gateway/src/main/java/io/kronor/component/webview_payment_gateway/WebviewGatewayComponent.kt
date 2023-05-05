@@ -71,7 +71,7 @@ fun WebviewGatewayComponent(
         viewModel::transition,
         viewModel.webviewGatewayState,
         viewModel.paymentGatewayUrl,
-        viewModel.webviewGatewayConfiguration.paymentMethod,
+        viewModel.paymentMethod,
         modifier = modifier
     )
 }

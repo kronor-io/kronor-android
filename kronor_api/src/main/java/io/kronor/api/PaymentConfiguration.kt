@@ -11,7 +11,6 @@ data class PaymentConfiguration(
     val redirectUrl: Uri,
     val appName: String,
     val appVersion: String,
-    val paymentMethod : PaymentMethod,
     @DrawableRes val merchantLogo: Int? = null
 )
 

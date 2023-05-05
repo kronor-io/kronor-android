@@ -74,7 +74,6 @@ import io.kronor.api.KronorError
 import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentStatusSubscription
 import kotlinx.coroutines.launch
-import java.lang.Exception
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -204,9 +203,11 @@ private fun SwishScreen(
 
             is SwishStatechart.Companion.State.Errored -> {
                 SwishPaymentErrored(
-                    error = (state.value as SwishStatechart.Companion.State.Errored).error, onPaymentRetry = {
+                    error = (state.value as SwishStatechart.Companion.State.Errored).error,
+                    onPaymentRetry = {
                         transition(SwishStatechart.Companion.Event.Retry)
-                    }, onGoBack = {
+                    },
+                    onGoBack = {
                         transition(SwishStatechart.Companion.Event.CancelFlow)
                     })
             }
@@ -334,7 +335,11 @@ private fun SwishPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Uni
 }
 
 @Composable
-private fun SwishPaymentErrored(error: KronorError, onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+private fun SwishPaymentErrored(
+    error: KronorError,
+    onPaymentRetry: () -> Unit,
+    onGoBack: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxHeight(),
         verticalArrangement = Arrangement.SpaceBetween,
@@ -428,11 +433,15 @@ private fun swishAppExists(context: Context): Boolean {
 }
 
 @Composable
-private fun SwishPromptScreen(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumberPayNow: (String) -> Unit) {
+private fun SwishPromptScreen(
+    onAppOpen: () -> Unit,
+    onQrCode: () -> Unit,
+    onPhoneNumberPayNow: (String) -> Unit
+) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "swishPromptMethods") {
         composable("swishPromptMethods") {
-            SwishPromptMethods(onAppOpen =onAppOpen, onQrCode = onQrCode, onPhoneNumber = {
+            SwishPromptMethods(onAppOpen = onAppOpen, onQrCode = onQrCode, onPhoneNumber = {
                 navController.navigate(
                     "swishPromptPhoneNumber"
                 )
@@ -445,7 +454,11 @@ private fun SwishPromptScreen(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPho
 }
 
 @Composable
-private fun SwishPromptMethods(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumber: () -> Unit) {
+private fun SwishPromptMethods(
+    onAppOpen: () -> Unit,
+    onQrCode: () -> Unit,
+    onPhoneNumber: () -> Unit
+) {
     val doesSwishAppExist: Boolean = if (LocalInspectionMode.current) {
         true
     } else {
@@ -613,8 +626,8 @@ private fun PreviewSwishPaymentErrored() {
 }
 
 @SuppressLint("HardwareIds")
-private fun getWeakFingerprint(context: Context) : String {
-    val contentResolver : ContentResolver = context.contentResolver!!
+private fun getWeakFingerprint(context: Context): String {
+    val contentResolver: ContentResolver = context.contentResolver!!
 
     val androidId: String? by lazy {
         try {
@@ -648,7 +661,7 @@ private fun getWeakFingerprint(context: Context) : String {
         }
     }
 
-    val gsfId : String? by lazy {
+    val gsfId: String? by lazy {
         try {
             getGsfId()
         } catch (e: Exception) {
@@ -682,7 +695,7 @@ private fun getWeakFingerprint(context: Context) : String {
         }
     }
 
-    val drmId : String? by lazy {
+    val drmId: String? by lazy {
         try {
             mediaDrmId()
         } catch (e: Exception) {

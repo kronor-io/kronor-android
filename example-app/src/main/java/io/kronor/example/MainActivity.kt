@@ -108,7 +108,6 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
                             locale = Locale("en_US"),
-                            paymentMethod = PaymentMethod.Swish,
                             redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
                         )
                     )
@@ -160,7 +159,6 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            paymentMethod = PaymentMethod.CreditCard,
                             redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
                             locale = Locale("en_US")
                         )
@@ -209,8 +207,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
                             redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US"),
-                            paymentMethod = PaymentMethod.MobilePay
+                            locale = Locale("en_US")
                         )
                     )
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -262,8 +259,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
                             redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US"),
-                            paymentMethod = PaymentMethod.Vipps
+                            locale = Locale("en_US")
                         )
                     )
 
