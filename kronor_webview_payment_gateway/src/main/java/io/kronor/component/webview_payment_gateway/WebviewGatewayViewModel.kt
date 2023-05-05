@@ -27,23 +27,25 @@ import kotlin.time.Duration.Companion.seconds
 private val DelayBeforeCallback: Duration = 2.seconds // 2000 milliseconds = 2 seconds
 
 class WebviewGatewayViewModelFactory(
-    private val WebviewGatewayConfiguration: PaymentConfiguration
+    private val WebviewGatewayConfiguration: PaymentConfiguration,
+    private val paymentMethod: PaymentMethod
 ) : ViewModelProvider.NewInstanceFactory() {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return WebviewGatewayViewModel(WebviewGatewayConfiguration) as T
+        return WebviewGatewayViewModel(WebviewGatewayConfiguration, paymentMethod) as T
     }
 }
 
 class WebviewGatewayViewModel(
-    val webviewGatewayConfiguration: PaymentConfiguration
+    val webviewGatewayConfiguration: PaymentConfiguration,
+    val paymentMethod: PaymentMethod
 ) : ViewModel() {
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null
     private val constructedRedirectUrl  : Uri =
         webviewGatewayConfiguration.redirectUrl
             .buildUpon()
-            .appendQueryParameter("paymentMethod", webviewGatewayConfiguration.paymentMethod.toRedirectMethod())
+            .appendQueryParameter("paymentMethod", paymentMethod.toRedirectMethod())
             .appendQueryParameter("sessionToken", webviewGatewayConfiguration.sessionToken)
             .build()
 
@@ -61,7 +63,7 @@ class WebviewGatewayViewModel(
     val paymentGatewayUrl: Uri = constructPaymentGatewayUrl(
         environment = webviewGatewayConfiguration.environment,
         sessionToken = webviewGatewayConfiguration.sessionToken,
-        paymentMethod = webviewGatewayConfiguration.paymentMethod.toPaymentGatewayMethod(),
+        paymentMethod = paymentMethod.toPaymentGatewayMethod(),
         merchantReturnUrl = this.constructedRedirectUrl
     )
 
@@ -118,7 +120,7 @@ class WebviewGatewayViewModel(
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = webviewGatewayConfiguration.appName,
                         appVersion = webviewGatewayConfiguration.appVersion,
-                        paymentMethod = webviewGatewayConfiguration.paymentMethod
+                        paymentMethod = paymentMethod
                     )
                 )
                 when {
@@ -296,7 +298,7 @@ class WebviewGatewayViewModel(
 
     suspend fun handleIntent(intent: Intent) {
         intent.data?.let { uri ->
-            if (uri.getQueryParameter("paymentMethod") == this.webviewGatewayConfiguration.paymentMethod.toRedirectMethod()) {
+            if (uri.getQueryParameter("paymentMethod") == this.paymentMethod.toRedirectMethod()) {
                 this.intentReceived = true
                 if (uri.queryParameterNames.contains("cancel")) {
                     _transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
