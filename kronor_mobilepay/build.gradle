@@ -112,7 +112,6 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
 
-    implementation "com.github.fingerprintjs:fingerprint-android:2.0.0"
     implementation "com.tinder.statemachine:statemachine:0.2.0"
     implementation("com.apollographql.apollo3:apollo-runtime:3.7.3")
 

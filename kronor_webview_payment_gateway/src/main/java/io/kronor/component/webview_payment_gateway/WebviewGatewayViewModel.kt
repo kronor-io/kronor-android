@@ -78,7 +78,7 @@ class WebviewGatewayViewModel(
     }
 
     fun setDeviceFingerPrint(fingerprint: String) {
-        this.deviceFingerprint = fingerprint
+        this.deviceFingerprint = fingerprint.take(64)
     }
 
     private suspend fun _transition(event: WebviewGatewayStatechart.Companion.Event) {

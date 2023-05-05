@@ -70,7 +70,7 @@ class SwishViewModel(
     }
 
     fun setDeviceFingerPrint(fingerprint: String) {
-        this.deviceFingerprint = fingerprint
+        this.deviceFingerprint = fingerprint.take(64)
     }
 
     internal fun updateSelectedMethod(selected: SelectedMethod) {
