@@ -278,7 +278,7 @@ class WebviewGatewayViewModel(
                             )
                         )
                     } ?: run {
-                        if (this.intentReceived) {
+                        if (this.intentReceived && !(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.Initializing)) {
                             _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
                         } else {
                             _transition(WebviewGatewayStatechart.Companion.Event.Initialize)
