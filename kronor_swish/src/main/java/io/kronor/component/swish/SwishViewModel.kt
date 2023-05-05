@@ -17,8 +17,11 @@ import io.kronor.api.ApiError
 import io.kronor.api.KronorError
 import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentMethod
+import io.kronor.api.PaymentRequestArgs
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
+import io.kronor.api.makeNewPaymentRequest
 import io.kronor.api.type.PaymentStatusEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -109,12 +112,12 @@ class SwishViewModel(
             is SwishStatechart.Companion.SideEffect.CreateMcomPaymentRequest -> {
                 Log.d("SwishViewModel", "Creating Mcom Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
-                    swishInputData = SwishComponentInput(
-                        customerSwishNumber = null,
+                    paymentRequestArgs = PaymentRequestArgs(
                         returnUrl = constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
-                        appVersion = swishConfiguration.appVersion
+                        appVersion = swishConfiguration.appVersion,
+                        paymentMethod = PaymentMethod.Swish()
                     )
                 )
                 when {
@@ -139,8 +142,8 @@ class SwishViewModel(
             is SwishStatechart.Companion.SideEffect.CreateEcomPaymentRequest -> {
                 Log.d("SwishViewModel", "Creating Ecom Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
-                    swishInputData = SwishComponentInput(
-                        customerSwishNumber = sideEffect.phoneNumber,
+                    paymentRequestArgs = PaymentRequestArgs(
+                        paymentMethod = PaymentMethod.Swish(sideEffect.phoneNumber),
                         returnUrl = constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,

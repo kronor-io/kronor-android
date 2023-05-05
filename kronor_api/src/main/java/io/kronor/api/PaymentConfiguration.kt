@@ -14,24 +14,29 @@ data class PaymentConfiguration(
     @DrawableRes val merchantLogo: Int? = null
 )
 
-enum class PaymentMethod {
-    CreditCard, MobilePay, Vipps, Swish
+
+sealed class PaymentMethod {
+    data class Swish(val customerSwishNumber: String? = null) : PaymentMethod()
+    object CreditCard : PaymentMethod()
+    object MobilePay : PaymentMethod()
+    object Vipps: PaymentMethod()
 }
+
 
 fun PaymentMethod.toRedirectMethod() : String {
     return when(this) {
-        PaymentMethod.CreditCard -> "creditcard"
-        PaymentMethod.MobilePay -> "mobilepay"
-        PaymentMethod.Vipps -> "vipps"
-        PaymentMethod.Swish -> "swish"
+        is PaymentMethod.CreditCard -> "creditcard"
+        is PaymentMethod.MobilePay -> "mobilepay"
+        is PaymentMethod.Vipps -> "vipps"
+        is PaymentMethod.Swish -> "swish"
     }
 }
 
 fun PaymentMethod.toPaymentGatewayMethod() : String {
     return when (this) {
-        PaymentMethod.CreditCard -> "creditCard"
-        PaymentMethod.MobilePay -> "mobilePay"
-        PaymentMethod.Vipps -> "vipps"
-        PaymentMethod.Swish -> "swish"
+        is PaymentMethod.CreditCard -> "creditCard"
+        is PaymentMethod.MobilePay -> "mobilePay"
+        is PaymentMethod.Vipps -> "vipps"
+        is PaymentMethod.Swish -> "swish"
     }
 }

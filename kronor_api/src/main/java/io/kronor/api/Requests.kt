@@ -1,12 +1,19 @@
 package io.kronor.api
 
+import android.os.Build
 import com.apollographql.apollo3.ApolloCall
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.api.Operation
+import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
 import com.apollographql.apollo3.network.okHttpClient
 import com.apollographql.apollo3.network.ws.SubscriptionWsProtocol
+import io.kronor.api.type.AddSessionDeviceInformationInput
+import io.kronor.api.type.CreditCardPaymentInput
+import io.kronor.api.type.MobilePayPaymentInput
 import io.kronor.api.type.PaymentCancelInput
+import io.kronor.api.type.SwishPaymentInput
+import io.kronor.api.type.VippsPaymentInput
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -89,5 +96,97 @@ suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D
         )
     } catch (e: ApolloException) {
         failure(KronorError.NetworkError(e))
+    }
+}
+
+data class PaymentRequestArgs(
+    val returnUrl: String,
+    val deviceFingerprint: String,
+    val appName: String,
+    val appVersion: String,
+    val paymentMethod: PaymentMethod
+)
+
+
+suspend fun Requests.makeNewPaymentRequest(
+    paymentRequestArgs: PaymentRequestArgs
+): Result<String> {
+    val androidVersion = java.lang.Double.parseDouble(
+        java.lang.String(Build.VERSION.RELEASE).replaceAll("(\\d+[.]\\d+)(.*)", "$1")
+    )
+    val os = "android"
+    val userAgent = "kronor_android_sdk"
+    return when (paymentRequestArgs.paymentMethod) {
+        is PaymentMethod.CreditCard -> {
+            kronorApolloClient.mutation(
+                CreditCardPaymentMutation(
+                    payment = CreditCardPaymentInput(
+                        idempotencyKey = UUID.randomUUID().toString(),
+                        returnUrl = paymentRequestArgs.returnUrl
+                    ), deviceInfo = AddSessionDeviceInformationInput(
+                        browserName = paymentRequestArgs.appName,
+                        browserVersion = paymentRequestArgs.appVersion,
+                        fingerprint = paymentRequestArgs.deviceFingerprint,
+                        osName = os,
+                        osVersion = androidVersion.toString(),
+                        userAgent = userAgent
+                    )
+                )
+            ).executeMapKronorError().map { it.newCreditCardPayment.waitToken }
+        }
+
+        is PaymentMethod.MobilePay -> {
+            kronorApolloClient.mutation(
+                MobilePayPaymentMutation(
+                    payment = MobilePayPaymentInput(
+                        idempotencyKey = UUID.randomUUID().toString(),
+                        returnUrl = paymentRequestArgs.returnUrl
+                    ), deviceInfo = AddSessionDeviceInformationInput(
+                        browserName = paymentRequestArgs.appName,
+                        browserVersion = paymentRequestArgs.appVersion,
+                        fingerprint = paymentRequestArgs.deviceFingerprint,
+                        osName = os,
+                        osVersion = androidVersion.toString(),
+                        userAgent = userAgent
+                    )
+                )
+            ).executeMapKronorError().map { it.newMobilePayPayment.waitToken }
+        }
+
+        is PaymentMethod.Vipps -> {
+            kronorApolloClient.mutation(
+                VippsPaymentMutation(
+                    payment = VippsPaymentInput(
+                        idempotencyKey = UUID.randomUUID().toString(),
+                        returnUrl = paymentRequestArgs.returnUrl
+                    ), deviceInfo = AddSessionDeviceInformationInput(
+                        browserName = paymentRequestArgs.appName,
+                        browserVersion = paymentRequestArgs.appVersion,
+                        fingerprint = paymentRequestArgs.deviceFingerprint,
+                        osName = os,
+                        osVersion = androidVersion.toString(),
+                        userAgent = userAgent
+                    )
+                )
+            ).executeMapKronorError().map { it.newVippsPayment.waitToken }
+        }
+
+        is PaymentMethod.Swish -> kronorApolloClient.mutation(
+            SwishPaymentMutation(
+                payment = SwishPaymentInput(
+                    customerSwishNumber = Optional.presentIfNotNull(paymentRequestArgs.paymentMethod.customerSwishNumber),
+                    flow = if (paymentRequestArgs.paymentMethod.customerSwishNumber == null) "mcom" else "ecom",
+                    idempotencyKey = UUID.randomUUID().toString(),
+                    returnUrl = paymentRequestArgs.returnUrl
+                ), deviceInfo = AddSessionDeviceInformationInput(
+                    browserName = paymentRequestArgs.appName,
+                    browserVersion = paymentRequestArgs.appVersion,
+                    fingerprint = paymentRequestArgs.deviceFingerprint,
+                    osName = os,
+                    osVersion = androidVersion.toString(),
+                    userAgent = userAgent
+                )
+            )
+        ).executeMapKronorError().map { it.newSwishPayment.waitToken }
     }
 }

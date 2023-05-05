@@ -115,7 +115,7 @@ class WebviewGatewayViewModel(
             is WebviewGatewayStatechart.Companion.SideEffect.CreatePaymentRequest -> {
                 Log.d("WebviewGatewayViewModel", "Creating Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
-                    webviewGatewayInputData = WebviewGatewayComponentInput(
+                    paymentRequestArgs = PaymentRequestArgs(
                         returnUrl = this.constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = webviewGatewayConfiguration.appName,
