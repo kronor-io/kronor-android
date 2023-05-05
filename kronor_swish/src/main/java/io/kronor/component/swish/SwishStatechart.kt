@@ -50,6 +50,12 @@ internal class SwishStatechart {
             on<Event.UsePhoneNumber> {
                 transitionTo(state = State.InsertingPhoneNumber)
             }
+            on<Event.PhoneNumberInserted> {
+                transitionTo(
+                    state = State.CreatingPaymentRequest(SelectedMethod.PhoneNumber),
+                    sideEffect = SideEffect.CreateEcomPaymentRequest(it.phoneNumber)
+                )
+            }
             on<Event.Error> {
                 transitionTo(
                     state = State.Errored(it.error)

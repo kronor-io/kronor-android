@@ -58,6 +58,9 @@ import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.apollographql.apollo3.exception.ApolloException
 import com.fingerprintjs.android.fingerprint.Fingerprinter
 import com.fingerprintjs.android.fingerprint.FingerprinterFactory
@@ -129,25 +132,28 @@ private fun SwishScreen(
             }
 
             SwishStatechart.Companion.State.PromptingMethod -> {
-                SwishPromptMethods(onAppOpen = {
-                    updateSelectedMethod(SelectedMethod.SwishApp)
-                    transition(SwishStatechart.Companion.Event.UseSwishApp)
-                }, onQrCode = {
-                    updateSelectedMethod(SelectedMethod.QrCode)
-                    transition(SwishStatechart.Companion.Event.UseQR)
-                }, onPhoneNumber = {
-                    updateSelectedMethod(SelectedMethod.PhoneNumber)
-                    transition(SwishStatechart.Companion.Event.UsePhoneNumber)
-                })
+                SwishPromptScreen(
+                    onAppOpen = {
+                        updateSelectedMethod(SelectedMethod.SwishApp)
+                        transition(SwishStatechart.Companion.Event.UseSwishApp)
+                    },
+                    onQrCode = {
+                        updateSelectedMethod(SelectedMethod.QrCode)
+                        transition(SwishStatechart.Companion.Event.UseQR)
+                    },
+                    onPhoneNumberPayNow = { phoneNumber ->
+                        updateSelectedMethod(SelectedMethod.PhoneNumber)
+                        transition(
+                            SwishStatechart.Companion.Event.PhoneNumberInserted(
+                                phoneNumber
+                            )
+                        )
+                    }
+                )
             }
 
             SwishStatechart.Companion.State.InsertingPhoneNumber -> {
-                SwishPromptPhoneNumber(onPayNow = { phoneNumber ->
-                    transition(
-                        SwishStatechart.Companion.Event.PhoneNumberInserted(
-                            phoneNumber
-                        )
-                    )
+                SwishPromptPhoneNumber(onPayNow = {
                 })
             }
 
@@ -413,6 +419,23 @@ private fun swishAppExists(context: Context): Boolean {
     )
     return appIntentMatch.any { resolveInfo ->
         resolveInfo.activityInfo.packageName == "se.bankgirot.swish.sandbox" || resolveInfo.activityInfo.packageName == "se.bankgirot.swish"
+    }
+}
+
+@Composable
+private fun SwishPromptScreen(onAppOpen: () -> Unit, onQrCode: () -> Unit, onPhoneNumberPayNow: (String) -> Unit) {
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "swishPromptMethods") {
+        composable("swishPromptMethods") {
+            SwishPromptMethods(onAppOpen =onAppOpen, onQrCode = onQrCode, onPhoneNumber = {
+                navController.navigate(
+                    "swishPromptPhoneNumber"
+                )
+            })
+        }
+        composable("swishPromptPhoneNumber") {
+            SwishPromptPhoneNumber(onPayNow = onPhoneNumberPayNow)
+        }
     }
 }
 
