@@ -2,7 +2,7 @@
 <resources>
     <string name="creating_swish">Påbörjar en säker Swish-transaktion</string>
     <string name="open_swish">Öppna din Swish-app</string>
-    <string name="pay_another_phone">betala med en annan telefon</string>
+    <string name="pay_another_phone">Betala med en annan telefon</string>
     <string name="scan_qr_code">Skanna QR-koden</string>
     <string name="enter_phone">Ange telefonnummer</string>
     <string name="scan_qr">Skanna den här koden din Swish-app</string>
@@ -10,7 +10,7 @@
     <string name="accept_swish_phone">Öppna Swish App på din telefon och acceptera betalningsförfrågan</string>
     <string name="network_error">Betalningen kunde inte genomföras på grund av nätverksproblem. Kontrollera att din telefon är ansluten till internet och försök igen.</string>
     <string name="cancel_payment">Avbryt betalningen</string>
-    <string name="try_again">försök igen</string>
+    <string name="try_again">Försök igen</string>
     <string name="go_back">Tillbaka</string>
     <string name="graphql_error">Betalningen kunde inte genomföras på grund av ett tekniskt fel</string>
     <string name="payment_rejected">Din betalning nekades</string>
