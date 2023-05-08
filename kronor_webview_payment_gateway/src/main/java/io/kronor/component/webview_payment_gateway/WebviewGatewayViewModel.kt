@@ -197,7 +197,7 @@ class WebviewGatewayViewModel(
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.CancelAndNotifyFailure -> {
-
+                _events.emit(PaymentEvent.PaymentFailure)
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.CancelAfterDeadline -> {

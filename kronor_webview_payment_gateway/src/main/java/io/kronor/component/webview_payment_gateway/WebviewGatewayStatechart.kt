@@ -30,7 +30,9 @@ internal class WebviewGatewayStatechart {
                 )
             }
             on<Event.PaymentRejected> {
-                transitionTo(state = State.PaymentRejected)
+                transitionTo(
+                    state = State.PaymentRejected, sideEffect = SideEffect.NotifyPaymentFailure
+                )
             }
             on<Event.Error> {
                 transitionTo(
@@ -85,7 +87,10 @@ internal class WebviewGatewayStatechart {
                 dontTransition(sideEffect = SideEffect.CancelPaymentRequest)
             }
             on<Event.PaymentRejected> {
-                transitionTo(state = State.PaymentRejected)
+                transitionTo(
+                    state = State.PaymentRejected,
+                    sideEffect = SideEffect.NotifyPaymentFailure
+                )
             }
             on<Event.Error> {
                 transitionTo(state = State.Errored(error = it.error))
@@ -110,7 +115,10 @@ internal class WebviewGatewayStatechart {
                 )
             }
             on<Event.PaymentRejected> {
-                transitionTo(state = State.PaymentRejected)
+                transitionTo(
+                    state = State.PaymentRejected,
+                    sideEffect = SideEffect.NotifyPaymentFailure
+                )
             }
             on<Event.Error> {
                 transitionTo(state = State.Errored(error = it.error))
@@ -183,7 +191,7 @@ internal class WebviewGatewayStatechart {
             object Retry : Event()
             object CancelFlow : Event()
             data class Error(val error: KronorError) : Event()
-            object WaitForCancel: Event()
+            object WaitForCancel : Event()
         }
 
         sealed class SideEffect {
@@ -196,7 +204,7 @@ internal class WebviewGatewayStatechart {
             object NotifyPaymentFailure : SideEffect()
             object ResetState : SideEffect()
             object CancelAndNotifyFailure : SideEffect()
-            object CancelAfterDeadline: SideEffect()
+            object CancelAfterDeadline : SideEffect()
         }
     }
 }

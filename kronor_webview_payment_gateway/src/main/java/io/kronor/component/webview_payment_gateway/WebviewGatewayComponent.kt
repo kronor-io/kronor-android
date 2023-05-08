@@ -157,13 +157,7 @@ private fun WebviewGatewayScreen(
 
             is WebviewGatewayStatechart.Companion.State.PaymentRejected -> {
                 WebviewGatewayWrapper {
-                    WebviewGatewayPaymentRejected(onPaymentRetry = {
-                        transition(
-                            WebviewGatewayStatechart.Companion.Event.Retry
-                        )
-                    }, onGoBack = {
-                        transition(WebviewGatewayStatechart.Companion.Event.CancelFlow)
-                    }, modifier = Modifier.fillMaxSize())
+                    WebviewGatewayPaymentRejected(modifier = Modifier.fillMaxSize())
                 }
             }
 
@@ -321,27 +315,14 @@ private fun WebviewGatewayPaymentCompleted(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun WebviewGatewayPaymentRejected(
-    onPaymentRetry: () -> Unit, onGoBack: () -> Unit, modifier: Modifier = Modifier
-) {
+private fun WebviewGatewayPaymentRejected(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.SpaceBetween,
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(100.dp))
         Text(stringResource(R.string.payment_rejected))
-        Button(onClick = {
-            onPaymentRetry()
-        }) {
-            Text(stringResource(id = R.string.try_again))
-        }
-
-        Button(onClick = {
-            onGoBack()
-        }) {
-            Text(stringResource(id = R.string.go_back))
-        }
     }
 }
 
