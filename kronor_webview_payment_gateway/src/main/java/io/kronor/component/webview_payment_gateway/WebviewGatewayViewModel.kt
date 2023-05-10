@@ -80,6 +80,7 @@ class WebviewGatewayViewModel(
     }
 
     fun setDeviceFingerPrint(fingerprint: String) {
+        Log.d("adlkjfldasg", this.paymentGatewayUrl.toString())
         this.deviceFingerprint = fingerprint.take(64)
     }
 
@@ -113,6 +114,10 @@ class WebviewGatewayViewModel(
     private suspend fun handleSideEffect(sideEffect: WebviewGatewayStatechart.Companion.SideEffect) {
         when (sideEffect) {
             is WebviewGatewayStatechart.Companion.SideEffect.CreatePaymentRequest -> {
+                if (this.paymentMethod is PaymentMethod.Fallback) {
+                    _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestWillBeCreatedElsewhere)
+                    return
+                }
                 Log.d("WebviewGatewayViewModel", "Creating Payment Request")
                 val waitToken = requests.makeNewPaymentRequest(
                     paymentRequestArgs = PaymentRequestArgs(
@@ -283,7 +288,9 @@ class WebviewGatewayViewModel(
                         if (this.intentReceived && !(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.Initializing)) {
                             _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
                         } else {
-                            _transition(WebviewGatewayStatechart.Companion.Event.Initialize)
+                            if (!(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized)) {
+                                _transition(WebviewGatewayStatechart.Companion.Event.Initialize)
+                            }
                         }
                     }
                 }
@@ -324,7 +331,7 @@ private fun constructPaymentGatewayUrl(
         .appendQueryParameter("env", toGatewayEnvName(environment))
         .appendQueryParameter("paymentMethod", paymentMethod)
         .appendQueryParameter("token", sessionToken)
-        .appendQueryParameter("merchantReturnUrl", Uri.encode(merchantReturnUrl.toString())).build()
+        .appendQueryParameter("merchantReturnUrl", merchantReturnUrl.toString()).build()
 }
 
 private fun toGatewayEnvName(environment: Environment): String {

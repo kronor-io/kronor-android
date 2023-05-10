@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
+import java.lang.Exception
 import java.util.*
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
@@ -188,5 +189,8 @@ suspend fun Requests.makeNewPaymentRequest(
                 )
             )
         ).executeMapKronorError().map { it.newSwishPayment.waitToken }
+        is PaymentMethod.Fallback -> {
+            failure<String>(Exception("Impossible!"))
+        }
     }
 }

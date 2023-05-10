@@ -57,7 +57,11 @@ internal class WebviewGatewayStatechart {
                     sideEffect = SideEffect.ListenOnPaymentRequest(waitToken = it.waitToken)
                 )
             }
-
+            on<Event.PaymentRequestWillBeCreatedElsewhere> {
+                transitionTo(
+                    state = State.PaymentRequestInitialized
+                )
+            }
             on<Event.Error> {
                 transitionTo(state = State.Errored(error = it.error))
             }
@@ -191,6 +195,8 @@ internal class WebviewGatewayStatechart {
             object Retry : Event()
             object CancelFlow : Event()
             data class Error(val error: KronorError) : Event()
+            object PaymentRequestWillBeCreatedElsewhere : Event()
+
             object WaitForCancel : Event()
         }
 
