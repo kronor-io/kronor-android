@@ -126,7 +126,7 @@ internal class SwishStatechart {
             }
 
             on<Event.PaymentRejected> {
-                transitionTo(state = State.PaymentRejected)
+                transitionTo(state = State.PaymentRejected, sideEffect = SideEffect.NotifyPaymentFailure)
             }
 
             on<Event.Error> {
@@ -156,7 +156,8 @@ internal class SwishStatechart {
 
             on<Event.PaymentRejected> {
                 transitionTo(
-                    state = State.PaymentRejected
+                    state = State.PaymentRejected,
+                    sideEffect = SideEffect.NotifyPaymentFailure
                 )
             }
 

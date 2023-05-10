@@ -197,8 +197,7 @@ private fun SwishScreen(
             }
 
             SwishStatechart.Companion.State.PaymentRejected -> {
-                SwishPaymentRejected(onPaymentRetry = { transition(SwishStatechart.Companion.Event.Retry) },
-                    onGoBack = { transition(SwishStatechart.Companion.Event.CancelFlow) })
+                SwishPaymentRejected()
             }
 
             is SwishStatechart.Companion.State.Errored -> {
@@ -312,25 +311,14 @@ private fun SwishPaymentCompleted() {
 }
 
 @Composable
-private fun SwishPaymentRejected(onPaymentRetry: () -> Unit, onGoBack: () -> Unit) {
+private fun SwishPaymentRejected() {
     Column(
         modifier = Modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.SpaceBetween,
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(100.dp))
         Text(stringResource(R.string.payment_rejected))
-        Button(onClick = {
-            onPaymentRetry()
-        }) {
-            Text(stringResource(id = R.string.try_again))
-        }
-
-        Button(onClick = {
-            onGoBack()
-        }) {
-            Text(stringResource(id = R.string.go_back))
-        }
     }
 }
 
@@ -611,7 +599,7 @@ private fun PreviewSwishPaymentCompleted() {
 @Composable
 private fun PreviewSwishPaymentRejected() {
     SwishWrapper {
-        SwishPaymentRejected({}) {}
+        SwishPaymentRejected()
     }
 }
 
