@@ -1,17 +1,17 @@
 <resources>
   <string name="secure_connection">
-    Upprättar säker kontakt.
+    Nawiązywanie bezpiecznego połączenia
   </string>
   <string name="try_again">
-    försök igen?
+    Spróbuj jeszcze raz?
   </string>
   <string name="payment_rejected">
-    Betalning misslyckad.
+    Płatność nie powiodła się
   </string>
   <string name="payment_completed">
-    Betalning slutförd.
+    Płatność zrealizowana
   </string>
   <string name="waiting_for_payment">
-    Slutför din betalning, vänligen vänta.
+    Dokonujemy płatności, proszę czekać
   </string>
 </resources>
