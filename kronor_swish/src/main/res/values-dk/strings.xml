@@ -1,0 +1,28 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Betalingen er gennemført
+  </string>
+  <string name="payment_rejected">
+    Betalingen mislykkedes
+  </string>
+  <string name="try_again">
+    prøv igen?
+  </string>
+  <string name="generate_qr">
+    Genererer QR kode
+  </string>
+  <string name="enter_phone">
+    Indtast telefonnummer
+  </string>
+  <string name="pay_another_phone">
+     eller betal med en anden telefon
+  </string>
+  <string name="scan_qr_code">
+    Scan QR kode
+  </string>
+  <string name="cancel_payment">
+    Afbryd betaling?
+  </string>
+</resources>

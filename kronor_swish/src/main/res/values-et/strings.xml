@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Makse sooritatud
+  </string>
+  <string name="payment_rejected">
+    Makse ebaõnnestus
+  </string>
+  <string name="try_again">
+    proovi uuesti?
+  </string>
+  <string name="creating_swish">
+
+  </string>
+  <string name="generate_qr">
+    QR-koodi genereerimine
+  </string>
+  <string name="enter_phone">
+    Lisa telefoninumber
+  </string>
+  <string name="pay_another_phone">
+    või makske teise telefoniga
+  </string>
+  <string name="scan_qr_code">
+    Skaneeri QR-kood
+  </string>
+  <string name="scan_qr">
+
+  </string>
+  <string name="cancel_payment">
+    Tühista makse?
+  </string>
+</resources>

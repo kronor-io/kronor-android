@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Maksājums pabeigts
+  </string>
+  <string name="payment_rejected">
+    Maksājums neizdevās
+  </string>
+  <string name="try_again">
+    mēģināt vēlreiz?
+  </string>
+  <string name="generate_qr">
+    QR koda ģenerēšana
+  </string>
+  <string name="enter_phone">
+    Ievadiet tālruņa numuru
+  </string>
+  <string name="pay_another_phone">
+    vai maksājiet, izmantojot citu tālruni
+  </string>
+  <string name="scan_qr_code">
+    Skenējiet QR kodu
+  </string>
+  <string name="cancel_payment">
+    Atcelt maksājumu?
+  </string>
+</resources>

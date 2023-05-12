@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Greiðslu lokið
+  </string>
+  <string name="payment_rejected">
+    Greiðsla mistókst
+  </string>
+  <string name="try_again">
+    Prófa aftur?
+  </string>
+  <string name="generate_qr">
+    Býr til QR kóða
+  </string>
+  <string name="enter_phone">
+    Skráðu símanúmer
+  </string>
+  <string name="pay_another_phone">
+    eða greiddu með öðru númeri
+  </string>
+  <string name="scan_qr_code">
+    Skannaðu QR kóðann
+  </string>
+  <string name="cancel_payment">
+    Hætta við greiðslu?
+  </string>
+</resources>
