@@ -80,7 +80,6 @@ class WebviewGatewayViewModel(
     }
 
     fun setDeviceFingerPrint(fingerprint: String) {
-        Log.d("adlkjfldasg", this.paymentGatewayUrl.toString())
         this.deviceFingerprint = fingerprint.take(64)
     }
 
