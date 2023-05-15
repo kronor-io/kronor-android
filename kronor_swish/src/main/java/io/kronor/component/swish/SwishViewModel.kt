@@ -40,6 +40,8 @@ class SwishViewModelFactory(
 class SwishViewModel(
     private val swishConfiguration: PaymentConfiguration
 ) : ViewModel() {
+    private val _subscribeKey: MutableState<Int> = mutableStateOf(0)
+    internal val subscribeKey : Int by _subscribeKey
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null
     private val constructedRedirectUrl: Uri =
@@ -174,6 +176,7 @@ class SwishViewModel(
             }
 
             is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
+                this._subscribeKey.value += 1
             }
 
             is SwishStatechart.Companion.SideEffect.CancelPaymentRequest -> {

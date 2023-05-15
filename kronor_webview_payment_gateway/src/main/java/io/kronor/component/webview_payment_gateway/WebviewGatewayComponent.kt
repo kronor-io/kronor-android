@@ -57,6 +57,8 @@ fun WebviewGatewayComponent(
 
         LaunchedEffect(Unit) {
             viewModel.transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
+        }
+        LaunchedEffect(viewModel.subscribeKey) {
             launch {
                 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     launch {

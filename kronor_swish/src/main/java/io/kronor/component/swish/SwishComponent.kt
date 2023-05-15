@@ -98,8 +98,9 @@ fun SwishComponent(
 
     LaunchedEffect(Unit) {
         viewModel.transition(SwishStatechart.Companion.Event.SubscribeToPaymentStatus)
+    }
+    LaunchedEffect(viewModel.subscribeKey) {
         launch {
-            Log.d("SwishComponent", "lifecycle scope launched")
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.subscription()
