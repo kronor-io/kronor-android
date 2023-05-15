@@ -126,4 +126,10 @@ dependencies {
 
 }
 
+android {
+    lintOptions {
+        disable 'MissingTranslation'
+    }
+}
+
 apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
