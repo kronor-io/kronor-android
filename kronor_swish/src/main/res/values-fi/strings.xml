@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Maksu suoritettu
+  </string>
+  <string name="payment_rejected">
+    Maksu epäonnistui
+  </string>
+  <string name="try_again">
+    yritä uudelleen?
+  </string>
+  <string name="generate_qr">
+    Luodaan QR-koodia
+  </string>
+  <string name="enter_phone">
+    Kirjoita puhelinnumerosi
+  </string>
+  <string name="pay_another_phone">
+    tai maksa käyttämällä toista puhelinta
+  </string>
+  <string name="scan_qr_code">
+    Skannaa QR-koodi
+  </string>
+  <string name="cancel_payment">
+    Keskeytä maksu?
+  </string>
+</resources>

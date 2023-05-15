@@ -119,4 +119,10 @@ dependencies {
     implementation project(path: ':kronor_api')
 }
 
+android {
+    lintOptions {
+        disable 'MissingTranslation'
+    }
+}
+
 apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Płatność zrealizowana
+  </string>
+  <string name="payment_rejected">
+    Płatność nie powiodła się
+  </string>
+  <string name="try_again">
+    Spróbuj jeszcze raz?
+  </string>
+  <string name="creating_swish">
+    Tworzenie bezpiecznej transakcji Swish
+  </string>
+  <string name="generate_qr">
+    Generowanie kodu QR
+  </string>
+  <string name="open_swish">
+    Otwieranie aplikacji swish
+  </string>
+  <string name="enter_phone">
+    Wprowadź numer telefonu
+  </string>
+  <string name="pay_another_phone">
+    lub zapłacić przy użyciu innego telefonu
+  </string>
+  <string name="scan_qr_code">
+    Zeskanuj kod QR
+  </string>
+  <string name="scan_qr">
+    Zeskanuj ten kod za pomocą aplikacji Swish
+  </string>
+  <string name="pay_now">
+    Zapłać teraz
+  </string>
+  <string name="cancel_payment">
+    Anulować płatność?
+  </string>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Mokėjimas atliktas
+  </string>
+  <string name="payment_rejected">
+    Mokėjimas nepavyko
+  </string>
+  <string name="try_again">
+    Bandyti dar kartą?
+  </string>
+  <string name="generate_qr">
+    Generuojamas QR kodas
+  </string>
+  <string name="enter_phone">
+    Įveskite telefono numerį
+  </string>
+  <string name="pay_another_phone">
+    arba mokėkite naudodami kitą telefoną
+  </string>
+  <string name="scan_qr_code">
+    Nuskenuoti QR kodą
+  </string>
+  <string name="cancel_payment">
+    Atšaukti mokėjimą?
+  </string>
+</resources>

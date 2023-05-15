@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Bezahlvorgang abgeschlossen
+  </string>
+  <string name="payment_rejected">
+    Bezahlung fehlgeschlagen
+  </string>
+  <string name="try_again">
+    erneut versuchen?
+  </string>
+  <string name="generate_qr">
+    QR-Code generieren
+  </string>
+  <string name="enter_phone">
+    Bitte Telefonnummer eingeben
+  </string>
+  <string name="pay_another_phone">
+    oder von einem anderen Handy bezahlen
+  </string>
+  <string name="scan_qr_code">
+    QR-Code scannen
+  </string>
+  <string name="cancel_payment">
+    Zahlung stornieren?
+  </string>
+</resources>

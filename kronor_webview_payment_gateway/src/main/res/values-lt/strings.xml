@@ -1,17 +1,17 @@
 <resources>
   <string name="secure_connection">
-    Upprättar säker kontakt.
+    Saugaus ryšio užmezgimas
   </string>
   <string name="try_again">
-    försök igen?
+    Bandyti dar kartą?
   </string>
   <string name="payment_rejected">
-    Betalning misslyckad.
+    Mokėjimas nepavyko
   </string>
   <string name="payment_completed">
-    Betalning slutförd.
+    Mokėjimas atliktas
   </string>
   <string name="waiting_for_payment">
-    Slutför din betalning, vänligen vänta.
+    Mokėjimas užbaigiamas, prašome palaukti
   </string>
 </resources>

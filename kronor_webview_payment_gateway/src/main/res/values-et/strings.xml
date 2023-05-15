@@ -1,17 +1,17 @@
 <resources>
   <string name="secure_connection">
-    Upprättar säker kontakt.
+    Turvalise ühenduse loomine
   </string>
   <string name="try_again">
-    försök igen?
+    proovi uuesti?
   </string>
   <string name="payment_rejected">
-    Betalning misslyckad.
+    Makse ebaõnnestus
   </string>
   <string name="payment_completed">
-    Betalning slutförd.
+    Makse sooritatud
   </string>
   <string name="waiting_for_payment">
-    Slutför din betalning, vänligen vänta.
+    Palun oodake, makset sooritatakse
   </string>
 </resources>

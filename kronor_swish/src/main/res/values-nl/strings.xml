@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="payment_completed">
+    Betaling voltooid
+  </string>
+  <string name="payment_rejected">
+    Betaling mislukt
+  </string>
+  <string name="try_again">
+    probeer het opnieuw?
+  </string>
+  <string name="generate_qr">
+    QR-code genereren
+  </string>
+  <string name="enter_phone">
+    Voer telefoonnummer in
+  </string>
+  <string name="pay_another_phone">
+    of betaal via een andere telefoon
+  </string>
+  <string name="scan_qr_code">
+    Scan QR-code
+  </string>
+  <string name="cancel_payment">
+    Betaling annuleren?
+  </string>
+</resources>
