@@ -1,6 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="secure_connection">
-    Établissement d'une connexion sécurisée
+    Établissement d\'une connexion sécurisée
   </string>
   <string name="try_again">
     Réessayer ?
