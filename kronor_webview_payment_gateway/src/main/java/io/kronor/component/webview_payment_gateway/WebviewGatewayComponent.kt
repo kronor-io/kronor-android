@@ -213,9 +213,6 @@ private fun PaymentGatewayView(
                             return false
                         }
                         if (request.url.scheme == "http" || request.url.scheme == "https") {
-                            if (paymentMethod == PaymentMethod.CreditCard) {
-                                return true
-                            }
                             return false
                         }
                         return try {
