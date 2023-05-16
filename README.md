@@ -1,10 +1,18 @@
 # Kronor Android
 
+[![api](https://maven-badges.herokuapp.com/maven-central/io.kronor/api/badge.svg?style=plastic&subject=api)](https://maven-badges.herokuapp.com/maven-central/io.kronor/api/)
+[![Swish](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/swish/badge.svg?style=plastic&subject=swish)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/swish/)
+[![credit_card](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/credit_card/badge.svg?style=plastic&subject=credit_card)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/credit_card/)
+[![mobilepay](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/mobilepay/badge.svg?style=plastic&subject=mobilepay)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/mobilepay/)
+[![vipps](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/vipps/badge.svg?style=plastic&subject=vipps)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/vipps/)
+[![webview_payment_gateway](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/webview_payment_gateway/badge.svg?style=plastic&subject=webview_payment_gateway)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/webview_payment_gateway/)
+
 Kronor Android provides payment components that you can use to create a custom checkout solution for your customers by using any of our provided payment methods.
 
 ## Payment methods
 
 These are the payment methods that are currently provided by this sdk
+
 - [Swish](#swish)
 - [CreditCard](#credit-card)
 - [MobilePay](#mobilepay)
@@ -32,12 +40,13 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.0'
-    implementation 'io.kronor.component:swish:2.0'
+    implementation 'io.kronor:api:2.1'
+    implementation 'io.kronor.component:swish:2.1'
 }
 ```
 
 Imports:
+
 ```kotlin
 import io.kronor.api.Environment
 import io.kronor.api.PaymentEvent
@@ -63,6 +72,7 @@ SwishComponent(swishConfiguration)
 ```
 
 Handling the payment events:
+
 ```kotlin
 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
     launch {
@@ -93,9 +103,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.0'
-    implementation 'io.kronor.component:credit_card:2.0'
-    implementation 'io.kronor.component:webview_payment_gateway:2.0'
+    implementation 'io.kronor:api:2.1'
+    implementation 'io.kronor.component:credit_card:2.1'
+    implementation 'io.kronor.component:webview_payment_gateway:2.1'
 }
 ```
 
@@ -125,6 +135,7 @@ CreditCardComponent(viewModelForCreditCard)
 ```
 
 Handling the payment events:
+
 ```kotlin
 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
     launch {
@@ -149,16 +160,15 @@ lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
 }
 ```
 
-
 ### MobilePay
 
 Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.0'
-    implementation 'io.kronor.component:mobilepay:2.0'
-    implementation 'io.kronor.component:webview_payment_gateway:2.0'
+    implementation 'io.kronor:api:2.1'
+    implementation 'io.kronor.component:mobilepay:2.1'
+    implementation 'io.kronor.component:webview_payment_gateway:2.1'
 }
 ```
 
@@ -188,6 +198,7 @@ MobilePayComponent(viewModelForMobilePay)
 ```
 
 Handling the payment events:
+
 ```kotlin
 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
     launch {
@@ -212,16 +223,15 @@ lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
 }
 ```
 
-
 ### Vipps
 
 Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.0'
-    implementation 'io.kronor.component:vipps:2.0'
-    implementation 'io.kronor.component:webview_payment_gateway:2.0'
+    implementation 'io.kronor:api:2.1'
+    implementation 'io.kronor.component:vipps:2.1'
+    implementation 'io.kronor.component:webview_payment_gateway:2.1'
 }
 ```
 
@@ -251,6 +261,7 @@ VippsComponent(viewModelForVipps)
 ```
 
 Handling the payment events:
+
 ```kotlin
 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
     launch {
