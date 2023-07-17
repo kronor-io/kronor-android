@@ -15,9 +15,6 @@ import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -86,29 +83,6 @@ private fun WebviewGatewayScreen(
     paymentMethod: PaymentMethod,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
-    var backPressedCount by remember { mutableStateOf(0) }
-    val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    DisposableEffect(key1 = backPressedDispatcher) {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (backPressedCount == 0) {
-                    backPressedCount++
-                    Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
-                } else {
-                    isEnabled = false
-                    backPressedDispatcher?.onBackPressed()
-                }
-            }
-        }
-        backPressedDispatcher?.addCallback(callback)
-
-        onDispose {
-            callback.remove()
-        }
-    }
-
     LaunchedEffect(Unit) {
         transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
     }
