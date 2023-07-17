@@ -15,17 +15,14 @@ directive @cached(
 
 """Result of the addition"""
 type AddNewUserResult {
-  """Result of the operation."""
-  success: Boolean!
+  """The number of users added."""
+  usersAdded: Int!
 }
 
 """Add new user to merchant pool."""
 input AddUserInput {
   """List of users that should be added."""
   addUsers: [AddUserSingleInput!]!
-
-  """Email of the user that is making the request."""
-  currentUser: String!
 }
 
 """Add new user to merchant pool."""
@@ -33,8 +30,16 @@ input AddUserSingleInput {
   """Email of the user, for reference."""
   email: String!
 
-  """Role that this user should have."""
+  """
+  One of "STAFF", "ADMIN" or "SUPERADMIN", role that this user should have.
+  """
   role: String!
+
+  """
+  One of "google", "password" or "webauthn", indicates the type of user to be added.
+  Max length: 64.
+  """
+  userType: String!
 }
 
 """A physical address for a customer."""
@@ -236,6 +241,29 @@ enum BankIdAuthSelectColumn {
   status
 }
 
+"""
+Streaming cursor of the table "BankIdAuth"
+"""
+input BankIdAuthStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: BankIdAuthStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input BankIdAuthStreamCursorValueInput {
+  createdAt: timestamptz
+  hintCode: String
+  id: uuid
+  merchantId: bigint
+  orderRef: String
+  polledAt: timestamptz
+  purchaseOrderId: String
+  status: BankidAuthStatusEnum
+}
+
 enum BankidAuthStatusEnum {
   CANCELLED
   CANCELLING
@@ -379,6 +407,17 @@ type CaptureAggregate {
   nodes: [Capture!]!
 }
 
+input CaptureAggregateBoolExp {
+  count: CaptureAggregateBoolExpCount
+}
+
+input CaptureAggregateBoolExpCount {
+  arguments: [CaptureSelectColumn!]
+  distinct: Boolean
+  filter: CaptureBoolExp
+  predicate: IntComparisonExp!
+}
+
 """
 aggregate fields of "marketplace.purchase_capture"
 """
@@ -405,11 +444,11 @@ input CaptureAggregateOrderBy {
   max: CaptureMaxOrderBy
   min: CaptureMinOrderBy
   stddev: CaptureStddevOrderBy
-  stddev_pop: CaptureStddevPopOrderBy
-  stddev_samp: CaptureStddevSampOrderBy
+  stddevPop: CaptureStddevPopOrderBy
+  stddevSamp: CaptureStddevSampOrderBy
   sum: CaptureSumOrderBy
-  var_pop: CaptureVarPopOrderBy
-  var_samp: CaptureVarSampOrderBy
+  varPop: CaptureVarPopOrderBy
+  varSamp: CaptureVarSampOrderBy
   variance: CaptureVarianceOrderBy
 }
 
@@ -505,11 +544,11 @@ input CaptureItemAggregateOrderBy {
   max: CaptureItemMaxOrderBy
   min: CaptureItemMinOrderBy
   stddev: CaptureItemStddevOrderBy
-  stddev_pop: CaptureItemStddevPopOrderBy
-  stddev_samp: CaptureItemStddevSampOrderBy
+  stddevPop: CaptureItemStddevPopOrderBy
+  stddevSamp: CaptureItemStddevSampOrderBy
   sum: CaptureItemSumOrderBy
-  var_pop: CaptureItemVarPopOrderBy
-  var_samp: CaptureItemVarSampOrderBy
+  varPop: CaptureItemVarPopOrderBy
+  varSamp: CaptureItemVarSampOrderBy
   variance: CaptureItemVarianceOrderBy
 }
 
@@ -727,7 +766,7 @@ input CaptureItemStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.purchase_capture_item"
+order by stddevPop() on columns of table "marketplace.purchase_capture_item"
 """
 input CaptureItemStddevPopOrderBy {
   merchantId: OrderBy
@@ -761,7 +800,7 @@ input CaptureItemStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.purchase_capture_item"
+order by stddevSamp() on columns of table "marketplace.purchase_capture_item"
 """
 input CaptureItemStddevSampOrderBy {
   merchantId: OrderBy
@@ -829,7 +868,7 @@ input CaptureItemSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "marketplace.purchase_capture_item"
+order by varPop() on columns of table "marketplace.purchase_capture_item"
 """
 input CaptureItemVarPopOrderBy {
   merchantId: OrderBy
@@ -863,7 +902,7 @@ input CaptureItemVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "marketplace.purchase_capture_item"
+order by varSamp() on columns of table "marketplace.purchase_capture_item"
 """
 input CaptureItemVarSampOrderBy {
   merchantId: OrderBy
@@ -1003,6 +1042,40 @@ input CaptureOrderBy {
   totalAmount: OrderBy
 }
 
+"""Arguments for capturing a new PayPal payment"""
+input CapturePayPalPaymentInput {
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """
+  The payment id of a PayPal payment, this is obtained
+  with `newPayPalPayment`.
+  
+  Max length: 64.
+  """
+  paymentId: String!
+}
+
+"""The result of capturing a PayPal payment."""
+type CapturePayPalPaymentResult {
+  """The result of starting the PayPal payment capture."""
+  paymentId: String!
+}
+
 """
 select columns of table "marketplace.purchase_capture"
 """
@@ -1071,7 +1144,7 @@ input CaptureStddevOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type CaptureStddevPopFields {
   id: Float
   merchantId: Float
@@ -1084,7 +1157,7 @@ type CaptureStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.purchase_capture"
+order by stddevPop() on columns of table "marketplace.purchase_capture"
 """
 input CaptureStddevPopOrderBy {
   id: OrderBy
@@ -1097,7 +1170,7 @@ input CaptureStddevPopOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type CaptureStddevSampFields {
   id: Float
   merchantId: Float
@@ -1110,7 +1183,7 @@ type CaptureStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.purchase_capture"
+order by stddevSamp() on columns of table "marketplace.purchase_capture"
 """
 input CaptureStddevSampOrderBy {
   id: OrderBy
@@ -1149,7 +1222,7 @@ input CaptureSumOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type CaptureVarPopFields {
   id: Float
   merchantId: Float
@@ -1162,7 +1235,7 @@ type CaptureVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "marketplace.purchase_capture"
+order by varPop() on columns of table "marketplace.purchase_capture"
 """
 input CaptureVarPopOrderBy {
   id: OrderBy
@@ -1175,7 +1248,7 @@ input CaptureVarPopOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type CaptureVarSampFields {
   id: Float
   merchantId: Float
@@ -1188,7 +1261,7 @@ type CaptureVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "marketplace.purchase_capture"
+order by varSamp() on columns of table "marketplace.purchase_capture"
 """
 input CaptureVarSampOrderBy {
   id: OrderBy
@@ -1282,11 +1355,35 @@ input CitextComparisonExp {
 
 """Supported countries"""
 enum Country {
+  AT
+  BE
+  CH
+  CY
+  CZ
+  DE
   DK
+  EE
+  ES
   FI
+  FR
+  GR
+  HR
+  HU
+  IE
   IS
+  IT
+  LT
+  LU
+  LV
+  MT
+  NL
   NO
+  PL
+  PT
+  RO
   SE
+  SI
+  SK
 }
 
 """
@@ -1306,10 +1403,60 @@ input CountryComparisonExp {
 
 """Describes the schema for credit card details"""
 type CreditCardDetails {
+  """Acquirer Name"""
+  acquirer: String
+
+  """Acquirer Message"""
+  acquirerMessage: String
+
+  """Bank"""
+  bank: String
+
+  """Card Country"""
   cardCountry: String
+
+  """Card Expiry Date"""
   cardExpiryDate: date
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: String
+
+  """Masked Card Number"""
   cardNumber: String
+
+  """Card Type"""
   cardType: String
+
+  """If the card is a corporate card or not (boolean)"""
+  corporateCard: Boolean
+
+  """Type of card, debit or credit"""
+  debitOrCredit: String
+
+  """Error message, null if not applicable"""
+  errorMessage: String
+
+  """If the card is prepaid or not (boolean)"""
+  isPrepaid: Boolean
+
+  """Strong Authentication Rule"""
+  strongAuthenticationRule: String
+
+  """Strong Authentication Scheme"""
+  strongAuthenticationScheme: String
+
+  """Strong Authentication Status"""
+  strongAuthenticationStatus: String
+
+  """3-D Secure ECI"""
+  threeDSecureEci: String
+
+  """3-D Secure Frictionless (boolean)"""
+  threeDSecureFrictionless: Boolean
+
+  """3-D Secure Status"""
   threeDSecureStatus: Boolean
 }
 
@@ -1329,10 +1476,23 @@ input CreditCardDetailsBoolExp {
   _and: [CreditCardDetailsBoolExp!]
   _not: CreditCardDetailsBoolExp
   _or: [CreditCardDetailsBoolExp!]
+  acquirer: StringComparisonExp
+  acquirerMessage: StringComparisonExp
+  bank: StringComparisonExp
   cardCountry: StringComparisonExp
   cardExpiryDate: DateComparisonExp
+  cardFingerprint: StringComparisonExp
   cardNumber: StringComparisonExp
   cardType: StringComparisonExp
+  corporateCard: BooleanComparisonExp
+  debitOrCredit: StringComparisonExp
+  errorMessage: StringComparisonExp
+  isPrepaid: BooleanComparisonExp
+  strongAuthenticationRule: StringComparisonExp
+  strongAuthenticationScheme: StringComparisonExp
+  strongAuthenticationStatus: StringComparisonExp
+  threeDSecureEci: StringComparisonExp
+  threeDSecureFrictionless: BooleanComparisonExp
   threeDSecureStatus: BooleanComparisonExp
 }
 
@@ -1340,30 +1500,121 @@ input CreditCardDetailsBoolExp {
 order by max() on columns of table "runtime.transaction_credit_card_details"
 """
 input CreditCardDetailsMaxOrderBy {
+  """Acquirer Name"""
+  acquirer: OrderBy
+
+  """Acquirer Message"""
+  acquirerMessage: OrderBy
+
+  """Bank"""
+  bank: OrderBy
+
+  """Card Country"""
   cardCountry: OrderBy
+
+  """Card Expiry Date"""
   cardExpiryDate: OrderBy
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: OrderBy
+
+  """Masked Card Number"""
   cardNumber: OrderBy
+
+  """Card Type"""
   cardType: OrderBy
+
+  """Type of card, debit or credit"""
+  debitOrCredit: OrderBy
+
+  """Error message, null if not applicable"""
+  errorMessage: OrderBy
+
+  """Strong Authentication Rule"""
+  strongAuthenticationRule: OrderBy
+
+  """Strong Authentication Scheme"""
+  strongAuthenticationScheme: OrderBy
+
+  """Strong Authentication Status"""
+  strongAuthenticationStatus: OrderBy
+
+  """3-D Secure ECI"""
+  threeDSecureEci: OrderBy
 }
 
 """
 order by min() on columns of table "runtime.transaction_credit_card_details"
 """
 input CreditCardDetailsMinOrderBy {
+  """Acquirer Name"""
+  acquirer: OrderBy
+
+  """Acquirer Message"""
+  acquirerMessage: OrderBy
+
+  """Bank"""
+  bank: OrderBy
+
+  """Card Country"""
   cardCountry: OrderBy
+
+  """Card Expiry Date"""
   cardExpiryDate: OrderBy
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: OrderBy
+
+  """Masked Card Number"""
   cardNumber: OrderBy
+
+  """Card Type"""
   cardType: OrderBy
+
+  """Type of card, debit or credit"""
+  debitOrCredit: OrderBy
+
+  """Error message, null if not applicable"""
+  errorMessage: OrderBy
+
+  """Strong Authentication Rule"""
+  strongAuthenticationRule: OrderBy
+
+  """Strong Authentication Scheme"""
+  strongAuthenticationScheme: OrderBy
+
+  """Strong Authentication Status"""
+  strongAuthenticationStatus: OrderBy
+
+  """3-D Secure ECI"""
+  threeDSecureEci: OrderBy
 }
 
 """
 Ordering options when selecting data from "runtime.transaction_credit_card_details".
 """
 input CreditCardDetailsOrderBy {
+  acquirer: OrderBy
+  acquirerMessage: OrderBy
+  bank: OrderBy
   cardCountry: OrderBy
   cardExpiryDate: OrderBy
+  cardFingerprint: OrderBy
   cardNumber: OrderBy
   cardType: OrderBy
+  corporateCard: OrderBy
+  debitOrCredit: OrderBy
+  errorMessage: OrderBy
+  isPrepaid: OrderBy
+  strongAuthenticationRule: OrderBy
+  strongAuthenticationScheme: OrderBy
+  strongAuthenticationStatus: OrderBy
+  threeDSecureEci: OrderBy
+  threeDSecureFrictionless: OrderBy
   threeDSecureStatus: OrderBy
 }
 
@@ -1372,16 +1623,55 @@ select columns of table "runtime.transaction_credit_card_details"
 """
 enum CreditCardDetailsSelectColumn {
   """column name"""
+  acquirer
+
+  """column name"""
+  acquirerMessage
+
+  """column name"""
+  bank
+
+  """column name"""
   cardCountry
 
   """column name"""
   cardExpiryDate
 
   """column name"""
+  cardFingerprint
+
+  """column name"""
   cardNumber
 
   """column name"""
   cardType
+
+  """column name"""
+  corporateCard
+
+  """column name"""
+  debitOrCredit
+
+  """column name"""
+  errorMessage
+
+  """column name"""
+  isPrepaid
+
+  """column name"""
+  strongAuthenticationRule
+
+  """column name"""
+  strongAuthenticationScheme
+
+  """column name"""
+  strongAuthenticationStatus
+
+  """column name"""
+  threeDSecureEci
+
+  """column name"""
+  threeDSecureFrictionless
 
   """column name"""
   threeDSecureStatus
@@ -1766,6 +2056,76 @@ enum CurrentRefundStatusSelectColumn {
   status
 }
 
+"""
+columns and relationships of "payment_gateway.current_transaction_release_status"
+"""
+type CurrentTransactionReleaseStatus {
+  enteredAt: timestamptz!
+  status: TransactionReleaseStatusEnum!
+}
+
+"""
+order by aggregate values of table "payment_gateway.current_transaction_release_status"
+"""
+input CurrentTransactionReleaseStatusAggregateOrderBy {
+  count: OrderBy
+  max: CurrentTransactionReleaseStatusMaxOrderBy
+  min: CurrentTransactionReleaseStatusMinOrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "payment_gateway.current_transaction_release_status". All fields are combined with a logical 'AND'.
+"""
+input CurrentTransactionReleaseStatusBoolExp {
+  _and: [CurrentTransactionReleaseStatusBoolExp!]
+  _not: CurrentTransactionReleaseStatusBoolExp
+  _or: [CurrentTransactionReleaseStatusBoolExp!]
+  enteredAt: TimestamptzComparisonExp
+  status: TransactionReleaseStatusEnumComparisonExp
+}
+
+"""
+order by max() on columns of table "payment_gateway.current_transaction_release_status"
+"""
+input CurrentTransactionReleaseStatusMaxOrderBy {
+  enteredAt: OrderBy
+}
+
+"""
+order by min() on columns of table "payment_gateway.current_transaction_release_status"
+"""
+input CurrentTransactionReleaseStatusMinOrderBy {
+  enteredAt: OrderBy
+}
+
+"""
+Ordering options when selecting data from "payment_gateway.current_transaction_release_status".
+"""
+input CurrentTransactionReleaseStatusOrderBy {
+  enteredAt: OrderBy
+  status: OrderBy
+}
+
+"""
+select columns of table "payment_gateway.current_transaction_release_status"
+"""
+enum CurrentTransactionReleaseStatusSelectColumn {
+  """column name"""
+  enteredAt
+
+  """column name"""
+  status
+}
+
+"""ordering argument of a cursor"""
+enum CursorOrdering {
+  """ascending ordering of the cursor"""
+  ASC
+
+  """descending ordering of the cursor"""
+  DESC
+}
+
 """A customer is a real person who can make purchases."""
 type Customer {
   """An array relationship"""
@@ -1953,11 +2313,11 @@ input CustomerAddressAggregateOrderBy {
   max: CustomerAddressMaxOrderBy
   min: CustomerAddressMinOrderBy
   stddev: CustomerAddressStddevOrderBy
-  stddev_pop: CustomerAddressStddevPopOrderBy
-  stddev_samp: CustomerAddressStddevSampOrderBy
+  stddevPop: CustomerAddressStddevPopOrderBy
+  stddevSamp: CustomerAddressStddevSampOrderBy
   sum: CustomerAddressSumOrderBy
-  var_pop: CustomerAddressVarPopOrderBy
-  var_samp: CustomerAddressVarSampOrderBy
+  varPop: CustomerAddressVarPopOrderBy
+  varSamp: CustomerAddressVarSampOrderBy
   variance: CustomerAddressVarianceOrderBy
 }
 
@@ -2157,14 +2517,14 @@ input CustomerAddressStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "dna.customer_address"
+order by stddevPop() on columns of table "dna.customer_address"
 """
 input CustomerAddressStddevPopOrderBy {
   merchantId: OrderBy
 }
 
 """
-order by stddev_samp() on columns of table "dna.customer_address"
+order by stddevSamp() on columns of table "dna.customer_address"
 """
 input CustomerAddressStddevSampOrderBy {
   merchantId: OrderBy
@@ -2178,14 +2538,14 @@ input CustomerAddressSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "dna.customer_address"
+order by varPop() on columns of table "dna.customer_address"
 """
 input CustomerAddressVarPopOrderBy {
   merchantId: OrderBy
 }
 
 """
-order by var_samp() on columns of table "dna.customer_address"
+order by varSamp() on columns of table "dna.customer_address"
 """
 input CustomerAddressVarSampOrderBy {
   merchantId: OrderBy
@@ -2250,11 +2610,11 @@ input CustomerBanAggregateOrderBy {
   max: CustomerBanMaxOrderBy
   min: CustomerBanMinOrderBy
   stddev: CustomerBanStddevOrderBy
-  stddev_pop: CustomerBanStddevPopOrderBy
-  stddev_samp: CustomerBanStddevSampOrderBy
+  stddevPop: CustomerBanStddevPopOrderBy
+  stddevSamp: CustomerBanStddevSampOrderBy
   sum: CustomerBanSumOrderBy
-  var_pop: CustomerBanVarPopOrderBy
-  var_samp: CustomerBanVarSampOrderBy
+  varPop: CustomerBanVarPopOrderBy
+  varSamp: CustomerBanVarSampOrderBy
   variance: CustomerBanVarianceOrderBy
 }
 
@@ -2326,14 +2686,14 @@ input CustomerBanStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "dna.blocked_customer"
+order by stddevPop() on columns of table "dna.blocked_customer"
 """
 input CustomerBanStddevPopOrderBy {
   merchantId: OrderBy
 }
 
 """
-order by stddev_samp() on columns of table "dna.blocked_customer"
+order by stddevSamp() on columns of table "dna.blocked_customer"
 """
 input CustomerBanStddevSampOrderBy {
   merchantId: OrderBy
@@ -2347,14 +2707,14 @@ input CustomerBanSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "dna.blocked_customer"
+order by varPop() on columns of table "dna.blocked_customer"
 """
 input CustomerBanVarPopOrderBy {
   merchantId: OrderBy
 }
 
 """
-order by var_samp() on columns of table "dna.blocked_customer"
+order by varSamp() on columns of table "dna.blocked_customer"
 """
 input CustomerBanVarSampOrderBy {
   merchantId: OrderBy
@@ -2386,6 +2746,7 @@ input CustomerBoolExp {
   merchantId: BigintComparisonExp
   phoneNumbers: CustomerPhoneNumberBoolExp
   purchases: PurchaseBoolExp
+  purchasesAggregate: PurchaseAggregateBoolExp
 }
 
 """Emails associated with the customer."""
@@ -2414,11 +2775,11 @@ input CustomerEmailAggregateOrderBy {
   max: CustomerEmailMaxOrderBy
   min: CustomerEmailMinOrderBy
   stddev: CustomerEmailStddevOrderBy
-  stddev_pop: CustomerEmailStddevPopOrderBy
-  stddev_samp: CustomerEmailStddevSampOrderBy
+  stddevPop: CustomerEmailStddevPopOrderBy
+  stddevSamp: CustomerEmailStddevSampOrderBy
   sum: CustomerEmailSumOrderBy
-  var_pop: CustomerEmailVarPopOrderBy
-  var_samp: CustomerEmailVarSampOrderBy
+  varPop: CustomerEmailVarPopOrderBy
+  varSamp: CustomerEmailVarSampOrderBy
   variance: CustomerEmailVarianceOrderBy
 }
 
@@ -2497,14 +2858,14 @@ input CustomerEmailStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "dna.customer_email"
+order by stddevPop() on columns of table "dna.customer_email"
 """
 input CustomerEmailStddevPopOrderBy {
   merchantId: OrderBy
 }
 
 """
-order by stddev_samp() on columns of table "dna.customer_email"
+order by stddevSamp() on columns of table "dna.customer_email"
 """
 input CustomerEmailStddevSampOrderBy {
   merchantId: OrderBy
@@ -2518,14 +2879,14 @@ input CustomerEmailSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "dna.customer_email"
+order by varPop() on columns of table "dna.customer_email"
 """
 input CustomerEmailVarPopOrderBy {
   merchantId: OrderBy
 }
 
 """
-order by var_samp() on columns of table "dna.customer_email"
+order by varSamp() on columns of table "dna.customer_email"
 """
 input CustomerEmailVarSampOrderBy {
   merchantId: OrderBy
@@ -2591,6 +2952,7 @@ type CustomerPaymentData {
   locale: spoken_lang!
   merchantId: bigint!
   name: String!
+  packedPhoneNumber: packed_phone_number
   reference: String!
 }
 
@@ -2607,6 +2969,7 @@ input CustomerPaymentDataBoolExp {
   locale: SpokenLangComparisonExp
   merchantId: BigintComparisonExp
   name: StringComparisonExp
+  packedPhoneNumber: PackedPhoneNumberComparisonExp
   reference: StringComparisonExp
 }
 
@@ -2618,6 +2981,7 @@ input CustomerPaymentDataOrderBy {
   locale: OrderBy
   merchantId: OrderBy
   name: OrderBy
+  packedPhoneNumber: OrderBy
   reference: OrderBy
 }
 
@@ -2641,7 +3005,34 @@ enum CustomerPaymentDataSelectColumn {
   name
 
   """column name"""
+  packedPhoneNumber
+
+  """column name"""
   reference
+}
+
+"""
+Streaming cursor of the table "CustomerPaymentData"
+"""
+input CustomerPaymentDataStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: CustomerPaymentDataStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input CustomerPaymentDataStreamCursorValueInput {
+  email: citext
+
+  """IP address of the customer where the payment originated from"""
+  ip: String
+  locale: spoken_lang
+  merchantId: bigint
+  name: String
+  packedPhoneNumber: packed_phone_number
+  reference: String
 }
 
 """Phone numbers of the customer."""
@@ -2669,11 +3060,11 @@ input CustomerPhoneNumberAggregateOrderBy {
   max: CustomerPhoneNumberMaxOrderBy
   min: CustomerPhoneNumberMinOrderBy
   stddev: CustomerPhoneNumberStddevOrderBy
-  stddev_pop: CustomerPhoneNumberStddevPopOrderBy
-  stddev_samp: CustomerPhoneNumberStddevSampOrderBy
+  stddevPop: CustomerPhoneNumberStddevPopOrderBy
+  stddevSamp: CustomerPhoneNumberStddevSampOrderBy
   sum: CustomerPhoneNumberSumOrderBy
-  var_pop: CustomerPhoneNumberVarPopOrderBy
-  var_samp: CustomerPhoneNumberVarSampOrderBy
+  varPop: CustomerPhoneNumberVarPopOrderBy
+  varSamp: CustomerPhoneNumberVarSampOrderBy
   variance: CustomerPhoneNumberVarianceOrderBy
 }
 
@@ -2757,7 +3148,7 @@ input CustomerPhoneNumberStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "dna.customer_phone_number"
+order by stddevPop() on columns of table "dna.customer_phone_number"
 """
 input CustomerPhoneNumberStddevPopOrderBy {
   customerId: OrderBy
@@ -2765,7 +3156,7 @@ input CustomerPhoneNumberStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "dna.customer_phone_number"
+order by stddevSamp() on columns of table "dna.customer_phone_number"
 """
 input CustomerPhoneNumberStddevSampOrderBy {
   customerId: OrderBy
@@ -2781,7 +3172,7 @@ input CustomerPhoneNumberSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "dna.customer_phone_number"
+order by varPop() on columns of table "dna.customer_phone_number"
 """
 input CustomerPhoneNumberVarPopOrderBy {
   customerId: OrderBy
@@ -2789,7 +3180,7 @@ input CustomerPhoneNumberVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "dna.customer_phone_number"
+order by varSamp() on columns of table "dna.customer_phone_number"
 """
 input CustomerPhoneNumberVarSampOrderBy {
   customerId: OrderBy
@@ -2836,7 +3227,7 @@ type CustomerStddevFields {
   merchantId: Float
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type CustomerStddevPopFields {
   """Serial id for each customer"""
   id: Float
@@ -2845,7 +3236,7 @@ type CustomerStddevPopFields {
   merchantId: Float
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type CustomerStddevSampFields {
   """Serial id for each customer"""
   id: Float
@@ -2871,7 +3262,7 @@ enum CustomerTitle {
   Ms
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type CustomerVarPopFields {
   """Serial id for each customer"""
   id: Float
@@ -2880,7 +3271,7 @@ type CustomerVarPopFields {
   merchantId: Float
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type CustomerVarSampFields {
   """Serial id for each customer"""
   id: Float
@@ -3048,6 +3439,50 @@ enum DeviceSelectColumn {
   userAgent
 }
 
+"""
+Streaming cursor of the table "Device"
+"""
+input DeviceStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: DeviceStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input DeviceStreamCursorValueInput {
+  browserName: String
+  browserVersion: String
+  createdAt: timestamptz
+
+  """Fingerprint of the device. This should be generated on the client side"""
+  fingerprint: String
+  ipAddress: inet
+
+  """City of the device when accessing our service calculated using the ip."""
+  ipCity: String
+
+  """
+  Continent of the device when accessing our service calculated using the ip.
+  """
+  ipContinent: String
+
+  """
+  Country of the device when accessing our service calculated using the ip.
+  """
+  ipCountry: String
+
+  """
+  Location coordinates of the device when accessing our service calculated using the ip.
+  """
+  ipLocation: geography
+  merchantId: bigint
+  osName: String
+  osVersion: String
+  userAgent: String
+}
+
 """Arguments for creating a new direct debit payment"""
 input DirectDebitPaymentInput {
   """
@@ -3140,6 +3575,17 @@ type DiscountAggregate {
   nodes: [Discount!]!
 }
 
+input DiscountAggregateBoolExp {
+  count: DiscountAggregateBoolExpCount
+}
+
+input DiscountAggregateBoolExpCount {
+  arguments: [DiscountSelectColumn!]
+  distinct: Boolean
+  filter: DiscountBoolExp
+  predicate: IntComparisonExp!
+}
+
 """
 aggregate fields of "marketplace.purchase_capture_item_discount"
 """
@@ -3166,11 +3612,11 @@ input DiscountAggregateOrderBy {
   max: DiscountMaxOrderBy
   min: DiscountMinOrderBy
   stddev: DiscountStddevOrderBy
-  stddev_pop: DiscountStddevPopOrderBy
-  stddev_samp: DiscountStddevSampOrderBy
+  stddevPop: DiscountStddevPopOrderBy
+  stddevSamp: DiscountStddevSampOrderBy
   sum: DiscountSumOrderBy
-  var_pop: DiscountVarPopOrderBy
-  var_samp: DiscountVarSampOrderBy
+  varPop: DiscountVarPopOrderBy
+  varSamp: DiscountVarSampOrderBy
   variance: DiscountVarianceOrderBy
 }
 
@@ -3318,7 +3764,7 @@ input DiscountStddevOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type DiscountStddevPopFields {
   """The discount amount in currency units, includes tax to be discounted."""
   discountAmount: Float
@@ -3328,7 +3774,7 @@ type DiscountStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.purchase_capture_item_discount"
+order by stddevPop() on columns of table "marketplace.purchase_capture_item_discount"
 """
 input DiscountStddevPopOrderBy {
   """The discount amount in currency units, includes tax to be discounted."""
@@ -3338,7 +3784,7 @@ input DiscountStddevPopOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type DiscountStddevSampFields {
   """The discount amount in currency units, includes tax to be discounted."""
   discountAmount: Float
@@ -3348,7 +3794,7 @@ type DiscountStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.purchase_capture_item_discount"
+order by stddevSamp() on columns of table "marketplace.purchase_capture_item_discount"
 """
 input DiscountStddevSampOrderBy {
   """The discount amount in currency units, includes tax to be discounted."""
@@ -3378,7 +3824,7 @@ input DiscountSumOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type DiscountVarPopFields {
   """The discount amount in currency units, includes tax to be discounted."""
   discountAmount: Float
@@ -3388,7 +3834,7 @@ type DiscountVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "marketplace.purchase_capture_item_discount"
+order by varPop() on columns of table "marketplace.purchase_capture_item_discount"
 """
 input DiscountVarPopOrderBy {
   """The discount amount in currency units, includes tax to be discounted."""
@@ -3398,7 +3844,7 @@ input DiscountVarPopOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type DiscountVarSampFields {
   """The discount amount in currency units, includes tax to be discounted."""
   discountAmount: Float
@@ -3408,7 +3854,7 @@ type DiscountVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "marketplace.purchase_capture_item_discount"
+order by varSamp() on columns of table "marketplace.purchase_capture_item_discount"
 """
 input DiscountVarSampOrderBy {
   """The discount amount in currency units, includes tax to be discounted."""
@@ -3440,17 +3886,14 @@ input DiscountVarianceOrderBy {
 
 """Edit user's role."""
 input EditUserInput {
-  """Email of the user that is making the request."""
-  currentUser: String!
-
   """List of users that should be changed."""
   editUsers: [EditUserSingleInput!]!
 }
 
 """Result of the editions"""
 type EditUserResult {
-  """Result of the operation."""
-  success: Boolean!
+  """The number of users modified."""
+  usersChanged: Int!
 }
 
 """The information needed to edit a user role."""
@@ -3460,6 +3903,12 @@ input EditUserSingleInput {
 
   """Role that this user should have."""
   role: String!
+
+  """
+  One of "google", "password" or "webauthn", indicates the type of user to be modify.
+  Max length: 64.
+  """
+  userType: String!
 }
 
 """
@@ -3663,8 +4112,23 @@ type GeneratePaymentCSVResult {
 
 """Arguments to generate presigned URLs for the merchant"""
 input GeneratePaymentRequestCSVInput {
+  """The credit card number of the payment request."""
+  creditCardNumber: String
+
+  """List of credit card types to be included in the CSV."""
+  creditCardTypeIn: [String!]
+
+  """List of currencies to be included in the CSV."""
+  currencyIn: [String!]
+
   """The email address of the customer that initiated the payment request."""
   customerEmail: String
+
+  """The name of the customer that initiated the payment request."""
+  customerName: String
+
+  """The phone number of the customer that initiated the payment request."""
+  customerPhoneNumber: String
 
   """
   A date in yyyy-mm-dd format, non-nullable, filters payment requests
@@ -3981,11 +4445,11 @@ input InstalmentAggregateOrderBy {
   max: InstalmentMaxOrderBy
   min: InstalmentMinOrderBy
   stddev: InstalmentStddevOrderBy
-  stddev_pop: InstalmentStddevPopOrderBy
-  stddev_samp: InstalmentStddevSampOrderBy
+  stddevPop: InstalmentStddevPopOrderBy
+  stddevSamp: InstalmentStddevSampOrderBy
   sum: InstalmentSumOrderBy
-  var_pop: InstalmentVarPopOrderBy
-  var_samp: InstalmentVarSampOrderBy
+  varPop: InstalmentVarPopOrderBy
+  varSamp: InstalmentVarSampOrderBy
   variance: InstalmentVarianceOrderBy
 }
 
@@ -4156,7 +4620,7 @@ input InstalmentStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "instalment.instalment"
+order by stddevPop() on columns of table "instalment.instalment"
 """
 input InstalmentStddevPopOrderBy {
   """Contains the total amount to pay, including fees"""
@@ -4176,7 +4640,7 @@ input InstalmentStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "instalment.instalment"
+order by stddevSamp() on columns of table "instalment.instalment"
 """
 input InstalmentStddevSampOrderBy {
   """Contains the total amount to pay, including fees"""
@@ -4216,7 +4680,7 @@ input InstalmentSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "instalment.instalment"
+order by varPop() on columns of table "instalment.instalment"
 """
 input InstalmentVarPopOrderBy {
   """Contains the total amount to pay, including fees"""
@@ -4236,7 +4700,7 @@ input InstalmentVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "instalment.instalment"
+order by varSamp() on columns of table "instalment.instalment"
 """
 input InstalmentVarSampOrderBy {
   """Contains the total amount to pay, including fees"""
@@ -4425,6 +4889,7 @@ input InvoiceBoolExp {
   merchantId: BigintComparisonExp
   merchantReference: StringComparisonExp
   notes: InvoiceNoteBoolExp
+  notesAggregate: InvoiceNoteAggregateBoolExp
   payments: InvoicePaymentBoolExp
   purchaseId: BigintComparisonExp
 }
@@ -4510,6 +4975,17 @@ type InvoiceNoteAggregate {
   nodes: [InvoiceNote!]!
 }
 
+input InvoiceNoteAggregateBoolExp {
+  count: InvoiceNoteAggregateBoolExpCount
+}
+
+input InvoiceNoteAggregateBoolExpCount {
+  arguments: [InvoiceNoteSelectColumn!]
+  distinct: Boolean
+  filter: InvoiceNoteBoolExp
+  predicate: IntComparisonExp!
+}
+
 """
 aggregate fields of "invoice.note"
 """
@@ -4536,11 +5012,11 @@ input InvoiceNoteAggregateOrderBy {
   max: InvoiceNoteMaxOrderBy
   min: InvoiceNoteMinOrderBy
   stddev: InvoiceNoteStddevOrderBy
-  stddev_pop: InvoiceNoteStddevPopOrderBy
-  stddev_samp: InvoiceNoteStddevSampOrderBy
+  stddevPop: InvoiceNoteStddevPopOrderBy
+  stddevSamp: InvoiceNoteStddevSampOrderBy
   sum: InvoiceNoteSumOrderBy
-  var_pop: InvoiceNoteVarPopOrderBy
-  var_samp: InvoiceNoteVarSampOrderBy
+  varPop: InvoiceNoteVarPopOrderBy
+  varSamp: InvoiceNoteVarSampOrderBy
   variance: InvoiceNoteVarianceOrderBy
 }
 
@@ -4705,7 +5181,7 @@ input InvoiceNoteStddevOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type InvoiceNoteStddevPopFields {
   id: Float
   invoiceNumber: Float
@@ -4714,7 +5190,7 @@ type InvoiceNoteStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "invoice.note"
+order by stddevPop() on columns of table "invoice.note"
 """
 input InvoiceNoteStddevPopOrderBy {
   id: OrderBy
@@ -4723,7 +5199,7 @@ input InvoiceNoteStddevPopOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type InvoiceNoteStddevSampFields {
   id: Float
   invoiceNumber: Float
@@ -4732,7 +5208,7 @@ type InvoiceNoteStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "invoice.note"
+order by stddevSamp() on columns of table "invoice.note"
 """
 input InvoiceNoteStddevSampOrderBy {
   id: OrderBy
@@ -4759,7 +5235,7 @@ input InvoiceNoteSumOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type InvoiceNoteVarPopFields {
   id: Float
   invoiceNumber: Float
@@ -4768,7 +5244,7 @@ type InvoiceNoteVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "invoice.note"
+order by varPop() on columns of table "invoice.note"
 """
 input InvoiceNoteVarPopOrderBy {
   id: OrderBy
@@ -4777,7 +5253,7 @@ input InvoiceNoteVarPopOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type InvoiceNoteVarSampFields {
   id: Float
   invoiceNumber: Float
@@ -4786,7 +5262,7 @@ type InvoiceNoteVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "invoice.note"
+order by varSamp() on columns of table "invoice.note"
 """
 input InvoiceNoteVarSampOrderBy {
   id: OrderBy
@@ -4996,11 +5472,11 @@ input InvoicePaymentAggregateOrderBy {
   max: InvoicePaymentMaxOrderBy
   min: InvoicePaymentMinOrderBy
   stddev: InvoicePaymentStddevOrderBy
-  stddev_pop: InvoicePaymentStddevPopOrderBy
-  stddev_samp: InvoicePaymentStddevSampOrderBy
+  stddevPop: InvoicePaymentStddevPopOrderBy
+  stddevSamp: InvoicePaymentStddevSampOrderBy
   sum: InvoicePaymentSumOrderBy
-  var_pop: InvoicePaymentVarPopOrderBy
-  var_samp: InvoicePaymentVarSampOrderBy
+  varPop: InvoicePaymentVarPopOrderBy
+  varSamp: InvoicePaymentVarSampOrderBy
   variance: InvoicePaymentVarianceOrderBy
 }
 
@@ -5104,7 +5580,7 @@ input InvoicePaymentStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "invoice_page.invoice_payment"
+order by stddevPop() on columns of table "invoice_page.invoice_payment"
 """
 input InvoicePaymentStddevPopOrderBy {
   amountPaid: OrderBy
@@ -5114,7 +5590,7 @@ input InvoicePaymentStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "invoice_page.invoice_payment"
+order by stddevSamp() on columns of table "invoice_page.invoice_payment"
 """
 input InvoicePaymentStddevSampOrderBy {
   amountPaid: OrderBy
@@ -5134,7 +5610,7 @@ input InvoicePaymentSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "invoice_page.invoice_payment"
+order by varPop() on columns of table "invoice_page.invoice_payment"
 """
 input InvoicePaymentVarPopOrderBy {
   amountPaid: OrderBy
@@ -5144,7 +5620,7 @@ input InvoicePaymentVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "invoice_page.invoice_payment"
+order by varSamp() on columns of table "invoice_page.invoice_payment"
 """
 input InvoicePaymentVarSampOrderBy {
   amountPaid: OrderBy
@@ -5200,7 +5676,7 @@ type InvoiceStddevFields {
   purchaseId: Float
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type InvoiceStddevPopFields {
   expectedAmount: Float
   invoiceNumber: Float
@@ -5208,7 +5684,7 @@ type InvoiceStddevPopFields {
   purchaseId: Float
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type InvoiceStddevSampFields {
   expectedAmount: Float
   invoiceNumber: Float
@@ -5244,11 +5720,11 @@ input InvoiceSurchargeAggregateOrderBy {
   max: InvoiceSurchargeMaxOrderBy
   min: InvoiceSurchargeMinOrderBy
   stddev: InvoiceSurchargeStddevOrderBy
-  stddev_pop: InvoiceSurchargeStddevPopOrderBy
-  stddev_samp: InvoiceSurchargeStddevSampOrderBy
+  stddevPop: InvoiceSurchargeStddevPopOrderBy
+  stddevSamp: InvoiceSurchargeStddevSampOrderBy
   sum: InvoiceSurchargeSumOrderBy
-  var_pop: InvoiceSurchargeVarPopOrderBy
-  var_samp: InvoiceSurchargeVarSampOrderBy
+  varPop: InvoiceSurchargeVarPopOrderBy
+  varSamp: InvoiceSurchargeVarSampOrderBy
   variance: InvoiceSurchargeVarianceOrderBy
 }
 
@@ -5352,7 +5828,7 @@ input InvoiceSurchargeStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "invoice_page.invoice_surcharge"
+order by stddevPop() on columns of table "invoice_page.invoice_surcharge"
 """
 input InvoiceSurchargeStddevPopOrderBy {
   amount: OrderBy
@@ -5362,7 +5838,7 @@ input InvoiceSurchargeStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "invoice_page.invoice_surcharge"
+order by stddevSamp() on columns of table "invoice_page.invoice_surcharge"
 """
 input InvoiceSurchargeStddevSampOrderBy {
   amount: OrderBy
@@ -5382,7 +5858,7 @@ input InvoiceSurchargeSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "invoice_page.invoice_surcharge"
+order by varPop() on columns of table "invoice_page.invoice_surcharge"
 """
 input InvoiceSurchargeVarPopOrderBy {
   amount: OrderBy
@@ -5392,7 +5868,7 @@ input InvoiceSurchargeVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "invoice_page.invoice_surcharge"
+order by varSamp() on columns of table "invoice_page.invoice_surcharge"
 """
 input InvoiceSurchargeVarSampOrderBy {
   amount: OrderBy
@@ -5449,11 +5925,11 @@ input InvoiceTransactionAggregateOrderBy {
   max: InvoiceTransactionMaxOrderBy
   min: InvoiceTransactionMinOrderBy
   stddev: InvoiceTransactionStddevOrderBy
-  stddev_pop: InvoiceTransactionStddevPopOrderBy
-  stddev_samp: InvoiceTransactionStddevSampOrderBy
+  stddevPop: InvoiceTransactionStddevPopOrderBy
+  stddevSamp: InvoiceTransactionStddevSampOrderBy
   sum: InvoiceTransactionSumOrderBy
-  var_pop: InvoiceTransactionVarPopOrderBy
-  var_samp: InvoiceTransactionVarSampOrderBy
+  varPop: InvoiceTransactionVarPopOrderBy
+  varSamp: InvoiceTransactionVarSampOrderBy
   variance: InvoiceTransactionVarianceOrderBy
 }
 
@@ -5506,11 +5982,11 @@ input InvoiceTransactionItemAggregateOrderBy {
   max: InvoiceTransactionItemMaxOrderBy
   min: InvoiceTransactionItemMinOrderBy
   stddev: InvoiceTransactionItemStddevOrderBy
-  stddev_pop: InvoiceTransactionItemStddevPopOrderBy
-  stddev_samp: InvoiceTransactionItemStddevSampOrderBy
+  stddevPop: InvoiceTransactionItemStddevPopOrderBy
+  stddevSamp: InvoiceTransactionItemStddevSampOrderBy
   sum: InvoiceTransactionItemSumOrderBy
-  var_pop: InvoiceTransactionItemVarPopOrderBy
-  var_samp: InvoiceTransactionItemVarSampOrderBy
+  varPop: InvoiceTransactionItemVarPopOrderBy
+  varSamp: InvoiceTransactionItemVarSampOrderBy
   variance: InvoiceTransactionItemVarianceOrderBy
 }
 
@@ -5653,7 +6129,7 @@ input InvoiceTransactionItemStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "invoice_page.invoice_transaction_item"
+order by stddevPop() on columns of table "invoice_page.invoice_transaction_item"
 """
 input InvoiceTransactionItemStddevPopOrderBy {
   merchantId: OrderBy
@@ -5665,7 +6141,7 @@ input InvoiceTransactionItemStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "invoice_page.invoice_transaction_item"
+order by stddevSamp() on columns of table "invoice_page.invoice_transaction_item"
 """
 input InvoiceTransactionItemStddevSampOrderBy {
   merchantId: OrderBy
@@ -5689,7 +6165,7 @@ input InvoiceTransactionItemSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "invoice_page.invoice_transaction_item"
+order by varPop() on columns of table "invoice_page.invoice_transaction_item"
 """
 input InvoiceTransactionItemVarPopOrderBy {
   merchantId: OrderBy
@@ -5701,7 +6177,7 @@ input InvoiceTransactionItemVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "invoice_page.invoice_transaction_item"
+order by varSamp() on columns of table "invoice_page.invoice_transaction_item"
 """
 input InvoiceTransactionItemVarSampOrderBy {
   merchantId: OrderBy
@@ -5792,7 +6268,7 @@ input InvoiceTransactionStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "invoice_page.invoice_transaction"
+order by stddevPop() on columns of table "invoice_page.invoice_transaction"
 """
 input InvoiceTransactionStddevPopOrderBy {
   id: OrderBy
@@ -5801,7 +6277,7 @@ input InvoiceTransactionStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "invoice_page.invoice_transaction"
+order by stddevSamp() on columns of table "invoice_page.invoice_transaction"
 """
 input InvoiceTransactionStddevSampOrderBy {
   id: OrderBy
@@ -5834,7 +6310,7 @@ input InvoiceTransactionTypeComparisonExp {
 }
 
 """
-order by var_pop() on columns of table "invoice_page.invoice_transaction"
+order by varPop() on columns of table "invoice_page.invoice_transaction"
 """
 input InvoiceTransactionVarPopOrderBy {
   id: OrderBy
@@ -5843,7 +6319,7 @@ input InvoiceTransactionVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "invoice_page.invoice_transaction"
+order by varSamp() on columns of table "invoice_page.invoice_transaction"
 """
 input InvoiceTransactionVarSampOrderBy {
   id: OrderBy
@@ -5860,7 +6336,7 @@ input InvoiceTransactionVarianceOrderBy {
   purchaseId: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type InvoiceVarPopFields {
   expectedAmount: Float
   invoiceNumber: Float
@@ -5868,7 +6344,7 @@ type InvoiceVarPopFields {
   purchaseId: Float
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type InvoiceVarSampFields {
   expectedAmount: Float
   invoiceNumber: Float
@@ -5971,10 +6447,30 @@ input JsonbComparisonExp {
 
 """Supported languages"""
 enum Language {
+  CS
   DA
+  DE
+  EL
   EN
+  ES
+  ET
+  FI
+  FR
+  HR
+  HU
   IS
+  IT
+  LB
+  LT
+  LV
+  MT
+  NL
   NO
+  PL
+  PT
+  RO
+  SK
+  SL
   SV
 }
 
@@ -6055,8 +6551,15 @@ input MerchantOrderBy {
 
 """Describe the schema for mobilepay details."""
 type MobilePayDetails {
+  """Acquirer Name"""
+  acquirer: String
   cardCountry: String
   cardExpiryDate: date
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: String
   cardNumber: String
   cardType: String
   threeDSecureStatus: Boolean
@@ -6078,8 +6581,10 @@ input MobilePayDetailsBoolExp {
   _and: [MobilePayDetailsBoolExp!]
   _not: MobilePayDetailsBoolExp
   _or: [MobilePayDetailsBoolExp!]
+  acquirer: StringComparisonExp
   cardCountry: StringComparisonExp
   cardExpiryDate: DateComparisonExp
+  cardFingerprint: StringComparisonExp
   cardNumber: StringComparisonExp
   cardType: StringComparisonExp
   threeDSecureStatus: BooleanComparisonExp
@@ -6089,8 +6594,15 @@ input MobilePayDetailsBoolExp {
 order by max() on columns of table "runtime.transaction_mobilepay_details"
 """
 input MobilePayDetailsMaxOrderBy {
+  """Acquirer Name"""
+  acquirer: OrderBy
   cardCountry: OrderBy
   cardExpiryDate: OrderBy
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: OrderBy
   cardNumber: OrderBy
   cardType: OrderBy
 }
@@ -6099,8 +6611,15 @@ input MobilePayDetailsMaxOrderBy {
 order by min() on columns of table "runtime.transaction_mobilepay_details"
 """
 input MobilePayDetailsMinOrderBy {
+  """Acquirer Name"""
+  acquirer: OrderBy
   cardCountry: OrderBy
   cardExpiryDate: OrderBy
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: OrderBy
   cardNumber: OrderBy
   cardType: OrderBy
 }
@@ -6109,8 +6628,10 @@ input MobilePayDetailsMinOrderBy {
 Ordering options when selecting data from "runtime.transaction_mobilepay_details".
 """
 input MobilePayDetailsOrderBy {
+  acquirer: OrderBy
   cardCountry: OrderBy
   cardExpiryDate: OrderBy
+  cardFingerprint: OrderBy
   cardNumber: OrderBy
   cardType: OrderBy
   threeDSecureStatus: OrderBy
@@ -6121,10 +6642,16 @@ select columns of table "runtime.transaction_mobilepay_details"
 """
 enum MobilePayDetailsSelectColumn {
   """column name"""
+  acquirer
+
+  """column name"""
   cardCountry
 
   """column name"""
   cardExpiryDate
+
+  """column name"""
+  cardFingerprint
 
   """column name"""
   cardNumber
@@ -6253,6 +6780,35 @@ type PayInstalmentResult {
   token: String!
 }
 
+"""Arguments for onboarding a new PayPal merchant"""
+input PayPalMerchantOnboardingInput {
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """The url to return to after the merchant is onboarded."""
+  returnUrl: String!
+}
+
+"""The result of starting the PayPal onboarding process."""
+type PayPalMerchantOnboardingResult {
+  """The result of starting the PayPal onboarding process."""
+  trackingId: String!
+}
+
 """Arguments for creating a new PayPal payment"""
 input PayPalPaymentInput {
   """
@@ -6311,15 +6867,6 @@ input PayPalPaymentInput {
 
 """The result of initiating a PayPal payment."""
 type PayPalPaymentResult {
-  """
-  The amount the customer pays in minor units.
-  So 100,56 kr would be 10056
-  """
-  amount: String!
-
-  """The currency of the payment"""
-  currency: String!
-
   """
   Once a payment is initialized, we will start the PayPal payment
   workflow. You can use this id to query the current status of the
@@ -6387,6 +6934,9 @@ type Payment {
   paymentMethod: PaymentMethodEnum!
   paymentRefundStatus: PaymentRefundStatusEnum
 
+  """An object relationship"""
+  payment_method_used: PaymentMethodStatus
+
   """An array relationship"""
   refunds(
     """distinct select on columns"""
@@ -6422,6 +6972,127 @@ type Payment {
     """filter the rows returned"""
     where: RefundBoolExp
   ): RefundAggregate!
+
+  """
+  A computed field, executes function "payment_gateway.get_transaction_credit_card_details"
+  """
+  transactionCreditCardDetails(
+    """distinct select on columns"""
+    distinctOn: [CreditCardDetailsSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [CreditCardDetailsOrderBy!]
+
+    """filter the rows returned"""
+    where: CreditCardDetailsBoolExp
+  ): [CreditCardDetails!]
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: String!
+
+  """
+  A computed field, executes function "payment_gateway.get_transaction_mobilepay_details"
+  """
+  transactionMobilePayDetails(
+    """distinct select on columns"""
+    distinctOn: [MobilePayDetailsSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [MobilePayDetailsOrderBy!]
+
+    """filter the rows returned"""
+    where: MobilePayDetailsBoolExp
+  ): [MobilePayDetails!]
+
+  """Get the list of transaction releases"""
+  transactionReleases(
+    """distinct select on columns"""
+    distinctOn: [TransactionReleaseSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [TransactionReleaseOrderBy!]
+
+    """filter the rows returned"""
+    where: TransactionReleaseBoolExp
+  ): [TransactionRelease!]!
+
+  """Run aggregations on the list of transaction releases"""
+  transactionReleasesAggregate(
+    """distinct select on columns"""
+    distinctOn: [TransactionReleaseSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [TransactionReleaseOrderBy!]
+
+    """filter the rows returned"""
+    where: TransactionReleaseBoolExp
+  ): TransactionReleaseAggregate!
+
+  """
+  A computed field, executes function "payment_gateway.get_transaction_swish_details"
+  """
+  transactionSwishDetails(
+    """distinct select on columns"""
+    distinctOn: [SwishDetailsSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [SwishDetailsOrderBy!]
+
+    """filter the rows returned"""
+    where: SwishDetailsBoolExp
+  ): [SwishDetails!]
+
+  """
+  A computed field, executes function "payment_gateway.get_transaction_vipps_details"
+  """
+  transactionVippsDetails(
+    """distinct select on columns"""
+    distinctOn: [VippsDetailsSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [VippsDetailsOrderBy!]
+
+    """filter the rows returned"""
+    where: VippsDetailsBoolExp
+  ): [VippsDetails!]
 }
 
 """
@@ -6469,6 +7140,7 @@ input PaymentBoolExp {
   amountAuthorized: BigintComparisonExp
   amountPaid: BigintComparisonExp
   captures: PaymentCaptureBoolExp
+  capturesAggregate: PaymentCaptureAggregateBoolExp
   createdAt: TimestamptzComparisonExp
   currency: SupportedCurrencyEnumComparisonExp
   customer: CustomerPaymentDataBoolExp
@@ -6479,7 +7151,16 @@ input PaymentBoolExp {
   merchantReference: StringComparisonExp
   paymentMethod: PaymentMethodEnumComparisonExp
   paymentRefundStatus: PaymentRefundStatusEnumComparisonExp
+  payment_method_used: PaymentMethodStatusBoolExp
   refunds: RefundBoolExp
+  refundsAggregate: RefundAggregateBoolExp
+  transactionCreditCardDetails: CreditCardDetailsBoolExp
+  transactionId: StringComparisonExp
+  transactionMobilePayDetails: MobilePayDetailsBoolExp
+  transactionReleases: TransactionReleaseBoolExp
+  transactionReleasesAggregate: TransactionReleaseAggregateBoolExp
+  transactionSwishDetails: SwishDetailsBoolExp
+  transactionVippsDetails: VippsDetailsBoolExp
 }
 
 """URL containing a downloadable CSV with payment data"""
@@ -6685,18 +7366,64 @@ type PaymentCSVStddevFields {
   merchantId: Float
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type PaymentCSVStddevPopFields {
   """This is the key that we send to query for the links."""
   id: Float
   merchantId: Float
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type PaymentCSVStddevSampFields {
   """This is the key that we send to query for the links."""
   id: Float
   merchantId: Float
+}
+
+"""
+Streaming cursor of the table "PaymentCSV"
+"""
+input PaymentCSVStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: PaymentCSVStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input PaymentCSVStreamCursorValueInput {
+  createdAt: timestamptz
+
+  """
+  
+          End date till which the csv is generated.
+          
+  """
+  endDate: date
+
+  """An error message that may be present in case we couldn't create a URL."""
+  errMessage: String
+  expiresAt: timestamptz
+
+  """This is the key that we send to query for the links."""
+  id: bigint
+
+  """
+  The Amazon S3 presigned URL shared with merchant for them to download the csv.
+  """
+  link: String
+  merchantId: bigint
+
+  """
+  
+          Start date from which the csv is generated.
+          
+  """
+  startDate: date
+
+  """The status of creating the presigned URL."""
+  status: ReportLinkStatusEnum
 }
 
 """aggregate sum on columns"""
@@ -6706,14 +7433,14 @@ type PaymentCSVSumFields {
   merchantId: bigint
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type PaymentCSVVarPopFields {
   """This is the key that we send to query for the links."""
   id: Float
   merchantId: Float
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type PaymentCSVVarSampFields {
   """This is the key that we send to query for the links."""
   id: Float
@@ -6814,6 +7541,11 @@ type PaymentCapture {
     """filter the rows returned"""
     where: CurrentCaptureStatusBoolExp
   ): [CurrentCaptureStatus!]
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: String!
 }
 
 """
@@ -6822,6 +7554,17 @@ aggregated selection of "payment_gateway.payment_capture"
 type PaymentCaptureAggregate {
   aggregate: PaymentCaptureAggregateFields
   nodes: [PaymentCapture!]!
+}
+
+input PaymentCaptureAggregateBoolExp {
+  count: PaymentCaptureAggregateBoolExpCount
+}
+
+input PaymentCaptureAggregateBoolExpCount {
+  arguments: [PaymentCaptureSelectColumn!]
+  distinct: Boolean
+  filter: PaymentCaptureBoolExp
+  predicate: IntComparisonExp!
 }
 
 """
@@ -6850,11 +7593,11 @@ input PaymentCaptureAggregateOrderBy {
   max: PaymentCaptureMaxOrderBy
   min: PaymentCaptureMinOrderBy
   stddev: PaymentCaptureStddevOrderBy
-  stddev_pop: PaymentCaptureStddevPopOrderBy
-  stddev_samp: PaymentCaptureStddevSampOrderBy
+  stddevPop: PaymentCaptureStddevPopOrderBy
+  stddevSamp: PaymentCaptureStddevSampOrderBy
   sum: PaymentCaptureSumOrderBy
-  var_pop: PaymentCaptureVarPopOrderBy
-  var_samp: PaymentCaptureVarSampOrderBy
+  varPop: PaymentCaptureVarPopOrderBy
+  varSamp: PaymentCaptureVarSampOrderBy
   variance: PaymentCaptureVarianceOrderBy
 }
 
@@ -6951,6 +7694,7 @@ input PaymentCaptureBoolExp {
   paymentId: BigintComparisonExp
   status: CurrentCaptureStatusBoolExp
   statusHistory: CurrentCaptureStatusBoolExp
+  transactionId: StringComparisonExp
 }
 
 """Arguments for partially capturing a payment."""
@@ -7007,6 +7751,11 @@ type PaymentCaptureMaxFields {
 
   """Payment to which this capture belongs to."""
   paymentId: bigint
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: String
 }
 
 """
@@ -7027,6 +7776,11 @@ input PaymentCaptureMaxOrderBy {
 
   """Payment to which this capture belongs to."""
   paymentId: OrderBy
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: OrderBy
 }
 
 """aggregate min on columns"""
@@ -7045,6 +7799,11 @@ type PaymentCaptureMinFields {
 
   """Payment to which this capture belongs to."""
   paymentId: bigint
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: String
 }
 
 """
@@ -7065,6 +7824,11 @@ input PaymentCaptureMinOrderBy {
 
   """Payment to which this capture belongs to."""
   paymentId: OrderBy
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: OrderBy
 }
 
 """
@@ -7081,6 +7845,7 @@ input PaymentCaptureOrderBy {
   paymentId: OrderBy
   statusAggregate: CurrentCaptureStatusAggregateOrderBy
   statusHistoryAggregate: CurrentCaptureStatusAggregateOrderBy
+  transactionId: OrderBy
 }
 
 """The result of capturing a payment."""
@@ -7116,6 +7881,9 @@ enum PaymentCaptureSelectColumn {
 
   """column name"""
   paymentId
+
+  """column name"""
+  transactionId
 }
 
 enum PaymentCaptureStatusEnum {
@@ -7166,7 +7934,7 @@ input PaymentCaptureStddevOrderBy {
   paymentId: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type PaymentCaptureStddevPopFields {
   """Amount to capture, should be less than or equal to authorized amount."""
   amount: Float
@@ -7180,7 +7948,7 @@ type PaymentCaptureStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "payment_gateway.payment_capture"
+order by stddevPop() on columns of table "payment_gateway.payment_capture"
 """
 input PaymentCaptureStddevPopOrderBy {
   """Amount to capture, should be less than or equal to authorized amount."""
@@ -7194,7 +7962,7 @@ input PaymentCaptureStddevPopOrderBy {
   paymentId: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type PaymentCaptureStddevSampFields {
   """Amount to capture, should be less than or equal to authorized amount."""
   amount: Float
@@ -7208,7 +7976,7 @@ type PaymentCaptureStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "payment_gateway.payment_capture"
+order by stddevSamp() on columns of table "payment_gateway.payment_capture"
 """
 input PaymentCaptureStddevSampOrderBy {
   """Amount to capture, should be less than or equal to authorized amount."""
@@ -7220,6 +7988,40 @@ input PaymentCaptureStddevSampOrderBy {
 
   """Payment to which this capture belongs to."""
   paymentId: OrderBy
+}
+
+"""
+Streaming cursor of the table "PaymentCapture"
+"""
+input PaymentCaptureStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: PaymentCaptureStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input PaymentCaptureStreamCursorValueInput {
+  """Amount to capture, should be less than or equal to authorized amount."""
+  amount: bigint
+  createdAt: timestamptz
+  id: bigint
+  latestStatus: String
+
+  """Merchant who has created the capture."""
+  merchantId: bigint
+
+  """Message for this capture."""
+  message: String
+
+  """Payment to which this capture belongs to."""
+  paymentId: bigint
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: String
 }
 
 """aggregate sum on columns"""
@@ -7250,7 +8052,7 @@ input PaymentCaptureSumOrderBy {
   paymentId: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type PaymentCaptureVarPopFields {
   """Amount to capture, should be less than or equal to authorized amount."""
   amount: Float
@@ -7264,7 +8066,7 @@ type PaymentCaptureVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "payment_gateway.payment_capture"
+order by varPop() on columns of table "payment_gateway.payment_capture"
 """
 input PaymentCaptureVarPopOrderBy {
   """Amount to capture, should be less than or equal to authorized amount."""
@@ -7278,7 +8080,7 @@ input PaymentCaptureVarPopOrderBy {
   paymentId: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type PaymentCaptureVarSampFields {
   """Amount to capture, should be less than or equal to authorized amount."""
   amount: Float
@@ -7292,7 +8094,7 @@ type PaymentCaptureVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "payment_gateway.payment_capture"
+order by varSamp() on columns of table "payment_gateway.payment_capture"
 """
 input PaymentCaptureVarSampOrderBy {
   """Amount to capture, should be less than or equal to authorized amount."""
@@ -7355,6 +8157,11 @@ type PaymentMaxFields {
 
   """Reference use by the merchant when creating the payment"""
   merchantReference: String
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: String
 }
 
 enum PaymentMethodEnum {
@@ -7461,6 +8268,32 @@ enum PaymentMethodStatusSelectColumn {
   paymentMethod
 }
 
+"""
+Streaming cursor of the table "PaymentMethodStatus"
+"""
+input PaymentMethodStatusStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: PaymentMethodStatusStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input PaymentMethodStatusStreamCursorValueInput {
+  country: country
+  currency: currency
+  enabled: Boolean
+  gateway: String
+  gatewayPaymentMethod: String
+
+  """Merchant id of the merchant."""
+  merchantId: bigint
+
+  """The payment method supported / available for this merchant.."""
+  paymentMethod: PaymentMethodEnum
+}
+
 """aggregate min on columns"""
 type PaymentMinFields {
   amountAuthorized: bigint
@@ -7474,6 +8307,11 @@ type PaymentMinFields {
 
   """Reference use by the merchant when creating the payment"""
   merchantReference: String
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: String
 }
 
 """Ordering options when selecting data from "payment_gateway.payment"."""
@@ -7491,7 +8329,14 @@ input PaymentOrderBy {
   merchantReference: OrderBy
   paymentMethod: OrderBy
   paymentRefundStatus: OrderBy
+  payment_method_used: PaymentMethodStatusOrderBy
   refundsAggregate: RefundAggregateOrderBy
+  transactionCreditCardDetailsAggregate: CreditCardDetailsAggregateOrderBy
+  transactionId: OrderBy
+  transactionMobilePayDetailsAggregate: MobilePayDetailsAggregateOrderBy
+  transactionReleasesAggregate: TransactionReleaseAggregateOrderBy
+  transactionSwishDetailsAggregate: SwishDetailsAggregateOrderBy
+  transactionVippsDetailsAggregate: VippsDetailsAggregateOrderBy
 }
 
 enum PaymentRefundStatusEnum {
@@ -7555,6 +8400,9 @@ type PaymentRequest {
   payment: Payment
   paymentFlow: String
   paymentProvider: PaymentMethodEnum
+
+  """An object relationship"""
+  payment_method_used: PaymentMethodStatus
 
   """
   
@@ -7644,6 +8492,11 @@ type PaymentRequest {
   ): [FinsharkDetails!]
 
   """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: String!
+
+  """
   A computed field, executes function "runtime.get_transaction_mobilepay_details"
   """
   transactionMobilePayDetails(
@@ -7724,12 +8577,14 @@ input PaymentRequestBoolExp {
   payment: PaymentBoolExp
   paymentFlow: StringComparisonExp
   paymentProvider: PaymentMethodEnumComparisonExp
+  payment_method_used: PaymentMethodStatusBoolExp
   reference: StringComparisonExp
   resultingPaymentId: BigintComparisonExp
   status: CurrentPaymentStatusBoolExp
   statusHistory: CurrentPaymentStatusBoolExp
   transactionCreditCardDetails: CreditCardDetailsBoolExp
   transactionFinsharkDetails: FinsharkDetailsBoolExp
+  transactionId: StringComparisonExp
   transactionMobilePayDetails: MobilePayDetailsBoolExp
   transactionSwishDetails: SwishDetailsBoolExp
   transactionVippsDetails: VippsDetailsBoolExp
@@ -7860,6 +8715,56 @@ enum PaymentRequestCSVSelectColumn {
   status
 }
 
+"""
+Streaming cursor of the table "PaymentRequestCSV"
+"""
+input PaymentRequestCSVStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: PaymentRequestCSVStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input PaymentRequestCSVStreamCursorValueInput {
+  createdAt: timestamptz
+  customerEmail: String
+
+  """
+  
+          End date till which the csv is generated.
+          
+  """
+  endDate: date
+
+  """An error message that may be present in case we couldn't create a URL."""
+  errMessage: String
+  expiresAt: timestamptz
+
+  """This is the key that we send to query for the links."""
+  id: bigint
+
+  """
+  The Amazon S3 presigned URL shared with merchant for them to download the csv.
+  """
+  link: String
+  maxAmount: bigint
+  merchantId: bigint
+  minAmount: bigint
+  reference: String
+
+  """
+  
+          Start date from which the csv is generated.
+          
+  """
+  startDate: date
+
+  """The status of creating the presigned URL."""
+  status: ReportLinkStatusEnum
+}
+
 """Payment method"""
 enum PaymentRequestMethod {
   """Credit or Debit cards"""
@@ -7898,12 +8803,14 @@ input PaymentRequestOrderBy {
   payment: PaymentOrderBy
   paymentFlow: OrderBy
   paymentProvider: OrderBy
+  payment_method_used: PaymentMethodStatusOrderBy
   reference: OrderBy
   resultingPaymentId: OrderBy
   statusAggregate: CurrentPaymentStatusAggregateOrderBy
   statusHistoryAggregate: CurrentPaymentStatusAggregateOrderBy
   transactionCreditCardDetailsAggregate: CreditCardDetailsAggregateOrderBy
   transactionFinsharkDetailsAggregate: FinsharkDetailsAggregateOrderBy
+  transactionId: OrderBy
   transactionMobilePayDetailsAggregate: MobilePayDetailsAggregateOrderBy
   transactionSwishDetailsAggregate: SwishDetailsAggregateOrderBy
   transactionVippsDetailsAggregate: VippsDetailsAggregateOrderBy
@@ -7957,6 +8864,9 @@ enum PaymentRequestSelectColumn {
   resultingPaymentId
 
   """column name"""
+  transactionId
+
+  """column name"""
   waitToken
 }
 
@@ -7972,7 +8882,7 @@ enum PaymentRequestStatus {
   CANCELLING
 
   """
-  Payment capture is declined. Please create a new payment. (Only applicable for credit card payments)
+  Payment capture is declined. Please create a new payment. (Only applicable for payments that support reservation)
   """
   CAPTURE_DECLINED
 
@@ -7989,12 +8899,17 @@ enum PaymentRequestStatus {
   PAID
 
   """
-  Payment is partially captured. (Only applicable for credit card payments)
+  Payment is partially captured. (Only applicable for payments that support reservation)
   """
   PARTIALLY_CAPTURED
 
   """Payment is undergoing check."""
   PRE_FLIGHT_CHECK
+
+  """
+  Payment reservation is released. (Only applicable for payments that support reservation)
+  """
+  RELEASED
 
   """Payment is requested and waiting for confirmation."""
   WAITING_FOR_PAYMENT
@@ -8033,6 +8948,9 @@ enum PaymentSelectColumn {
 
   """column name"""
   paymentRefundStatus
+
+  """column name"""
+  transactionId
 }
 
 """Arguments for adding additional data to a payment."""
@@ -8074,6 +8992,12 @@ input PaymentSessionInput {
   So 100,56 kr would be 10056
   """
   amount: Int!
+
+  """
+  The country where the payment is taking place.
+  Example: `SE`, `DK`, `NO`, `IS`, `FI`
+  """
+  country: Country
 
   """
   When `currency` is not set, it defaults to the merchant's default currency.
@@ -8147,6 +9071,103 @@ type PaymentSessionResult {
   token: String!
 }
 
+"""Arguments for creating a new payment session."""
+input PaymentSessionWithReferenceCheckInput {
+  """Additional data about the customer attempting the payment."""
+  additionalData: PaymentSessionAdditionalData
+
+  """
+  The amount the customer pays in minor units.
+  So 100,56 kr would be 10056
+  """
+  amount: Int!
+
+  """
+  The country where the payment is taking place.
+  Example: `SE`, `DK`, `NO`, `IS`, `FI`
+  """
+  country: Country!
+
+  """
+  The currency the customer pays in.
+  
+  When no payment method is available for the given currency, then
+  `newPaymentSession` fails with an error. Similarly, attempting to
+  create a payment with a payment method that is not available for
+  the given currency also results in an error.
+  """
+  currency: SupportedCurrencyEnum!
+
+  """
+  Session expiry timestamp in ISO8601 format.
+  E.g. '1970-01-01T00:00:00Z'
+  Max is 24 hrs from creation of session.
+  """
+  expiresAt: String!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """
+  Merchant's own internal reference that may help the
+  merchant in identifying this payment.
+  
+  This identifier will be used for checking existing payment sessions,
+  if another session with the same reference exists, and the amount
+  and currency are the same, then the existing session will be returned.
+  
+  Max length: 64.
+  """
+  merchantReference: String!
+
+  """
+  A message to show to the customer. It could be an order id or a reference.
+  Only alphanumeric, Swedish characters, and the following are allowed:
+  - ':'
+  - ';'
+  - '.'
+  - ','
+  - '?'
+  - '!'
+  - '('
+  - ')'
+  - '”'
+  - '"'
+  - ' '
+  
+  Max length: 50.
+  """
+  message: String!
+}
+
+"""The result of starting a new payment session."""
+type PaymentSessionWithReferenceCheckResult {
+  """
+  If a successfult payment was already made for the same `merchantReference`,
+  this field will contain the ID of the payment.
+  """
+  paymentId: String
+
+  """
+  Once a payment session is initialized, you can use this token to start the payment flow.
+  """
+  token: String!
+}
+
 enum PaymentStatusEnum {
   """Payment is authorized. Can be captured now."""
   AUTHORIZED
@@ -8158,7 +9179,7 @@ enum PaymentStatusEnum {
   CANCELLING
 
   """
-  Payment capture is declined. Please create a new payment. (Only applicable for credit card payments)
+  Payment capture is declined. Please create a new payment. (Only applicable for payments that support reservation)
   """
   CAPTURE_DECLINED
 
@@ -8175,12 +9196,17 @@ enum PaymentStatusEnum {
   PAID
 
   """
-  Payment is partially captured. (Only applicable for credit card payments)
+  Payment is partially captured. (Only applicable for payments that support reservation)
   """
   PARTIALLY_CAPTURED
 
   """Payment is undergoing check."""
   PRE_FLIGHT_CHECK
+
+  """
+  Payment reservation is released. (Only applicable for payments that support reservation)
+  """
+  RELEASED
 
   """Payment is requested and waiting for confirmation."""
   WAITING_FOR_PAYMENT
@@ -8207,7 +9233,7 @@ type PaymentStddevFields {
   merchantId: Float
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type PaymentStddevPopFields {
   amountAuthorized: Float
 
@@ -8217,7 +9243,7 @@ type PaymentStddevPopFields {
   merchantId: Float
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type PaymentStddevSampFields {
   amountAuthorized: Float
 
@@ -8237,7 +9263,7 @@ type PaymentSumFields {
   merchantId: bigint
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type PaymentVarPopFields {
   amountAuthorized: Float
 
@@ -8247,7 +9273,7 @@ type PaymentVarPopFields {
   merchantId: Float
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type PaymentVarSampFields {
   amountAuthorized: Float
 
@@ -8570,6 +9596,17 @@ type PurchaseAggregate {
   nodes: [Purchase!]!
 }
 
+input PurchaseAggregateBoolExp {
+  count: PurchaseAggregateBoolExpCount
+}
+
+input PurchaseAggregateBoolExpCount {
+  arguments: [PurchaseSelectColumn!]
+  distinct: Boolean
+  filter: PurchaseBoolExp
+  predicate: IntComparisonExp!
+}
+
 """
 aggregate fields of "marketplace.purchase"
 """
@@ -8596,11 +9633,11 @@ input PurchaseAggregateOrderBy {
   max: PurchaseMaxOrderBy
   min: PurchaseMinOrderBy
   stddev: PurchaseStddevOrderBy
-  stddev_pop: PurchaseStddevPopOrderBy
-  stddev_samp: PurchaseStddevSampOrderBy
+  stddevPop: PurchaseStddevPopOrderBy
+  stddevSamp: PurchaseStddevSampOrderBy
   sum: PurchaseSumOrderBy
-  var_pop: PurchaseVarPopOrderBy
-  var_samp: PurchaseVarSampOrderBy
+  varPop: PurchaseVarPopOrderBy
+  varSamp: PurchaseVarSampOrderBy
   variance: PurchaseVarianceOrderBy
 }
 
@@ -8646,7 +9683,9 @@ input PurchaseBoolExp {
   billingAddress: CustomerAddressBoolExp
   billingAddressId: BigintComparisonExp
   captureItemDiscounts: DiscountBoolExp
+  captureItemDiscountsAggregate: DiscountAggregateBoolExp
   captures: CaptureBoolExp
+  capturesAggregate: CaptureAggregateBoolExp
   createdAt: TimestamptzComparisonExp
   customer: CustomerBoolExp
   customerId: BigintComparisonExp
@@ -8658,11 +9697,14 @@ input PurchaseBoolExp {
   instalments: InstalmentBoolExp
   invoice: InvoiceBoolExp
   items: PurchaseItemBoolExp
+  itemsAggregate: PurchaseItemAggregateBoolExp
   merchant: MerchantBoolExp
   merchantId: BigintComparisonExp
   merchantReference: StringComparisonExp
   payments: PurchasePaymentBoolExp
+  paymentsAggregate: PurchasePaymentAggregateBoolExp
   returns: ReturnBoolExp
+  returnsAggregate: ReturnAggregateBoolExp
   shippingAddress: CustomerAddressBoolExp
   status: CurrentPurchaseStatusBoolExp
   surcharges: SurchargeBoolExp
@@ -9369,6 +10411,17 @@ type PurchaseItemAggregate {
   nodes: [PurchaseItem!]!
 }
 
+input PurchaseItemAggregateBoolExp {
+  count: PurchaseItemAggregateBoolExpCount
+}
+
+input PurchaseItemAggregateBoolExpCount {
+  arguments: [PurchaseItemSelectColumn!]
+  distinct: Boolean
+  filter: PurchaseItemBoolExp
+  predicate: IntComparisonExp!
+}
+
 """
 aggregate fields of "marketplace.purchase_item"
 """
@@ -9395,11 +10448,11 @@ input PurchaseItemAggregateOrderBy {
   max: PurchaseItemMaxOrderBy
   min: PurchaseItemMinOrderBy
   stddev: PurchaseItemStddevOrderBy
-  stddev_pop: PurchaseItemStddevPopOrderBy
-  stddev_samp: PurchaseItemStddevSampOrderBy
+  stddevPop: PurchaseItemStddevPopOrderBy
+  stddevSamp: PurchaseItemStddevSampOrderBy
   sum: PurchaseItemSumOrderBy
-  var_pop: PurchaseItemVarPopOrderBy
-  var_samp: PurchaseItemVarSampOrderBy
+  varPop: PurchaseItemVarPopOrderBy
+  varSamp: PurchaseItemVarSampOrderBy
   variance: PurchaseItemVarianceOrderBy
 }
 
@@ -10273,7 +11326,7 @@ input PurchaseItemStddevOrderBy {
   totalTaxAmount: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type PurchaseItemStddevPopFields {
   extraDiscountedAmount: Float
   merchantId: Float
@@ -10347,7 +11400,7 @@ type PurchaseItemStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.purchase_item"
+order by stddevPop() on columns of table "marketplace.purchase_item"
 """
 input PurchaseItemStddevPopOrderBy {
   extraDiscountedAmount: OrderBy
@@ -10421,7 +11474,7 @@ input PurchaseItemStddevPopOrderBy {
   totalTaxAmount: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type PurchaseItemStddevSampFields {
   extraDiscountedAmount: Float
   merchantId: Float
@@ -10495,7 +11548,7 @@ type PurchaseItemStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.purchase_item"
+order by stddevSamp() on columns of table "marketplace.purchase_item"
 """
 input PurchaseItemStddevSampOrderBy {
   extraDiscountedAmount: OrderBy
@@ -10717,7 +11770,7 @@ input PurchaseItemSumOrderBy {
   totalTaxAmount: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type PurchaseItemVarPopFields {
   extraDiscountedAmount: Float
   merchantId: Float
@@ -10791,7 +11844,7 @@ type PurchaseItemVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "marketplace.purchase_item"
+order by varPop() on columns of table "marketplace.purchase_item"
 """
 input PurchaseItemVarPopOrderBy {
   extraDiscountedAmount: OrderBy
@@ -10865,7 +11918,7 @@ input PurchaseItemVarPopOrderBy {
   totalTaxAmount: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type PurchaseItemVarSampFields {
   extraDiscountedAmount: Float
   merchantId: Float
@@ -10939,7 +11992,7 @@ type PurchaseItemVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "marketplace.purchase_item"
+order by varSamp() on columns of table "marketplace.purchase_item"
 """
 input PurchaseItemVarSampOrderBy {
   extraDiscountedAmount: OrderBy
@@ -11709,6 +12762,17 @@ type PurchasePaymentAggregate {
   nodes: [PurchasePayment!]!
 }
 
+input PurchasePaymentAggregateBoolExp {
+  count: PurchasePaymentAggregateBoolExpCount
+}
+
+input PurchasePaymentAggregateBoolExpCount {
+  arguments: [PurchasePaymentSelectColumn!]
+  distinct: Boolean
+  filter: PurchasePaymentBoolExp
+  predicate: IntComparisonExp!
+}
+
 """
 aggregate fields of "marketplace.payment"
 """
@@ -11735,11 +12799,11 @@ input PurchasePaymentAggregateOrderBy {
   max: PurchasePaymentMaxOrderBy
   min: PurchasePaymentMinOrderBy
   stddev: PurchasePaymentStddevOrderBy
-  stddev_pop: PurchasePaymentStddevPopOrderBy
-  stddev_samp: PurchasePaymentStddevSampOrderBy
+  stddevPop: PurchasePaymentStddevPopOrderBy
+  stddevSamp: PurchasePaymentStddevSampOrderBy
   sum: PurchasePaymentSumOrderBy
-  var_pop: PurchasePaymentVarPopOrderBy
-  var_samp: PurchasePaymentVarSampOrderBy
+  varPop: PurchasePaymentVarPopOrderBy
+  varSamp: PurchasePaymentVarSampOrderBy
   variance: PurchasePaymentVarianceOrderBy
 }
 
@@ -11867,7 +12931,7 @@ input PurchasePaymentStddevOrderBy {
   merchantId: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type PurchasePaymentStddevPopFields {
   """Amount paid by the customer to us."""
   amountPaid: Float
@@ -11876,7 +12940,7 @@ type PurchasePaymentStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.payment"
+order by stddevPop() on columns of table "marketplace.payment"
 """
 input PurchasePaymentStddevPopOrderBy {
   """Amount paid by the customer to us."""
@@ -11885,7 +12949,7 @@ input PurchasePaymentStddevPopOrderBy {
   merchantId: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type PurchasePaymentStddevSampFields {
   """Amount paid by the customer to us."""
   amountPaid: Float
@@ -11894,7 +12958,7 @@ type PurchasePaymentStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.payment"
+order by stddevSamp() on columns of table "marketplace.payment"
 """
 input PurchasePaymentStddevSampOrderBy {
   """Amount paid by the customer to us."""
@@ -11921,7 +12985,7 @@ input PurchasePaymentSumOrderBy {
   merchantId: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type PurchasePaymentVarPopFields {
   """Amount paid by the customer to us."""
   amountPaid: Float
@@ -11930,7 +12994,7 @@ type PurchasePaymentVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "marketplace.payment"
+order by varPop() on columns of table "marketplace.payment"
 """
 input PurchasePaymentVarPopOrderBy {
   """Amount paid by the customer to us."""
@@ -11939,7 +13003,7 @@ input PurchasePaymentVarPopOrderBy {
   merchantId: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type PurchasePaymentVarSampFields {
   """Amount paid by the customer to us."""
   amountPaid: Float
@@ -11948,7 +13012,7 @@ type PurchasePaymentVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "marketplace.payment"
+order by varSamp() on columns of table "marketplace.payment"
 """
 input PurchasePaymentVarSampOrderBy {
   """Amount paid by the customer to us."""
@@ -12198,7 +13262,7 @@ input PurchaseStddevOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type PurchaseStddevPopFields {
   billingAddressId: Float
   customerId: Float
@@ -12214,7 +13278,7 @@ type PurchaseStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.purchase"
+order by stddevPop() on columns of table "marketplace.purchase"
 """
 input PurchaseStddevPopOrderBy {
   billingAddressId: OrderBy
@@ -12230,7 +13294,7 @@ input PurchaseStddevPopOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type PurchaseStddevSampFields {
   billingAddressId: Float
   customerId: Float
@@ -12246,7 +13310,7 @@ type PurchaseStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.purchase"
+order by stddevSamp() on columns of table "marketplace.purchase"
 """
 input PurchaseStddevSampOrderBy {
   billingAddressId: OrderBy
@@ -12260,6 +13324,39 @@ input PurchaseStddevSampOrderBy {
   Total amount of the purchase which included the total amounts of all purchase items.
   """
   totalAmount: OrderBy
+}
+
+"""
+Streaming cursor of the table "Purchase"
+"""
+input PurchaseStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: PurchaseStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input PurchaseStreamCursorValueInput {
+  billingAddressId: bigint
+  createdAt: timestamptz
+  customerId: bigint
+  deliveryAddressId: bigint
+  deliveryMethod: String
+  id: bigint
+  merchantId: bigint
+
+  """
+  This is a reference key that the merchant provides for their internal tracking.
+  """
+  merchantReference: String
+  taxAmount: bigint
+
+  """
+  Total amount of the purchase which included the total amounts of all purchase items.
+  """
+  totalAmount: bigint
 }
 
 """aggregate sum on columns"""
@@ -12294,7 +13391,7 @@ input PurchaseSumOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type PurchaseVarPopFields {
   billingAddressId: Float
   customerId: Float
@@ -12310,7 +13407,7 @@ type PurchaseVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "marketplace.purchase"
+order by varPop() on columns of table "marketplace.purchase"
 """
 input PurchaseVarPopOrderBy {
   billingAddressId: OrderBy
@@ -12326,7 +13423,7 @@ input PurchaseVarPopOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type PurchaseVarSampFields {
   billingAddressId: Float
   customerId: Float
@@ -12342,7 +13439,7 @@ type PurchaseVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "marketplace.purchase"
+order by varSamp() on columns of table "marketplace.purchase"
 """
 input PurchaseVarSampOrderBy {
   billingAddressId: OrderBy
@@ -12403,6 +13500,7 @@ type Reconciliation {
   endDate: date!
   isAuto: Boolean!
   merchantId: bigint!
+  reportType: String!
 
   """
   
@@ -12454,6 +13552,7 @@ input ReconciliationBoolExp {
   endDate: DateComparisonExp
   isAuto: BooleanComparisonExp
   merchantId: BigintComparisonExp
+  reportType: StringComparisonExp
   startDate: DateComparisonExp
 }
 
@@ -12469,6 +13568,7 @@ type ReconciliationMaxFields {
   """
   endDate: date
   merchantId: bigint
+  reportType: String
 
   """
   
@@ -12491,6 +13591,7 @@ type ReconciliationMinFields {
   """
   endDate: date
   merchantId: bigint
+  reportType: String
 
   """
   
@@ -12509,6 +13610,7 @@ input ReconciliationOrderBy {
   endDate: OrderBy
   isAuto: OrderBy
   merchantId: OrderBy
+  reportType: OrderBy
   startDate: OrderBy
 }
 
@@ -12625,6 +13727,9 @@ enum ReconciliationSelectColumn {
   merchantId
 
   """column name"""
+  reportType
+
+  """column name"""
   startDate
 }
 
@@ -12633,12 +13738,12 @@ type ReconciliationStddevFields {
   merchantId: Float
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type ReconciliationStddevPopFields {
   merchantId: Float
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type ReconciliationStddevSampFields {
   merchantId: Float
 }
@@ -12648,12 +13753,12 @@ type ReconciliationSumFields {
   merchantId: bigint
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type ReconciliationVarPopFields {
   merchantId: Float
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type ReconciliationVarSampFields {
   merchantId: Float
 }
@@ -12709,6 +13814,7 @@ type Refund {
     where: CurrentRefundStatusBoolExp
   ): [CurrentRefundStatus!]
   totalAmount: bigint!
+  transactionId: String!
 
   """The ID corresponding to the refund"""
   waitToken: uuid!
@@ -12720,6 +13826,17 @@ aggregated selection of "payment_gateway.refund"
 type RefundAggregate {
   aggregate: RefundAggregateFields
   nodes: [Refund!]!
+}
+
+input RefundAggregateBoolExp {
+  count: RefundAggregateBoolExpCount
+}
+
+input RefundAggregateBoolExpCount {
+  arguments: [RefundSelectColumn!]
+  distinct: Boolean
+  filter: RefundBoolExp
+  predicate: IntComparisonExp!
 }
 
 """
@@ -12748,11 +13865,11 @@ input RefundAggregateOrderBy {
   max: RefundMaxOrderBy
   min: RefundMinOrderBy
   stddev: RefundStddevOrderBy
-  stddev_pop: RefundStddevPopOrderBy
-  stddev_samp: RefundStddevSampOrderBy
+  stddevPop: RefundStddevPopOrderBy
+  stddevSamp: RefundStddevSampOrderBy
   sum: RefundSumOrderBy
-  var_pop: RefundVarPopOrderBy
-  var_samp: RefundVarSampOrderBy
+  varPop: RefundVarPopOrderBy
+  varSamp: RefundVarSampOrderBy
   variance: RefundVarianceOrderBy
 }
 
@@ -12789,6 +13906,7 @@ input RefundBoolExp {
   status: CurrentRefundStatusBoolExp
   statusHistory: CurrentRefundStatusBoolExp
   totalAmount: BigintComparisonExp
+  transactionId: StringComparisonExp
   waitToken: UuidComparisonExp
 }
 
@@ -12802,6 +13920,7 @@ type RefundMaxFields {
   message: String
   paymentId: bigint
   totalAmount: bigint
+  transactionId: String
 
   """The ID corresponding to the refund"""
   waitToken: uuid
@@ -12819,6 +13938,7 @@ input RefundMaxOrderBy {
   message: OrderBy
   paymentId: OrderBy
   totalAmount: OrderBy
+  transactionId: OrderBy
 
   """The ID corresponding to the refund"""
   waitToken: OrderBy
@@ -12834,6 +13954,7 @@ type RefundMinFields {
   message: String
   paymentId: bigint
   totalAmount: bigint
+  transactionId: String
 
   """The ID corresponding to the refund"""
   waitToken: uuid
@@ -12851,6 +13972,7 @@ input RefundMinOrderBy {
   message: OrderBy
   paymentId: OrderBy
   totalAmount: OrderBy
+  transactionId: OrderBy
 
   """The ID corresponding to the refund"""
   waitToken: OrderBy
@@ -12868,6 +13990,7 @@ input RefundOrderBy {
   statusAggregate: CurrentRefundStatusAggregateOrderBy
   statusHistoryAggregate: CurrentRefundStatusAggregateOrderBy
   totalAmount: OrderBy
+  transactionId: OrderBy
   waitToken: OrderBy
 }
 
@@ -12970,6 +14093,9 @@ enum RefundSelectColumn {
   totalAmount
 
   """column name"""
+  transactionId
+
+  """column name"""
   waitToken
 }
 
@@ -13007,7 +14133,7 @@ input RefundStddevOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type RefundStddevPopFields {
   merchantId: Float
   paymentId: Float
@@ -13015,7 +14141,7 @@ type RefundStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "payment_gateway.refund"
+order by stddevPop() on columns of table "payment_gateway.refund"
 """
 input RefundStddevPopOrderBy {
   merchantId: OrderBy
@@ -13023,7 +14149,7 @@ input RefundStddevPopOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type RefundStddevSampFields {
   merchantId: Float
   paymentId: Float
@@ -13031,7 +14157,7 @@ type RefundStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "payment_gateway.refund"
+order by stddevSamp() on columns of table "payment_gateway.refund"
 """
 input RefundStddevSampOrderBy {
   merchantId: OrderBy
@@ -13055,7 +14181,7 @@ input RefundSumOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type RefundVarPopFields {
   merchantId: Float
   paymentId: Float
@@ -13063,7 +14189,7 @@ type RefundVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "payment_gateway.refund"
+order by varPop() on columns of table "payment_gateway.refund"
 """
 input RefundVarPopOrderBy {
   merchantId: OrderBy
@@ -13071,7 +14197,7 @@ input RefundVarPopOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type RefundVarSampFields {
   merchantId: Float
   paymentId: Float
@@ -13079,7 +14205,7 @@ type RefundVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "payment_gateway.refund"
+order by varSamp() on columns of table "payment_gateway.refund"
 """
 input RefundVarSampOrderBy {
   merchantId: OrderBy
@@ -13103,19 +14229,77 @@ input RefundVarianceOrderBy {
   totalAmount: OrderBy
 }
 
+"""Arguments for performing a release of an uncaptured payment."""
+input ReleasePaymentInput {
+  """
+  The amount to be released in minor units.
+  So 100,56 kr would be 10056
+  """
+  amount: Int!
+
+  """
+  Who is releasing the payment.
+  
+  Max length: 100.
+  """
+  createdBy: String
+
+  """
+  Optional, where is the release being created, will default to "Portal" when releasing from the kronor portal.
+  
+  Max length: 100.
+  """
+  generatedFrom: String
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """Generated id for the payment after a successful payment."""
+  paymentId: bigint!
+}
+
+"""The result of performing a release of a payment."""
+type ReleasePaymentResult {
+  """The id of the release attempt."""
+  releaseId: String!
+}
+
 """Remove an user from merchant's pool."""
 input RemoveUserInput {
-  """Email of the user that is making the request."""
-  currentUser: String!
-
   """List of users that should be removed."""
-  removeUsers: [String!]!
+  removeUsers: [RemoveUserSingleInput!]!
 }
 
 """Result of the remotion"""
 type RemoveUserResult {
-  """Result of the operation."""
-  success: Boolean!
+  """The number of users deleted."""
+  usersDeleted: Int!
+}
+
+"""Remove users from merchant pool."""
+input RemoveUserSingleInput {
+  """Email of the user, for reference."""
+  email: String!
+
+  """
+  One of "google", "password" or "webauthn", indicates the type of user to be remove.
+  Max length: 64.
+  """
+  userType: String!
 }
 
 enum ReportLinkStatusEnum {
@@ -13242,6 +14426,35 @@ type ResendInvoiceEmailResult {
   result: Boolean!
 }
 
+"""Arguments need to recheck the payment status."""
+input RestartPaymentStatusCheckInput {
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """The payment to have its status rechecked."""
+  paymentId: String!
+}
+
+"""The result of restarting a payment status check/polling."""
+type RestartPaymentStatusCheckResult {
+  """Result of the recheck attempt."""
+  status: Boolean!
+}
+
 """A group of items in a purchase that were returned by the customer"""
 type Return {
   createdAt: timestamptz!
@@ -13285,6 +14498,17 @@ type ReturnAggregate {
   nodes: [Return!]!
 }
 
+input ReturnAggregateBoolExp {
+  count: ReturnAggregateBoolExpCount
+}
+
+input ReturnAggregateBoolExpCount {
+  arguments: [ReturnSelectColumn!]
+  distinct: Boolean
+  filter: ReturnBoolExp
+  predicate: IntComparisonExp!
+}
+
 """
 aggregate fields of "marketplace.purchase_return"
 """
@@ -13311,11 +14535,11 @@ input ReturnAggregateOrderBy {
   max: ReturnMaxOrderBy
   min: ReturnMinOrderBy
   stddev: ReturnStddevOrderBy
-  stddev_pop: ReturnStddevPopOrderBy
-  stddev_samp: ReturnStddevSampOrderBy
+  stddevPop: ReturnStddevPopOrderBy
+  stddevSamp: ReturnStddevSampOrderBy
   sum: ReturnSumOrderBy
-  var_pop: ReturnVarPopOrderBy
-  var_samp: ReturnVarSampOrderBy
+  varPop: ReturnVarPopOrderBy
+  varSamp: ReturnVarSampOrderBy
   variance: ReturnVarianceOrderBy
 }
 
@@ -13412,11 +14636,11 @@ input ReturnItemAggregateOrderBy {
   max: ReturnItemMaxOrderBy
   min: ReturnItemMinOrderBy
   stddev: ReturnItemStddevOrderBy
-  stddev_pop: ReturnItemStddevPopOrderBy
-  stddev_samp: ReturnItemStddevSampOrderBy
+  stddevPop: ReturnItemStddevPopOrderBy
+  stddevSamp: ReturnItemStddevSampOrderBy
   sum: ReturnItemSumOrderBy
-  var_pop: ReturnItemVarPopOrderBy
-  var_samp: ReturnItemVarSampOrderBy
+  varPop: ReturnItemVarPopOrderBy
+  varSamp: ReturnItemVarSampOrderBy
   variance: ReturnItemVarianceOrderBy
 }
 
@@ -13635,7 +14859,7 @@ input ReturnItemStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.purchase_return_item"
+order by stddevPop() on columns of table "marketplace.purchase_return_item"
 """
 input ReturnItemStddevPopOrderBy {
   id: OrderBy
@@ -13668,7 +14892,7 @@ input ReturnItemStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.purchase_return_item"
+order by stddevSamp() on columns of table "marketplace.purchase_return_item"
 """
 input ReturnItemStddevSampOrderBy {
   id: OrderBy
@@ -13734,7 +14958,7 @@ input ReturnItemSumOrderBy {
 }
 
 """
-order by var_pop() on columns of table "marketplace.purchase_return_item"
+order by varPop() on columns of table "marketplace.purchase_return_item"
 """
 input ReturnItemVarPopOrderBy {
   id: OrderBy
@@ -13767,7 +14991,7 @@ input ReturnItemVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "marketplace.purchase_return_item"
+order by varSamp() on columns of table "marketplace.purchase_return_item"
 """
 input ReturnItemVarSampOrderBy {
   id: OrderBy
@@ -13972,7 +15196,7 @@ input ReturnStddevOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type ReturnStddevPopFields {
   id: Float
   merchantId: Float
@@ -13986,7 +15210,7 @@ type ReturnStddevPopFields {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.purchase_return"
+order by stddevPop() on columns of table "marketplace.purchase_return"
 """
 input ReturnStddevPopOrderBy {
   id: OrderBy
@@ -14000,7 +15224,7 @@ input ReturnStddevPopOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type ReturnStddevSampFields {
   id: Float
   merchantId: Float
@@ -14014,7 +15238,7 @@ type ReturnStddevSampFields {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.purchase_return"
+order by stddevSamp() on columns of table "marketplace.purchase_return"
 """
 input ReturnStddevSampOrderBy {
   id: OrderBy
@@ -14056,7 +15280,7 @@ input ReturnSumOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type ReturnVarPopFields {
   id: Float
   merchantId: Float
@@ -14070,7 +15294,7 @@ type ReturnVarPopFields {
 }
 
 """
-order by var_pop() on columns of table "marketplace.purchase_return"
+order by varPop() on columns of table "marketplace.purchase_return"
 """
 input ReturnVarPopOrderBy {
   id: OrderBy
@@ -14084,7 +15308,7 @@ input ReturnVarPopOrderBy {
   totalAmount: OrderBy
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type ReturnVarSampFields {
   id: Float
   merchantId: Float
@@ -14098,7 +15322,7 @@ type ReturnVarSampFields {
 }
 
 """
-order by var_samp() on columns of table "marketplace.purchase_return"
+order by varSamp() on columns of table "marketplace.purchase_return"
 """
 input ReturnVarSampOrderBy {
   id: OrderBy
@@ -14407,12 +15631,12 @@ type SettlementStddevFields {
   merchantId: Float
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type SettlementStddevPopFields {
   merchantId: Float
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type SettlementStddevSampFields {
   merchantId: Float
 }
@@ -14422,12 +15646,12 @@ type SettlementSumFields {
   merchantId: bigint
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type SettlementVarPopFields {
   merchantId: Float
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type SettlementVarSampFields {
   merchantId: Float
 }
@@ -14696,7 +15920,7 @@ type SuccessfulWebhookNotificationStddevFields {
   purchaseId: Float
 }
 
-"""aggregate stddev_pop on columns"""
+"""aggregate stddevPop on columns"""
 type SuccessfulWebhookNotificationStddevPopFields {
   """Same id as in the job_queue.pending_webhook_notification table"""
   id: Float
@@ -14705,7 +15929,7 @@ type SuccessfulWebhookNotificationStddevPopFields {
   purchaseId: Float
 }
 
-"""aggregate stddev_samp on columns"""
+"""aggregate stddevSamp on columns"""
 type SuccessfulWebhookNotificationStddevSampFields {
   """Same id as in the job_queue.pending_webhook_notification table"""
   id: Float
@@ -14723,7 +15947,7 @@ type SuccessfulWebhookNotificationSumFields {
   purchaseId: bigint
 }
 
-"""aggregate var_pop on columns"""
+"""aggregate varPop on columns"""
 type SuccessfulWebhookNotificationVarPopFields {
   """Same id as in the job_queue.pending_webhook_notification table"""
   id: Float
@@ -14732,7 +15956,7 @@ type SuccessfulWebhookNotificationVarPopFields {
   purchaseId: Float
 }
 
-"""aggregate var_samp on columns"""
+"""aggregate varSamp on columns"""
 type SuccessfulWebhookNotificationVarSampFields {
   """Same id as in the job_queue.pending_webhook_notification table"""
   id: Float
@@ -14802,14 +16026,32 @@ type SupplyPayPalPaymentMethodIdResult {
 }
 
 enum SupportedCurrencyEnum {
+  """Swiss Franc, the currency of Switzerland"""
+  CHF
+
+  """Czech Koruna, the currency of the Czech Republic"""
+  CZK
+
   """Danish Krone, currency of Denmark"""
   DKK
 
   """Euro, Currency for the states in Eurozone"""
   EUR
 
+  """Hungarian Forint, the currency of Hungary"""
+  HUF
+
+  """Icelandic Krona, currency of Iceland"""
+  ISK
+
   """Norwegian Krone, currency of Norway"""
   NOK
+
+  """Polish Zloty, currency of Poland"""
+  PLN
+
+  """Romanian Leu, the currency of Romania"""
+  RON
 
   """Swedish Krona, currency of Sweden"""
   SEK
@@ -14856,11 +16098,11 @@ input SurchargeAggregateOrderBy {
   max: SurchargeMaxOrderBy
   min: SurchargeMinOrderBy
   stddev: SurchargeStddevOrderBy
-  stddev_pop: SurchargeStddevPopOrderBy
-  stddev_samp: SurchargeStddevSampOrderBy
+  stddevPop: SurchargeStddevPopOrderBy
+  stddevSamp: SurchargeStddevSampOrderBy
   sum: SurchargeSumOrderBy
-  var_pop: SurchargeVarPopOrderBy
-  var_samp: SurchargeVarSampOrderBy
+  varPop: SurchargeVarPopOrderBy
+  varSamp: SurchargeVarSampOrderBy
   variance: SurchargeVarianceOrderBy
 }
 
@@ -14985,7 +16227,7 @@ input SurchargeStddevOrderBy {
 }
 
 """
-order by stddev_pop() on columns of table "marketplace.surcharge"
+order by stddevPop() on columns of table "marketplace.surcharge"
 """
 input SurchargeStddevPopOrderBy {
   """Amount of surcharge."""
@@ -15000,7 +16242,7 @@ input SurchargeStddevPopOrderBy {
 }
 
 """
-order by stddev_samp() on columns of table "marketplace.surcharge"
+order by stddevSamp() on columns of table "marketplace.surcharge"
 """
 input SurchargeStddevSampOrderBy {
   """Amount of surcharge."""
@@ -15055,7 +16297,7 @@ input SurchargeTypeEnumComparisonExp {
 }
 
 """
-order by var_pop() on columns of table "marketplace.surcharge"
+order by varPop() on columns of table "marketplace.surcharge"
 """
 input SurchargeVarPopOrderBy {
   """Amount of surcharge."""
@@ -15070,7 +16312,7 @@ input SurchargeVarPopOrderBy {
 }
 
 """
-order by var_samp() on columns of table "marketplace.surcharge"
+order by varSamp() on columns of table "marketplace.surcharge"
 """
 input SurchargeVarSampOrderBy {
   """Amount of surcharge."""
@@ -15439,6 +16681,355 @@ enum TokensSelectColumn {
   tokenName
 }
 
+"""A transaction release requested"""
+type TransactionRelease {
+  amount: bigint!
+  createdAt: timestamptz!
+  createdBy: String
+  currentStatus: TransactionReleaseStatusEnum!
+  id: bigint!
+  merchantId: bigint!
+  paymentId: bigint!
+
+  """List of statuses the transaction release has been in"""
+  statusHistory(
+    """distinct select on columns"""
+    distinctOn: [CurrentTransactionReleaseStatusSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [CurrentTransactionReleaseStatusOrderBy!]
+
+    """filter the rows returned"""
+    where: CurrentTransactionReleaseStatusBoolExp
+  ): [CurrentTransactionReleaseStatus!]
+}
+
+"""
+aggregated selection of "payment_gateway.transaction_release"
+"""
+type TransactionReleaseAggregate {
+  aggregate: TransactionReleaseAggregateFields
+  nodes: [TransactionRelease!]!
+}
+
+input TransactionReleaseAggregateBoolExp {
+  count: TransactionReleaseAggregateBoolExpCount
+}
+
+input TransactionReleaseAggregateBoolExpCount {
+  arguments: [TransactionReleaseSelectColumn!]
+  distinct: Boolean
+  filter: TransactionReleaseBoolExp
+  predicate: IntComparisonExp!
+}
+
+"""
+aggregate fields of "payment_gateway.transaction_release"
+"""
+type TransactionReleaseAggregateFields {
+  avg: TransactionReleaseAvgFields
+  count(columns: [TransactionReleaseSelectColumn!], distinct: Boolean): Int!
+  max: TransactionReleaseMaxFields
+  min: TransactionReleaseMinFields
+  stddev: TransactionReleaseStddevFields
+  stddevPop: TransactionReleaseStddevPopFields
+  stddevSamp: TransactionReleaseStddevSampFields
+  sum: TransactionReleaseSumFields
+  varPop: TransactionReleaseVarPopFields
+  varSamp: TransactionReleaseVarSampFields
+  variance: TransactionReleaseVarianceFields
+}
+
+"""
+order by aggregate values of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseAggregateOrderBy {
+  avg: TransactionReleaseAvgOrderBy
+  count: OrderBy
+  max: TransactionReleaseMaxOrderBy
+  min: TransactionReleaseMinOrderBy
+  stddev: TransactionReleaseStddevOrderBy
+  stddevPop: TransactionReleaseStddevPopOrderBy
+  stddevSamp: TransactionReleaseStddevSampOrderBy
+  sum: TransactionReleaseSumOrderBy
+  varPop: TransactionReleaseVarPopOrderBy
+  varSamp: TransactionReleaseVarSampOrderBy
+  variance: TransactionReleaseVarianceOrderBy
+}
+
+"""aggregate avg on columns"""
+type TransactionReleaseAvgFields {
+  amount: Float
+  id: Float
+  merchantId: Float
+  paymentId: Float
+}
+
+"""
+order by avg() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseAvgOrderBy {
+  amount: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "payment_gateway.transaction_release". All fields are combined with a logical 'AND'.
+"""
+input TransactionReleaseBoolExp {
+  _and: [TransactionReleaseBoolExp!]
+  _not: TransactionReleaseBoolExp
+  _or: [TransactionReleaseBoolExp!]
+  amount: BigintComparisonExp
+  createdAt: TimestamptzComparisonExp
+  createdBy: StringComparisonExp
+  currentStatus: TransactionReleaseStatusEnumComparisonExp
+  id: BigintComparisonExp
+  merchantId: BigintComparisonExp
+  paymentId: BigintComparisonExp
+  statusHistory: CurrentTransactionReleaseStatusBoolExp
+}
+
+"""aggregate max on columns"""
+type TransactionReleaseMaxFields {
+  amount: bigint
+  createdAt: timestamptz
+  createdBy: String
+  id: bigint
+  merchantId: bigint
+  paymentId: bigint
+}
+
+"""
+order by max() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseMaxOrderBy {
+  amount: OrderBy
+  createdAt: OrderBy
+  createdBy: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""aggregate min on columns"""
+type TransactionReleaseMinFields {
+  amount: bigint
+  createdAt: timestamptz
+  createdBy: String
+  id: bigint
+  merchantId: bigint
+  paymentId: bigint
+}
+
+"""
+order by min() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseMinOrderBy {
+  amount: OrderBy
+  createdAt: OrderBy
+  createdBy: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""
+Ordering options when selecting data from "payment_gateway.transaction_release".
+"""
+input TransactionReleaseOrderBy {
+  amount: OrderBy
+  createdAt: OrderBy
+  createdBy: OrderBy
+  currentStatus: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+  statusHistoryAggregate: CurrentTransactionReleaseStatusAggregateOrderBy
+}
+
+"""
+select columns of table "payment_gateway.transaction_release"
+"""
+enum TransactionReleaseSelectColumn {
+  """column name"""
+  amount
+
+  """column name"""
+  createdAt
+
+  """column name"""
+  createdBy
+
+  """column name"""
+  currentStatus
+
+  """column name"""
+  id
+
+  """column name"""
+  merchantId
+
+  """column name"""
+  paymentId
+}
+
+enum TransactionReleaseStatusEnum {
+  """The release is done"""
+  DONE
+
+  """The release failed"""
+  ERROR
+
+  """The release is in progress"""
+  IN_PROGRESS
+}
+
+"""
+Boolean expression to compare columns of type "TransactionReleaseStatusEnum". All fields are combined with logical 'AND'.
+"""
+input TransactionReleaseStatusEnumComparisonExp {
+  _eq: TransactionReleaseStatusEnum
+  _in: [TransactionReleaseStatusEnum!]
+  _isNull: Boolean
+  _neq: TransactionReleaseStatusEnum
+  _nin: [TransactionReleaseStatusEnum!]
+}
+
+"""aggregate stddev on columns"""
+type TransactionReleaseStddevFields {
+  amount: Float
+  id: Float
+  merchantId: Float
+  paymentId: Float
+}
+
+"""
+order by stddev() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseStddevOrderBy {
+  amount: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""aggregate stddevPop on columns"""
+type TransactionReleaseStddevPopFields {
+  amount: Float
+  id: Float
+  merchantId: Float
+  paymentId: Float
+}
+
+"""
+order by stddevPop() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseStddevPopOrderBy {
+  amount: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""aggregate stddevSamp on columns"""
+type TransactionReleaseStddevSampFields {
+  amount: Float
+  id: Float
+  merchantId: Float
+  paymentId: Float
+}
+
+"""
+order by stddevSamp() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseStddevSampOrderBy {
+  amount: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""aggregate sum on columns"""
+type TransactionReleaseSumFields {
+  amount: bigint
+  id: bigint
+  merchantId: bigint
+  paymentId: bigint
+}
+
+"""
+order by sum() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseSumOrderBy {
+  amount: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""aggregate varPop on columns"""
+type TransactionReleaseVarPopFields {
+  amount: Float
+  id: Float
+  merchantId: Float
+  paymentId: Float
+}
+
+"""
+order by varPop() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseVarPopOrderBy {
+  amount: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""aggregate varSamp on columns"""
+type TransactionReleaseVarSampFields {
+  amount: Float
+  id: Float
+  merchantId: Float
+  paymentId: Float
+}
+
+"""
+order by varSamp() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseVarSampOrderBy {
+  amount: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
+"""aggregate variance on columns"""
+type TransactionReleaseVarianceFields {
+  amount: Float
+  id: Float
+  merchantId: Float
+  paymentId: Float
+}
+
+"""
+order by variance() on columns of table "payment_gateway.transaction_release"
+"""
+input TransactionReleaseVarianceOrderBy {
+  amount: OrderBy
+  id: OrderBy
+  merchantId: OrderBy
+  paymentId: OrderBy
+}
+
 """Unblock customer"""
 input UnblockCustomerInput {
   """Email of the customer"""
@@ -15705,6 +17296,84 @@ enum UserWithPasswordSelectColumn {
 }
 
 """
+Streaming cursor of the table "UserWithPassword"
+"""
+input UserWithPasswordStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: UserWithPasswordStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input UserWithPasswordStreamCursorValueInput {
+  email: citext
+  merchantId: bigint
+  role: UserRoleEnum
+}
+
+"""Join table for tenant.merchant and merchant_portal.user_webauthn"""
+type UserWithWebauthn {
+  email: citext!
+  merchantId: bigint!
+  role: UserRoleEnum!
+}
+
+"""
+Boolean expression to filter rows from the table "merchant_portal.merchant_user_webauthn". All fields are combined with a logical 'AND'.
+"""
+input UserWithWebauthnBoolExp {
+  _and: [UserWithWebauthnBoolExp!]
+  _not: UserWithWebauthnBoolExp
+  _or: [UserWithWebauthnBoolExp!]
+  email: CitextComparisonExp
+  merchantId: BigintComparisonExp
+  role: UserRoleEnumComparisonExp
+}
+
+"""
+Ordering options when selecting data from "merchant_portal.merchant_user_webauthn".
+"""
+input UserWithWebauthnOrderBy {
+  email: OrderBy
+  merchantId: OrderBy
+  role: OrderBy
+}
+
+"""
+select columns of table "merchant_portal.merchant_user_webauthn"
+"""
+enum UserWithWebauthnSelectColumn {
+  """column name"""
+  email
+
+  """column name"""
+  merchantId
+
+  """column name"""
+  role
+}
+
+"""
+Streaming cursor of the table "UserWithWebauthn"
+"""
+input UserWithWebauthnStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: UserWithWebauthnStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input UserWithWebauthnStreamCursorValueInput {
+  email: citext
+  merchantId: bigint
+  role: UserRoleEnum
+}
+
+"""
 Boolean expression to compare columns of type "uuid". All fields are combined with logical 'AND'.
 """
 input UuidComparisonExp {
@@ -15721,8 +17390,15 @@ input UuidComparisonExp {
 
 """Describe the schema for Vipps details."""
 type VippsDetails {
+  """Acquirer Name"""
+  acquirer: String
   cardCountry: String
   cardExpiryDate: date
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: String
   cardNumber: String
   cardType: String
   threeDSecureStatus: Boolean
@@ -15744,8 +17420,10 @@ input VippsDetailsBoolExp {
   _and: [VippsDetailsBoolExp!]
   _not: VippsDetailsBoolExp
   _or: [VippsDetailsBoolExp!]
+  acquirer: StringComparisonExp
   cardCountry: StringComparisonExp
   cardExpiryDate: DateComparisonExp
+  cardFingerprint: StringComparisonExp
   cardNumber: StringComparisonExp
   cardType: StringComparisonExp
   threeDSecureStatus: BooleanComparisonExp
@@ -15755,8 +17433,15 @@ input VippsDetailsBoolExp {
 order by max() on columns of table "runtime.transaction_vipps_details"
 """
 input VippsDetailsMaxOrderBy {
+  """Acquirer Name"""
+  acquirer: OrderBy
   cardCountry: OrderBy
   cardExpiryDate: OrderBy
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: OrderBy
   cardNumber: OrderBy
   cardType: OrderBy
 }
@@ -15765,8 +17450,15 @@ input VippsDetailsMaxOrderBy {
 order by min() on columns of table "runtime.transaction_vipps_details"
 """
 input VippsDetailsMinOrderBy {
+  """Acquirer Name"""
+  acquirer: OrderBy
   cardCountry: OrderBy
   cardExpiryDate: OrderBy
+
+  """
+  Reepay credit card fingerprint that uniquely identifies this particular card number
+  """
+  cardFingerprint: OrderBy
   cardNumber: OrderBy
   cardType: OrderBy
 }
@@ -15775,8 +17467,10 @@ input VippsDetailsMinOrderBy {
 Ordering options when selecting data from "runtime.transaction_vipps_details".
 """
 input VippsDetailsOrderBy {
+  acquirer: OrderBy
   cardCountry: OrderBy
   cardExpiryDate: OrderBy
+  cardFingerprint: OrderBy
   cardNumber: OrderBy
   cardType: OrderBy
   threeDSecureStatus: OrderBy
@@ -15787,10 +17481,16 @@ select columns of table "runtime.transaction_vipps_details"
 """
 enum VippsDetailsSelectColumn {
   """column name"""
+  acquirer
+
+  """column name"""
   cardCountry
 
   """column name"""
   cardExpiryDate
+
+  """column name"""
+  cardFingerprint
 
   """column name"""
   cardNumber
@@ -15800,46 +17500,6 @@ enum VippsDetailsSelectColumn {
 
   """column name"""
   threeDSecureStatus
-}
-
-"""Settings for merchant webhook notifications"""
-type WebhookURLs {
-  faulty: Boolean!
-  merchantId: bigint!
-  webhookUrl: String!
-}
-
-"""
-Boolean expression to filter rows from the table "tenant.webhook_settings". All fields are combined with a logical 'AND'.
-"""
-input WebhookURLsBoolExp {
-  _and: [WebhookURLsBoolExp!]
-  _not: WebhookURLsBoolExp
-  _or: [WebhookURLsBoolExp!]
-  faulty: BooleanComparisonExp
-  merchantId: BigintComparisonExp
-  webhookUrl: StringComparisonExp
-}
-
-"""Ordering options when selecting data from "tenant.webhook_settings"."""
-input WebhookURLsOrderBy {
-  faulty: OrderBy
-  merchantId: OrderBy
-  webhookUrl: OrderBy
-}
-
-"""
-select columns of table "tenant.webhook_settings"
-"""
-enum WebhookURLsSelectColumn {
-  """column name"""
-  faulty
-
-  """column name"""
-  merchantId
-
-  """column name"""
-  webhookUrl
 }
 
 scalar bigint
@@ -15891,6 +17551,9 @@ type mutation_root {
 
   """Cancel payment request made using newSwishPayment."""
   cancelSwishPayment(pay: SwishPaymentCancelInput!): SwishPaymentCancelResult!
+
+  """Capture PayPal payment"""
+  capturePayPalPayment(pay: CapturePayPalPaymentInput!): CapturePayPalPaymentResult!
 
   """
   Fully capture a payment and consider it paid, refund the user any remaining pre-authorized amount.
@@ -15944,6 +17607,16 @@ type mutation_root {
   """
   newPaymentSession(payment: PaymentSessionInput!): PaymentSessionResult!
 
+  """
+  Create a new payment session to start a new payment.
+  The token from the session can be used in subsequent calls for the payment flow.
+  
+  This mutation will also check if any other payment session with the same
+  `merchantReference` exists and if so, it will return the token from that session,
+  provided that the session is not expired, and the same amount is requested.
+  """
+  newPaymentSessionWithReferenceCheck(payment: PaymentSessionWithReferenceCheckInput!): PaymentSessionWithReferenceCheckResult!
+
   """Capture a partial or complete purchase."""
   newPurchaseCapture(capture: PurchaseCaptureInput!): PurchaseCaptureResult!
 
@@ -15976,6 +17649,9 @@ type mutation_root {
   """Create a new payment request to receive money via swish"""
   newSwishPayment(pay: SwishPaymentInput!): SwishPaymentResult!
 
+  """Onboard a merchant on PayPal"""
+  onboardPayPalMerchant(merchant: PayPalMerchantOnboardingInput!): PayPalMerchantOnboardingResult!
+
   """Pay the next instalment"""
   payInstalment(instalment: PayInstalmentInput!): PayInstalmentResult!
 
@@ -15988,11 +17664,17 @@ type mutation_root {
   """Refund a payment"""
   refundPayment(refund: RefundPaymentInput!): RefundPaymentResult!
 
+  """Release a payment that hasn't been captured yet"""
+  releasePayment(release: ReleasePaymentInput!): ReleasePaymentResult!
+
   """Remove users."""
   removeUser(remove: RemoveUserInput!): RemoveUserResult!
 
   """Sends the invoice email to the customer."""
   resendInvoiceEmail(generate: ResendInvoiceEmailInput!): ResendInvoiceEmailResult!
+
+  """Recheck payment status with payment provider."""
+  restartPaymentStatusCheck(info: RestartPaymentStatusCheckInput!): RestartPaymentStatusCheckResult!
 
   """Set the url that will receive webhook notifications"""
   setWebhookUrl(setWebhookUrl: SetWebhookUrlInput!): SetWebhookUrlResult!
@@ -16251,7 +17933,7 @@ type query_root {
   ): PaymentCapture
 
   """
-  fetch aggregated fields from the table: "payment_gateway.payment_capture"
+  Run aggregation functions on the list of emails associated to customers
   """
   paymentCaptureAggregate(
     """distinct select on columns"""
@@ -16748,6 +18430,42 @@ type query_root {
     where: TokensBoolExp
   ): [Tokens!]!
 
+  """Get the list of transaction releases"""
+  transactionReleases(
+    """distinct select on columns"""
+    distinctOn: [TransactionReleaseSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [TransactionReleaseOrderBy!]
+
+    """filter the rows returned"""
+    where: TransactionReleaseBoolExp
+  ): [TransactionRelease!]!
+
+  """Run aggregations on the list of transaction releases"""
+  transactionReleasesAggregate(
+    """distinct select on columns"""
+    distinctOn: [TransactionReleaseSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [TransactionReleaseOrderBy!]
+
+    """filter the rows returned"""
+    where: TransactionReleaseBoolExp
+  ): TransactionReleaseAggregate!
+
   """
   fetch data from the table: "tenant.merchant_daily_metric"
   """
@@ -16793,6 +18511,11 @@ type query_root {
   """
   userWithPassword(email: citext!, merchantId: bigint!): UserWithPassword
 
+  """
+  fetch data from the table: "merchant_portal.merchant_user_webauthn" using primary key columns
+  """
+  userWithWebauthn(email: citext!, merchantId: bigint!): UserWithWebauthn
+
   """Get the list of users who authenticate using their Google account"""
   usersFromGoogle(
     """distinct select on columns"""
@@ -16830,19 +18553,13 @@ type query_root {
     """filter the rows returned"""
     where: UserWithPasswordBoolExp
   ): [UserWithPassword!]!
-  version: String!
 
   """
-  fetch data from the table: "tenant.webhook_settings" using primary key columns
+  fetch data from the table: "merchant_portal.merchant_user_webauthn"
   """
-  webhookURL(merchantId: bigint!, webhookUrl: String!): WebhookURLs
-
-  """
-  fetch data from the table: "tenant.webhook_settings"
-  """
-  webhookURLs(
+  usersWithWebauthn(
     """distinct select on columns"""
-    distinctOn: [WebhookURLsSelectColumn!]
+    distinctOn: [UserWithWebauthnSelectColumn!]
 
     """limit the number of rows returned"""
     limit: Int
@@ -16851,11 +18568,37 @@ type query_root {
     offset: Int
 
     """sort the rows by one or more columns"""
-    orderBy: [WebhookURLsOrderBy!]
+    orderBy: [UserWithWebauthnOrderBy!]
 
     """filter the rows returned"""
-    where: WebhookURLsBoolExp
-  ): [WebhookURLs!]!
+    where: UserWithWebauthnBoolExp
+  ): [UserWithWebauthn!]!
+  version: String!
+
+  """
+  fetch data from the table: "tenant.webhook_settings" using primary key columns
+  """
+  webhookURL(merchantId: bigint!, webhookUrl: String!): webhookURLs
+
+  """
+  fetch data from the table: "tenant.webhook_settings"
+  """
+  webhookURLs(
+    """distinct select on columns"""
+    distinctOn: [webhookURLsSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [webhookURLsOrderBy!]
+
+    """filter the rows returned"""
+    where: webhookURLsBoolExp
+  ): [webhookURLs!]!
 }
 
 scalar smallint
@@ -16874,6 +18617,146 @@ input st_d_within_input {
 }
 
 type subscription_root {
+  """
+  fetch data from the table in a streaming manner: "runtime.bankid_auth"
+  """
+  BankIdAuthStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [BankIdAuthStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: BankIdAuthBoolExp
+  ): [BankIdAuth!]!
+
+  """
+  fetch data from the table in a streaming manner: "dna.customer_payment_data"
+  """
+  CustomerPaymentDataStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [CustomerPaymentDataStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: CustomerPaymentDataBoolExp
+  ): [CustomerPaymentData!]!
+
+  """
+  fetch data from the table in a streaming manner: "dna.device"
+  """
+  DeviceStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [DeviceStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: DeviceBoolExp
+  ): [Device!]!
+
+  """
+  fetch data from the table in a streaming manner: "merchant_portal.generated_payments_csv"
+  """
+  PaymentCSVStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [PaymentCSVStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: PaymentCSVBoolExp
+  ): [PaymentCSV!]!
+
+  """
+  fetch data from the table in a streaming manner: "payment_gateway.payment_capture"
+  """
+  PaymentCaptureStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [PaymentCaptureStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: PaymentCaptureBoolExp
+  ): [PaymentCapture!]!
+
+  """
+  fetch data from the table in a streaming manner: "tenant.payment_method_available"
+  """
+  PaymentMethodStatusStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [PaymentMethodStatusStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: PaymentMethodStatusBoolExp
+  ): [PaymentMethodStatus!]!
+
+  """
+  fetch data from the table in a streaming manner: "merchant_portal.generated_payment_requests_csv"
+  """
+  PaymentRequestCSVStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [PaymentRequestCSVStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: PaymentRequestCSVBoolExp
+  ): [PaymentRequestCSV!]!
+
+  """
+  fetch data from the table in a streaming manner: "marketplace.purchase"
+  """
+  PurchaseStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [PurchaseStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: PurchaseBoolExp
+  ): [Purchase!]!
+
+  """
+  fetch data from the table in a streaming manner: "merchant_portal.merchant_user_email"
+  """
+  UserWithPasswordStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [UserWithPasswordStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: UserWithPasswordBoolExp
+  ): [UserWithPassword!]!
+
+  """
+  fetch data from the table in a streaming manner: "merchant_portal.merchant_user_webauthn"
+  """
+  UserWithWebauthnStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [UserWithWebauthnStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: UserWithWebauthnBoolExp
+  ): [UserWithWebauthn!]!
+
   """
   Get the list of Strong Customer Authentication processes and their status
   """
@@ -17058,7 +18941,7 @@ type subscription_root {
   ): PaymentCapture
 
   """
-  fetch aggregated fields from the table: "payment_gateway.payment_capture"
+  Run aggregation functions on the list of emails associated to customers
   """
   paymentCaptureAggregate(
     """distinct select on columns"""
@@ -17425,10 +19308,33 @@ type subscription_root {
     where: SuccessfulWebhookNotificationBoolExp
   ): [SuccessfulWebhookNotification!]!
 
+  """Get the list of transaction releases"""
+  transactionReleases(
+    """distinct select on columns"""
+    distinctOn: [TransactionReleaseSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [TransactionReleaseOrderBy!]
+
+    """filter the rows returned"""
+    where: TransactionReleaseBoolExp
+  ): [TransactionRelease!]!
+
   """
   fetch data from the table: "merchant_portal.merchant_user_email" using primary key columns
   """
   userWithPassword(email: citext!, merchantId: bigint!): UserWithPassword
+
+  """
+  fetch data from the table: "merchant_portal.merchant_user_webauthn" using primary key columns
+  """
+  userWithWebauthn(email: citext!, merchantId: bigint!): UserWithWebauthn
 
   """
   fetch data from the table: "merchant_portal.merchant_user_email"
@@ -17451,16 +19357,11 @@ type subscription_root {
   ): [UserWithPassword!]!
 
   """
-  fetch data from the table: "tenant.webhook_settings" using primary key columns
+  fetch data from the table: "merchant_portal.merchant_user_webauthn"
   """
-  webhookURL(merchantId: bigint!, webhookUrl: String!): WebhookURLs
-
-  """
-  fetch data from the table: "tenant.webhook_settings"
-  """
-  webhookURLs(
+  usersWithWebauthn(
     """distinct select on columns"""
-    distinctOn: [WebhookURLsSelectColumn!]
+    distinctOn: [UserWithWebauthnSelectColumn!]
 
     """limit the number of rows returned"""
     limit: Int
@@ -17469,14 +19370,111 @@ type subscription_root {
     offset: Int
 
     """sort the rows by one or more columns"""
-    orderBy: [WebhookURLsOrderBy!]
+    orderBy: [UserWithWebauthnOrderBy!]
 
     """filter the rows returned"""
-    where: WebhookURLsBoolExp
-  ): [WebhookURLs!]!
+    where: UserWithWebauthnBoolExp
+  ): [UserWithWebauthn!]!
+
+  """
+  fetch data from the table: "tenant.webhook_settings" using primary key columns
+  """
+  webhookURL(merchantId: bigint!, webhookUrl: String!): webhookURLs
+
+  """
+  fetch data from the table: "tenant.webhook_settings"
+  """
+  webhookURLs(
+    """distinct select on columns"""
+    distinctOn: [webhookURLsSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [webhookURLsOrderBy!]
+
+    """filter the rows returned"""
+    where: webhookURLsBoolExp
+  ): [webhookURLs!]!
+
+  """
+  fetch data from the table in a streaming manner: "tenant.webhook_settings"
+  """
+  webhookURLsStream(
+    """maximum number of rows returned in a single batch"""
+    batchSize: Int!
+
+    """cursor to stream the results returned by the query"""
+    cursor: [webhookURLsStreamCursorInput]!
+
+    """filter the rows returned"""
+    where: webhookURLsBoolExp
+  ): [webhookURLs!]!
 }
 
 scalar timestamptz
 
 scalar uuid
+
+"""Settings for merchant webhook notifications"""
+type webhookURLs {
+  faulty: Boolean!
+  merchantId: bigint!
+  webhookUrl: String!
+}
+
+"""
+Boolean expression to filter rows from the table "tenant.webhook_settings". All fields are combined with a logical 'AND'.
+"""
+input webhookURLsBoolExp {
+  _and: [webhookURLsBoolExp!]
+  _not: webhookURLsBoolExp
+  _or: [webhookURLsBoolExp!]
+  faulty: BooleanComparisonExp
+  merchantId: BigintComparisonExp
+  webhookUrl: StringComparisonExp
+}
+
+"""Ordering options when selecting data from "tenant.webhook_settings"."""
+input webhookURLsOrderBy {
+  faulty: OrderBy
+  merchantId: OrderBy
+  webhookUrl: OrderBy
+}
+
+"""
+select columns of table "tenant.webhook_settings"
+"""
+enum webhookURLsSelectColumn {
+  """column name"""
+  faulty
+
+  """column name"""
+  merchantId
+
+  """column name"""
+  webhookUrl
+}
+
+"""
+Streaming cursor of the table "webhookURLs"
+"""
+input webhookURLsStreamCursorInput {
+  """Stream column input with initial value"""
+  initialValue: webhookURLsStreamCursorValueInput!
+
+  """cursor ordering"""
+  ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input webhookURLsStreamCursorValueInput {
+  faulty: Boolean
+  merchantId: bigint
+  webhookUrl: String
+}
 

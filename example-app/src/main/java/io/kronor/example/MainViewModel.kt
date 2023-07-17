@@ -11,6 +11,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
+import io.kronor.example.type.Country
 import io.kronor.example.type.Language
 import io.kronor.example.type.PaymentSessionAdditionalData
 import io.kronor.example.type.PaymentSessionInput
@@ -45,6 +46,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
                     PaymentSessionInput(
                         amount = amountToPay.toInt(),
                         currency = Optional.present(currency),
+                        country = Optional.present(Country.SE),
                         expiresAt = expiresAt,
                         idempotencyKey = UUID.randomUUID().toString(),
                         merchantReference = "android-reference",
