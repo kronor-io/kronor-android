@@ -25,15 +25,6 @@ import java.util.*
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
-private class AuthorizationInterceptor(val token: String) : Interceptor {
-    override fun intercept(chain: Interceptor.Chain): Response {
-        val request =
-            chain.request().newBuilder().addHeader("Authorization", "Bearer $token").build()
-
-        return chain.proceed(request)
-    }
-}
-
 enum class Environment {
     Staging, Production
 }
@@ -41,7 +32,7 @@ enum class Environment {
 class Requests(token: String, env: Environment) {
 
     private val okHttpClient =
-        OkHttpClient.Builder().addInterceptor(AuthorizationInterceptor(token)).build()
+        OkHttpClient.Builder().build()
 
     val kronorApolloClient = ApolloClient.Builder().httpServerUrl(
         when (env) {
@@ -54,6 +45,7 @@ class Requests(token: String, env: Environment) {
             Environment.Production -> "wss://kronor.io/v1/graphql"
         }
     )
+        .addHttpHeader("Authorization", "Bearer $token")
         .wsProtocol(SubscriptionWsProtocol.Factory(connectionPayload = { mapOf("headers" to (mapOf("Authorization" to "Bearer $token"))) }))
         .okHttpClient(okHttpClient).build()
 
