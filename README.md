@@ -40,8 +40,8 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.2'
-    implementation 'io.kronor.component:swish:2.2'
+    implementation 'io.kronor:api:2.3'
+    implementation 'io.kronor.component:swish:2.3'
 }
 ```
 
@@ -103,9 +103,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.2'
-    implementation 'io.kronor.component:credit_card:2.2'
-    implementation 'io.kronor.component:webview_payment_gateway:2.2'
+    implementation 'io.kronor:api:2.3'
+    implementation 'io.kronor.component:credit_card:2.3'
+    implementation 'io.kronor.component:webview_payment_gateway:2.3'
 }
 ```
 
@@ -166,9 +166,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.2'
-    implementation 'io.kronor.component:mobilepay:2.2'
-    implementation 'io.kronor.component:webview_payment_gateway:2.2'
+    implementation 'io.kronor:api:2.3'
+    implementation 'io.kronor.component:mobilepay:2.3'
+    implementation 'io.kronor.component:webview_payment_gateway:2.3'
 }
 ```
 
@@ -229,9 +229,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.2'
-    implementation 'io.kronor.component:vipps:2.2'
-    implementation 'io.kronor.component:webview_payment_gateway:2.2'
+    implementation 'io.kronor:api:2.3'
+    implementation 'io.kronor.component:vipps:2.3'
+    implementation 'io.kronor.component:webview_payment_gateway:2.3'
 }
 ```
 
