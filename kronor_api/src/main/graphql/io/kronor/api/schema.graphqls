@@ -4,17 +4,14 @@ schema {
     subscription: subscription_root
 }
 
-
 """whether this query should be cached (Hasura Cloud only)"""
 directive @cached(
     """measured in seconds"""
     ttl: Int! = 60
 
-
     """refresh the cache entry"""
     refresh: Boolean! = false
 ) on QUERY
-
 
 """
 Aguments for adding device information on a device related to a payment session.
@@ -27,14 +24,12 @@ input AddSessionDeviceInformationInput {
     """
     browserName: String!
 
-
     """
     The customer device browser version.
 
     Max length: 64.
     """
     browserVersion: String!
-
 
     """
     The customer device fingerprint.
@@ -43,7 +38,6 @@ input AddSessionDeviceInformationInput {
     """
     fingerprint: String!
 
-
     """
     The customer device os name.
 
@@ -51,14 +45,12 @@ input AddSessionDeviceInformationInput {
     """
     osName: String!
 
-
     """
     The customer device os version.
 
     Max length: 64.
     """
     osVersion: String!
-
 
     """
     The customer device User-Agent string.
@@ -68,7 +60,6 @@ input AddSessionDeviceInformationInput {
     userAgent: String!
 }
 
-
 """
 The result of adding information on the device related to a payment session.
 """
@@ -77,6 +68,96 @@ type AddSessionDeviceInformationResult {
     result: Boolean!
 }
 
+"""A physical address for a customer."""
+input AddressInput {
+    """
+    Named intermediary.
+    Max length: 100.
+    """
+    careOf: String
+
+    """
+    City.
+    Max length: 100.
+    """
+    city: String!
+
+    """
+    Country.
+    Example: `SE`, `DK`, `NO`, `IS`, `FI`
+    """
+    country: Country!
+
+    """E-mail address."""
+    email: String!
+
+    """
+    First name or Given Name.
+    Max length: 100.
+    """
+    firstName: String!
+
+    """
+    Last name or Family Name.
+    Max length: 100.
+    """
+    lastName: String!
+
+    """
+    Phone number
+    Max length: 100.
+    """
+    phoneNumber: String!
+
+    """Postal Code."""
+    postalCode: String!
+
+    """
+    State or Region.
+    Max length: 100.
+    """
+    region: String
+
+    """
+    Street address, first line.
+    This should contain any free text as given by the customer
+
+    Max length: 10000.
+    """
+    streetAddress: String!
+
+    """
+    Street address, second line.
+    This should contain any free text as given by the customer
+
+    Max length: 10000.
+    """
+    streetAddress2: String
+
+    """
+    Street name. Do not combine with streetAddress.
+    Should only be used if this field has been validated by the merchant
+    and known to be correct.
+
+    Max length: 10000.
+    """
+    streetName: String
+
+    """
+    Street number. Do not combine with streetAddress.
+    Should only be used if this field has been validated by the merchant
+    and known to be correct.
+
+    Max length: 10000.
+    """
+    streetNumber: String
+
+    """
+    Title used for addressing the customer.
+    Max length: 100.
+    """
+    title: CustomerTitle
+}
 
 """
 Boolean expression to compare columns of type "bigint". All fields are combined with logical 'AND'.
@@ -93,7 +174,6 @@ input BigintComparisonExp {
     _nin: [bigint!]
 }
 
-
 """
 Boolean expression to compare columns of type "Boolean". All fields are combined with logical 'AND'.
 """
@@ -109,52 +189,72 @@ input BooleanComparisonExp {
     _nin: [Boolean!]
 }
 
+"""Arguments for capturing a new PayPal payment"""
+input CapturePayPalPaymentInput {
+    """
+    Idempotency key is required to prevent double processing a request.
+    It is recommended to use a deterministic unique value, such as the combination of
+    the order id and the customer id. Avoid using time-based values.
+    Only alphanumeric character and the following are allowed:
+    - "-"
+    - "_"
+    - "."
+    - ","
+    - "["
+    - "]"
+    - "+"
 
-"""Settings for using Braintree"""
-type BraintreeSetting {
-    currency: SupportedCurrencyEnum!
-    paypalClientId: String!
-    tokenizationKey: String!
+    Max length: 64.
+    """
+    idempotencyKey: String!
+
+    """
+    The payment id of a PayPal payment, this is obtained
+    with `newPayPalPayment`.
+
+    Max length: 64.
+    """
+    paymentId: String!
 }
 
-
-"""
-Boolean expression to filter rows from the table "tenant.braintree_setting". All fields are combined with a logical 'AND'.
-"""
-input BraintreeSettingBoolExp {
-    _and: [BraintreeSettingBoolExp!]
-    _not: BraintreeSettingBoolExp
-    _or: [BraintreeSettingBoolExp!]
-    currency: SupportedCurrencyEnumComparisonExp
-    paypalClientId: StringComparisonExp
-    tokenizationKey: StringComparisonExp
+"""The result of capturing a PayPal payment."""
+type CapturePayPalPaymentResult {
+    """The result of starting the PayPal payment capture."""
+    paymentId: String!
 }
 
-
-"""Ordering options when selecting data from "tenant.braintree_setting"."""
-input BraintreeSettingOrderBy {
-    currency: OrderBy
-    paypalClientId: OrderBy
-    tokenizationKey: OrderBy
+"""Supported countries"""
+enum Country {
+    AT
+    BE
+    CH
+    CY
+    CZ
+    DE
+    DK
+    EE
+    ES
+    FI
+    FR
+    GR
+    HR
+    HU
+    IE
+    IS
+    IT
+    LT
+    LU
+    LV
+    MT
+    NL
+    NO
+    PL
+    PT
+    RO
+    SE
+    SI
+    SK
 }
-
-
-"""
-select columns of table "tenant.braintree_setting"
-"""
-enum BraintreeSettingSelectColumn {
-    """column name"""
-    currency
-
-
-    """column name"""
-    paypalClientId
-
-
-    """column name"""
-    tokenizationKey
-}
-
 
 """
 Boolean expression to compare columns of type "country". All fields are combined with logical 'AND'.
@@ -171,17 +271,14 @@ input CountryComparisonExp {
     _nin: [country!]
 }
 
-
 """Describes the schema for credit card details"""
 type CreditCardDetails {
     """Session id"""
     sessionId: String
 
-
     """Session url"""
     sessionUrl: String
 }
-
 
 """
 order by aggregate values of table "runtime.transaction_credit_card_details"
@@ -191,7 +288,6 @@ input CreditCardDetailsAggregateOrderBy {
     max: CreditCardDetailsMaxOrderBy
     min: CreditCardDetailsMinOrderBy
 }
-
 
 """
 Boolean expression to filter rows from the table "runtime.transaction_credit_card_details". All fields are combined with a logical 'AND'.
@@ -204,7 +300,6 @@ input CreditCardDetailsBoolExp {
     sessionUrl: StringComparisonExp
 }
 
-
 """
 order by max() on columns of table "runtime.transaction_credit_card_details"
 """
@@ -212,11 +307,9 @@ input CreditCardDetailsMaxOrderBy {
     """Session id"""
     sessionId: OrderBy
 
-
     """Session url"""
     sessionUrl: OrderBy
 }
-
 
 """
 order by min() on columns of table "runtime.transaction_credit_card_details"
@@ -225,11 +318,9 @@ input CreditCardDetailsMinOrderBy {
     """Session id"""
     sessionId: OrderBy
 
-
     """Session url"""
     sessionUrl: OrderBy
 }
-
 
 """
 Ordering options when selecting data from "runtime.transaction_credit_card_details".
@@ -239,7 +330,6 @@ input CreditCardDetailsOrderBy {
     sessionUrl: OrderBy
 }
 
-
 """
 select columns of table "runtime.transaction_credit_card_details"
 """
@@ -247,11 +337,9 @@ enum CreditCardDetailsSelectColumn {
     """column name"""
     sessionId
 
-
     """column name"""
     sessionUrl
 }
-
 
 """Arguments for creating a new credit card payment"""
 input CreditCardPaymentInput {
@@ -272,7 +360,6 @@ input CreditCardPaymentInput {
     """
     idempotencyKey: String!
 
-
     """
     The url to return to after the payment is done. If the payment
     screen is opened on a separate window, customer will be redirected
@@ -280,7 +367,6 @@ input CreditCardPaymentInput {
     """
     returnUrl: String!
 }
-
 
 """The result of initiating a credit card payment."""
 type CreditCardPaymentResult {
@@ -291,7 +377,6 @@ type CreditCardPaymentResult {
     """
     waitToken: String!
 }
-
 
 """
 Boolean expression to compare columns of type "currency". All fields are combined with logical 'AND'.
@@ -308,7 +393,6 @@ input CurrencyComparisonExp {
     _nin: [currency!]
 }
 
-
 """
 columns and relationships of "runtime.current_payment_detail"
 """
@@ -319,14 +403,12 @@ type CurrentPaymentDetail {
     ): jsonb!
 }
 
-
 """
 order by aggregate values of table "runtime.current_payment_detail"
 """
 input CurrentPaymentDetailAggregateOrderBy {
     count: OrderBy
 }
-
 
 """
 Boolean expression to filter rows from the table "runtime.current_payment_detail". All fields are combined with a logical 'AND'.
@@ -338,14 +420,12 @@ input CurrentPaymentDetailBoolExp {
     detail: JsonbComparisonExp
 }
 
-
 """
 Ordering options when selecting data from "runtime.current_payment_detail".
 """
 input CurrentPaymentDetailOrderBy {
     detail: OrderBy
 }
-
 
 """
 select columns of table "runtime.current_payment_detail"
@@ -355,7 +435,6 @@ enum CurrentPaymentDetailSelectColumn {
     detail
 }
 
-
 """
 columns and relationships of "runtime.current_payment_status"
 """
@@ -363,7 +442,6 @@ type CurrentPaymentStatus {
     enteredAt: timestamptz!
     status: PaymentStatusEnum!
 }
-
 
 """
 order by aggregate values of table "runtime.current_payment_status"
@@ -373,7 +451,6 @@ input CurrentPaymentStatusAggregateOrderBy {
     max: CurrentPaymentStatusMaxOrderBy
     min: CurrentPaymentStatusMinOrderBy
 }
-
 
 """
 Boolean expression to filter rows from the table "runtime.current_payment_status". All fields are combined with a logical 'AND'.
@@ -386,7 +463,6 @@ input CurrentPaymentStatusBoolExp {
     status: PaymentStatusEnumComparisonExp
 }
 
-
 """
 order by max() on columns of table "runtime.current_payment_status"
 """
@@ -394,14 +470,12 @@ input CurrentPaymentStatusMaxOrderBy {
     enteredAt: OrderBy
 }
 
-
 """
 order by min() on columns of table "runtime.current_payment_status"
 """
 input CurrentPaymentStatusMinOrderBy {
     enteredAt: OrderBy
 }
-
 
 """
 Ordering options when selecting data from "runtime.current_payment_status".
@@ -411,7 +485,6 @@ input CurrentPaymentStatusOrderBy {
     status: OrderBy
 }
 
-
 """
 select columns of table "runtime.current_payment_status"
 """
@@ -419,11 +492,26 @@ enum CurrentPaymentStatusSelectColumn {
     """column name"""
     enteredAt
 
-
     """column name"""
     status
 }
 
+"""ordering argument of a cursor"""
+enum CursorOrdering {
+    """ascending ordering of the cursor"""
+    ASC
+
+    """descending ordering of the cursor"""
+    DESC
+}
+
+"""Customer's preferred title when addressed."""
+enum CustomerTitle {
+    Miss
+    Mr
+    Mrs
+    Ms
+}
 
 """Arguments for cancelling a direct debit payment"""
 input DirectDebitPaymentCancelInput {
@@ -444,7 +532,6 @@ input DirectDebitPaymentCancelInput {
     """
     idempotencyKey: String!
 
-
     """
     The payment id to cancel, this is obtained when a payment
     request is made. As opposed to a payment_reference which is
@@ -456,7 +543,6 @@ input DirectDebitPaymentCancelInput {
     paymentId: String!
 }
 
-
 """The result of cancelling a direct debit payment request."""
 type DirectDebitPaymentCancelResult {
     """
@@ -465,7 +551,6 @@ type DirectDebitPaymentCancelResult {
     """
     waitToken: String!
 }
-
 
 """Arguments for creating a new direct debit payment"""
 input DirectDebitPaymentInput {
@@ -486,11 +571,9 @@ input DirectDebitPaymentInput {
     """
     idempotencyKey: String!
 
-
     """The url to return to after the payment is done."""
     returnUrl: String!
 }
-
 
 """The result of initiating a direct debit payment."""
 type DirectDebitPaymentResult {
@@ -502,14 +585,12 @@ type DirectDebitPaymentResult {
     waitToken: String!
 }
 
-
 """
 Describes the schema for the finshark payment transaction details to be used by hasura
 """
 type FinsharkDetails {
     paymentFlowsUrl: String
 }
-
 
 """
 order by aggregate values of table "runtime.transaction_finshark_details"
@@ -519,7 +600,6 @@ input FinsharkDetailsAggregateOrderBy {
     max: FinsharkDetailsMaxOrderBy
     min: FinsharkDetailsMinOrderBy
 }
-
 
 """
 Boolean expression to filter rows from the table "runtime.transaction_finshark_details". All fields are combined with a logical 'AND'.
@@ -531,14 +611,12 @@ input FinsharkDetailsBoolExp {
     paymentFlowsUrl: StringComparisonExp
 }
 
-
 """
 order by max() on columns of table "runtime.transaction_finshark_details"
 """
 input FinsharkDetailsMaxOrderBy {
     paymentFlowsUrl: OrderBy
 }
-
 
 """
 order by min() on columns of table "runtime.transaction_finshark_details"
@@ -547,14 +625,12 @@ input FinsharkDetailsMinOrderBy {
     paymentFlowsUrl: OrderBy
 }
 
-
 """
 Ordering options when selecting data from "runtime.transaction_finshark_details".
 """
 input FinsharkDetailsOrderBy {
     paymentFlowsUrl: OrderBy
 }
-
 
 """
 select columns of table "runtime.transaction_finshark_details"
@@ -564,11 +640,9 @@ enum FinsharkDetailsSelectColumn {
     paymentFlowsUrl
 }
 
-
 input JsonbCastExp {
     String: StringComparisonExp
 }
-
 
 """
 Boolean expression to compare columns of type "jsonb". All fields are combined with logical 'AND'.
@@ -576,10 +650,8 @@ Boolean expression to compare columns of type "jsonb". All fields are combined w
 input JsonbComparisonExp {
     _cast: JsonbCastExp
 
-
     """is the column contained in the given json value"""
     _containedIn: jsonb
-
 
     """does the column contain the given json value at the top level"""
     _contains: jsonb
@@ -587,14 +659,11 @@ input JsonbComparisonExp {
     _gt: jsonb
     _gte: jsonb
 
-
     """does the string exist as a top-level key in the column"""
     _hasKey: String
 
-
     """do all of these strings exist as top-level keys in the column"""
     _hasKeysAll: [String!]
-
 
     """do any of these strings exist as top-level keys in the column"""
     _hasKeysAny: [String!]
@@ -606,26 +675,42 @@ input JsonbComparisonExp {
     _nin: [jsonb!]
 }
 
-
 """Supported languages"""
 enum Language {
+    CS
     DA
+    DE
+    EL
     EN
+    ES
+    ET
+    FI
+    FR
+    HR
+    HU
     IS
+    IT
+    LB
+    LT
+    LV
+    MT
+    NL
     NO
+    PL
+    PT
+    RO
+    SK
+    SL
     SV
 }
-
 
 """Arguments for sending a log"""
 input LogInput {
     """Any additional data you want to send, preferably a json encoded string"""
     additionalData: String
 
-
     """Unique client identifier"""
     clientSessionId: String!
-
 
     """
     Idempotency key is required to prevent double processing a request.
@@ -644,22 +729,18 @@ input LogInput {
     """
     idempotencyKey: String!
 
-
     """State context"""
     stateContext: String!
-
 
     """Name of the state to log"""
     stateName: String!
 }
-
 
 """The result of log."""
 type LogResult {
     """Placeholder response to return, always an empty string"""
     status: String!
 }
-
 
 """List of merchants registered with us."""
 type Merchant {
@@ -675,7 +756,6 @@ type Merchant {
     id: bigint!
 }
 
-
 """
 Boolean expression to filter rows from the table "tenant.merchant". All fields are combined with a logical 'AND'.
 """
@@ -687,24 +767,20 @@ input MerchantBoolExp {
     id: BigintComparisonExp
 }
 
-
 """Ordering options when selecting data from "tenant.merchant"."""
 input MerchantOrderBy {
     currency: OrderBy
     id: OrderBy
 }
 
-
 """Describe the schema for mobilepay details."""
 type MobilePayDetails {
     """Session id"""
     sessionId: String
 
-
     """Session url"""
     sessionUrl: String
 }
-
 
 """
 order by aggregate values of table "runtime.transaction_mobilepay_details"
@@ -714,7 +790,6 @@ input MobilePayDetailsAggregateOrderBy {
     max: MobilePayDetailsMaxOrderBy
     min: MobilePayDetailsMinOrderBy
 }
-
 
 """
 Boolean expression to filter rows from the table "runtime.transaction_mobilepay_details". All fields are combined with a logical 'AND'.
@@ -727,7 +802,6 @@ input MobilePayDetailsBoolExp {
     sessionUrl: StringComparisonExp
 }
 
-
 """
 order by max() on columns of table "runtime.transaction_mobilepay_details"
 """
@@ -735,11 +809,9 @@ input MobilePayDetailsMaxOrderBy {
     """Session id"""
     sessionId: OrderBy
 
-
     """Session url"""
     sessionUrl: OrderBy
 }
-
 
 """
 order by min() on columns of table "runtime.transaction_mobilepay_details"
@@ -748,11 +820,9 @@ input MobilePayDetailsMinOrderBy {
     """Session id"""
     sessionId: OrderBy
 
-
     """Session url"""
     sessionUrl: OrderBy
 }
-
 
 """
 Ordering options when selecting data from "runtime.transaction_mobilepay_details".
@@ -762,7 +832,6 @@ input MobilePayDetailsOrderBy {
     sessionUrl: OrderBy
 }
 
-
 """
 select columns of table "runtime.transaction_mobilepay_details"
 """
@@ -770,11 +839,9 @@ enum MobilePayDetailsSelectColumn {
     """column name"""
     sessionId
 
-
     """column name"""
     sessionUrl
 }
-
 
 """Arguments for creating a new MobilePay payment"""
 input MobilePayPaymentInput {
@@ -795,7 +862,6 @@ input MobilePayPaymentInput {
     """
     idempotencyKey: String!
 
-
     """
     The url to return to after the payment is done. If the payment
     screen is opened on a separate window, customer will be redirected
@@ -803,7 +869,6 @@ input MobilePayPaymentInput {
     """
     returnUrl: String!
 }
-
 
 """The result of initiating a MobilePay payment."""
 type MobilePayPaymentResult {
@@ -815,33 +880,26 @@ type MobilePayPaymentResult {
     waitToken: String!
 }
 
-
 """column ordering options"""
 enum OrderBy {
     """in ascending order, nulls last"""
     ASC
 
-
     """in ascending order, nulls first"""
     ASC_NULLS_FIRST
-
 
     """in ascending order, nulls last"""
     ASC_NULLS_LAST
 
-
     """in descending order, nulls first"""
     DESC
-
 
     """in descending order, nulls first"""
     DESC_NULLS_FIRST
 
-
     """in descending order, nulls last"""
     DESC_NULLS_LAST
 }
-
 
 """
 Boolean expression to compare columns of type "packed_phone_number". All fields are combined with logical 'AND'.
@@ -857,7 +915,6 @@ input PackedPhoneNumberComparisonExp {
     _neq: packed_phone_number
     _nin: [packed_phone_number!]
 }
-
 
 """Arguments for creating a new PayPal payment"""
 input PayPalPaymentInput {
@@ -878,25 +935,12 @@ input PayPalPaymentInput {
     """
     idempotencyKey: String!
 
-
     """The url to return to after the payment is done."""
     returnUrl: String!
 }
 
-
 """The result of initiating a PayPal payment."""
 type PayPalPaymentResult {
-    """
-    The amount the customer pays in minor units.
-    So 100,56 kr would be 10056
-    """
-    amount: String!
-
-
-    """The currency of the payment"""
-    currency: String!
-
-
     """
     Once a payment is initialized, we will start the PayPal payment
     workflow. You can use this id to query the current status of the
@@ -904,7 +948,6 @@ type PayPalPaymentResult {
     """
     paymentId: String!
 }
-
 
 """Arguments for cancelling payment"""
 input PaymentCancelInput {
@@ -926,7 +969,6 @@ input PaymentCancelInput {
     idempotencyKey: String!
 }
 
-
 """The result of cancelling a payment request."""
 type PaymentCancelResult {
     """
@@ -936,36 +978,28 @@ type PaymentCancelResult {
     waitToken: String
 }
 
-
 enum PaymentMethodEnum {
     """Credit or Debit cards"""
     CREDIT_CARD
 
-
     """Open Banking direct debit via Finshark"""
     FINSHARK_DIRECT_DEBIT
-
 
     """Open Banking recurring debit via Finshark"""
     FINSHARK_RECURRING_DEBIT
 
-
     """Pay with MobilePay Online"""
     MOBILEPAY
-
 
     """Pay with PayPal"""
     PAYPAL
 
-
     """Swish"""
     SWISH
-
 
     """Pay with Vipps"""
     VIPPS
 }
-
 
 """
 Boolean expression to compare columns of type "PaymentMethodEnum". All fields are combined with logical 'AND'.
@@ -978,7 +1012,6 @@ input PaymentMethodEnumComparisonExp {
     _nin: [PaymentMethodEnum!]
 }
 
-
 """Payment methods available for a merchant."""
 type PaymentMethodStatus {
     country: country!
@@ -987,11 +1020,9 @@ type PaymentMethodStatus {
     gateway: String!
     gatewayPaymentMethod: String
 
-
     """The payment method supported / available for this merchant.."""
     paymentMethod: PaymentMethodEnum!
 }
-
 
 """
 Boolean expression to filter rows from the table "tenant.payment_method_available". All fields are combined with a logical 'AND'.
@@ -1008,7 +1039,6 @@ input PaymentMethodStatusBoolExp {
     paymentMethod: PaymentMethodEnumComparisonExp
 }
 
-
 """
 Ordering options when selecting data from "tenant.payment_method_available".
 """
@@ -1021,7 +1051,6 @@ input PaymentMethodStatusOrderBy {
     paymentMethod: OrderBy
 }
 
-
 """
 select columns of table "tenant.payment_method_available"
 """
@@ -1029,27 +1058,44 @@ enum PaymentMethodStatusSelectColumn {
     """column name"""
     country
 
-
     """column name"""
     currency
-
 
     """column name"""
     enabled
 
-
     """column name"""
     gateway
 
-
     """column name"""
     gatewayPaymentMethod
-
 
     """column name"""
     paymentMethod
 }
 
+"""
+Streaming cursor of the table "PaymentMethodStatus"
+"""
+input PaymentMethodStatusStreamCursorInput {
+    """Stream column input with initial value"""
+    initialValue: PaymentMethodStatusStreamCursorValueInput!
+
+    """cursor ordering"""
+    ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input PaymentMethodStatusStreamCursorValueInput {
+    country: country
+    currency: currency
+    enabled: Boolean
+    gateway: String
+    gatewayPaymentMethod: String
+
+    """The payment method supported / available for this merchant.."""
+    paymentMethod: PaymentMethodEnum
+}
 
 """A payment requested"""
 type PaymentRequest {
@@ -1057,52 +1103,41 @@ type PaymentRequest {
     createdAt: timestamptz!
     currency: SupportedCurrencyEnum!
 
-
     """Additional information specific to the payment"""
     detail(
         """distinct select on columns"""
         distinctOn: [CurrentPaymentDetailSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [CurrentPaymentDetailOrderBy!]
-
 
         """filter the rows returned"""
         where: CurrentPaymentDetailBoolExp
     ): [CurrentPaymentDetail!]
-
 
     """Gives the latest status that the payment is on."""
     latestStatus(
         """distinct select on columns"""
         distinctOn: [CurrentPaymentStatusSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [CurrentPaymentStatusOrderBy!]
-
 
         """filter the rows returned"""
         where: CurrentPaymentStatusBoolExp
     ): [CurrentPaymentStatus!]
-
 
     """An object relationship"""
     merchant: Merchant!
@@ -1110,6 +1145,8 @@ type PaymentRequest {
     paymentFlow: String
     paymentProvider: PaymentMethodEnum
 
+    """An object relationship"""
+    payment_method_used: PaymentMethodStatus
 
     """
 
@@ -1119,56 +1156,44 @@ type PaymentRequest {
     """
     reference: String!
 
-
     """Id of the generated gateway payment (stand alone payments only)."""
     resultingPaymentId: bigint
-
 
     """List of statuses the payment is currently on"""
     status(
         """distinct select on columns"""
         distinctOn: [CurrentPaymentStatusSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [CurrentPaymentStatusOrderBy!]
-
 
         """filter the rows returned"""
         where: CurrentPaymentStatusBoolExp
     ): [CurrentPaymentStatus!]
-
 
     """List of statuses the payment has been on"""
     statusHistory(
         """distinct select on columns"""
         distinctOn: [CurrentPaymentStatusSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [CurrentPaymentStatusOrderBy!]
-
 
         """filter the rows returned"""
         where: CurrentPaymentStatusBoolExp
     ): [CurrentPaymentStatus!]
-
 
     """
     A computed field, executes function "runtime.get_transaction_credit_card_details"
@@ -1177,23 +1202,18 @@ type PaymentRequest {
         """distinct select on columns"""
         distinctOn: [CreditCardDetailsSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [CreditCardDetailsOrderBy!]
-
 
         """filter the rows returned"""
         where: CreditCardDetailsBoolExp
     ): [CreditCardDetails!]
-
 
     """
     A computed field, executes function "runtime.get_transaction_finshark_details"
@@ -1202,23 +1222,23 @@ type PaymentRequest {
         """distinct select on columns"""
         distinctOn: [FinsharkDetailsSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [FinsharkDetailsOrderBy!]
-
 
         """filter the rows returned"""
         where: FinsharkDetailsBoolExp
     ): [FinsharkDetails!]
 
+    """
+    This id uniquely identifies the transaction in kronor among other types of transactions
+    """
+    transactionId: String!
 
     """
     A computed field, executes function "runtime.get_transaction_mobilepay_details"
@@ -1227,23 +1247,38 @@ type PaymentRequest {
         """distinct select on columns"""
         distinctOn: [MobilePayDetailsSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [MobilePayDetailsOrderBy!]
-
 
         """filter the rows returned"""
         where: MobilePayDetailsBoolExp
     ): [MobilePayDetails!]
 
+    """
+    A computed field, executes function "runtime.get_transaction_paypal_details"
+    """
+    transactionPayPalDetails(
+        """distinct select on columns"""
+        distinctOn: [PaypalDetailsSelectColumn!]
+
+        """limit the number of rows returned"""
+        limit: Int
+
+        """skip the first n rows. Use only with order_by"""
+        offset: Int
+
+        """sort the rows by one or more columns"""
+        orderBy: [PaypalDetailsOrderBy!]
+
+        """filter the rows returned"""
+        where: PaypalDetailsBoolExp
+    ): [PaypalDetails!]
 
     """
     A computed field, executes function "runtime.get_transaction_swish_details"
@@ -1252,23 +1287,18 @@ type PaymentRequest {
         """distinct select on columns"""
         distinctOn: [SwishDetailsSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [SwishDetailsOrderBy!]
-
 
         """filter the rows returned"""
         where: SwishDetailsBoolExp
     ): [SwishDetails!]
-
 
     """
     A computed field, executes function "runtime.get_transaction_vipps_details"
@@ -1277,25 +1307,20 @@ type PaymentRequest {
         """distinct select on columns"""
         distinctOn: [VippsDetailsSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [VippsDetailsOrderBy!]
-
 
         """filter the rows returned"""
         where: VippsDetailsBoolExp
     ): [VippsDetails!]
     waitToken: uuid!
 }
-
 
 """
 Boolean expression to filter rows from the table "runtime.payment". All fields are combined with a logical 'AND'.
@@ -1313,18 +1338,20 @@ input PaymentRequestBoolExp {
     message: StringComparisonExp
     paymentFlow: StringComparisonExp
     paymentProvider: PaymentMethodEnumComparisonExp
+    payment_method_used: PaymentMethodStatusBoolExp
     reference: StringComparisonExp
     resultingPaymentId: BigintComparisonExp
     status: CurrentPaymentStatusBoolExp
     statusHistory: CurrentPaymentStatusBoolExp
     transactionCreditCardDetails: CreditCardDetailsBoolExp
     transactionFinsharkDetails: FinsharkDetailsBoolExp
+    transactionId: StringComparisonExp
     transactionMobilePayDetails: MobilePayDetailsBoolExp
+    transactionPayPalDetails: PaypalDetailsBoolExp
     transactionSwishDetails: SwishDetailsBoolExp
     transactionVippsDetails: VippsDetailsBoolExp
     waitToken: UuidComparisonExp
 }
-
 
 """Ordering options when selecting data from "runtime.payment"."""
 input PaymentRequestOrderBy {
@@ -1337,18 +1364,20 @@ input PaymentRequestOrderBy {
     message: OrderBy
     paymentFlow: OrderBy
     paymentProvider: OrderBy
+    payment_method_used: PaymentMethodStatusOrderBy
     reference: OrderBy
     resultingPaymentId: OrderBy
     statusAggregate: CurrentPaymentStatusAggregateOrderBy
     statusHistoryAggregate: CurrentPaymentStatusAggregateOrderBy
     transactionCreditCardDetailsAggregate: CreditCardDetailsAggregateOrderBy
     transactionFinsharkDetailsAggregate: FinsharkDetailsAggregateOrderBy
+    transactionId: OrderBy
     transactionMobilePayDetailsAggregate: MobilePayDetailsAggregateOrderBy
+    transactionPayPalDetailsAggregate: PaypalDetailsAggregateOrderBy
     transactionSwishDetailsAggregate: SwishDetailsAggregateOrderBy
     transactionVippsDetailsAggregate: VippsDetailsAggregateOrderBy
     waitToken: OrderBy
 }
-
 
 """
 select columns of table "runtime.payment"
@@ -1357,49 +1386,41 @@ enum PaymentRequestSelectColumn {
     """column name"""
     amount
 
-
     """column name"""
     createdAt
-
 
     """column name"""
     currency
 
-
     """column name"""
     message
-
 
     """column name"""
     paymentFlow
 
-
     """column name"""
     paymentProvider
-
 
     """column name"""
     reference
 
-
     """column name"""
     resultingPaymentId
 
+    """column name"""
+    transactionId
 
     """column name"""
     waitToken
 }
-
 
 """Arguments for adding additional data to a payment."""
 input PaymentSessionAdditionalData {
     """The E-mail address of the customer."""
     email: String!
 
-
     """IP address of the customer attempting the payment."""
     ip: String!
-
 
     """
     Language in which the payment is being handled
@@ -1408,7 +1429,6 @@ input PaymentSessionAdditionalData {
     """
     language: Language!
 
-
     """
     The name of the customer that the payment is associated with.
 
@@ -1416,20 +1436,23 @@ input PaymentSessionAdditionalData {
     """
     name: String!
 
+    """A list with all purchase items in this order."""
+    orderLines: [PurchaseOrderLineInput!]
 
     """
     Phone number
     Max length: 100.
     """
     phoneNumber: String
-}
 
+    """Shipping Address for the order."""
+    shippingAddress: AddressInput
+}
 
 """Arguments for creating a new payment session."""
 input PaymentSessionInput {
     """Additional data about the customer attempting the payment."""
     additionalData: PaymentSessionAdditionalData
-
 
     """
     The amount the customer pays in minor units.
@@ -1437,6 +1460,11 @@ input PaymentSessionInput {
     """
     amount: Int!
 
+    """
+    The country where the payment is taking place.
+    Example: `SE`, `DK`, `NO`, `IS`, `FI`
+    """
+    country: Country
 
     """
     When `currency` is not set, it defaults to the merchant's default currency.
@@ -1448,14 +1476,12 @@ input PaymentSessionInput {
     """
     currency: SupportedCurrencyEnum
 
-
     """
     Session expiry timestamp in ISO8601 format.
     E.g. '1970-01-01T00:00:00Z'
     Max is 24 hrs from creation of session.
     """
     expiresAt: String!
-
 
     """
     Idempotency key is required to prevent double processing a request.
@@ -1474,7 +1500,6 @@ input PaymentSessionInput {
     """
     idempotencyKey: String!
 
-
     """
     Merchant's own internal reference that may help the
     merchant in identifying this payment. These have to
@@ -1484,7 +1509,6 @@ input PaymentSessionInput {
     Max length: 64.
     """
     merchantReference: String!
-
 
     """
     A message to show to the customer. It could be an order id or a reference.
@@ -1497,7 +1521,7 @@ input PaymentSessionInput {
     - '!'
     - '('
     - ')'
-    - '"'
+    - '”'
     - '"'
     - ' '
 
@@ -1505,7 +1529,6 @@ input PaymentSessionInput {
     """
     message: String!
 }
-
 
 """The result of starting a new payment session."""
 type PaymentSessionResult {
@@ -1515,56 +1538,49 @@ type PaymentSessionResult {
     token: String!
 }
 
-
 enum PaymentStatusEnum {
     """Payment is authorized. Can be captured now."""
     AUTHORIZED
 
-
     """Payment was cancelled."""
     CANCELLED
-
 
     """Attempting to cancel the payment."""
     CANCELLING
 
-
     """
-    Payment capture is declined. Please create a new payment. (Only applicable for credit card payments)
+    Payment capture is declined. Please create a new payment. (Only applicable for payments that support reservation)
     """
     CAPTURE_DECLINED
-
 
     """Payment was declined by the customer."""
     DECLINED
 
-
     """Payment errored."""
     ERROR
-
 
     """Payment is initialising."""
     INITIALIZING
 
-
     """Payment is paid."""
     PAID
 
-
     """
-    Payment is partially captured. (Only applicable for credit card payments)
+    Payment is partially captured. (Only applicable for payments that support reservation)
     """
     PARTIALLY_CAPTURED
-
 
     """Payment is undergoing check."""
     PRE_FLIGHT_CHECK
 
+    """
+    Payment reservation is released. (Only applicable for payments that support reservation)
+    """
+    RELEASED
 
     """Payment is requested and waiting for confirmation."""
     WAITING_FOR_PAYMENT
 }
-
 
 """
 Boolean expression to compare columns of type "PaymentStatusEnum". All fields are combined with logical 'AND'.
@@ -1577,6 +1593,178 @@ input PaymentStatusEnumComparisonExp {
     _nin: [PaymentStatusEnum!]
 }
 
+"""Describes the schema for paypal details"""
+type PaypalDetails {
+    """Order ID as shared by PayPal"""
+    orderId: String
+
+    """PayPal payment URL"""
+    paymentUrl: String
+    paypalMerchantId: String
+}
+
+"""
+order by aggregate values of table "runtime.transaction_paypal_details"
+"""
+input PaypalDetailsAggregateOrderBy {
+    count: OrderBy
+    max: PaypalDetailsMaxOrderBy
+    min: PaypalDetailsMinOrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "runtime.transaction_paypal_details". All fields are combined with a logical 'AND'.
+"""
+input PaypalDetailsBoolExp {
+    _and: [PaypalDetailsBoolExp!]
+    _not: PaypalDetailsBoolExp
+    _or: [PaypalDetailsBoolExp!]
+    orderId: StringComparisonExp
+    paymentUrl: StringComparisonExp
+    paypalMerchantId: StringComparisonExp
+}
+
+"""
+order by max() on columns of table "runtime.transaction_paypal_details"
+"""
+input PaypalDetailsMaxOrderBy {
+    """Order ID as shared by PayPal"""
+    orderId: OrderBy
+
+    """PayPal payment URL"""
+    paymentUrl: OrderBy
+    paypalMerchantId: OrderBy
+}
+
+"""
+order by min() on columns of table "runtime.transaction_paypal_details"
+"""
+input PaypalDetailsMinOrderBy {
+    """Order ID as shared by PayPal"""
+    orderId: OrderBy
+
+    """PayPal payment URL"""
+    paymentUrl: OrderBy
+    paypalMerchantId: OrderBy
+}
+
+"""
+Ordering options when selecting data from "runtime.transaction_paypal_details".
+"""
+input PaypalDetailsOrderBy {
+    orderId: OrderBy
+    paymentUrl: OrderBy
+    paypalMerchantId: OrderBy
+}
+
+"""
+select columns of table "runtime.transaction_paypal_details"
+"""
+enum PaypalDetailsSelectColumn {
+    """column name"""
+    orderId
+
+    """column name"""
+    paymentUrl
+
+    """column name"""
+    paypalMerchantId
+}
+
+enum PaypalIntentEnum {
+    """Authorize to capture funds later."""
+    AUTHORIZE
+
+    """Instant capture funds."""
+    CAPTURE
+}
+
+"""
+Boolean expression to compare columns of type "PaypalIntentEnum". All fields are combined with logical 'AND'.
+"""
+input PaypalIntentEnumComparisonExp {
+    _eq: PaypalIntentEnum
+    _in: [PaypalIntentEnum!]
+    _isNull: Boolean
+    _neq: PaypalIntentEnum
+    _nin: [PaypalIntentEnum!]
+}
+
+"""List of order items which are part of this checkout."""
+input PurchaseOrderLineInput {
+    """
+    URL to an image that can be used later in communications between kronor
+    and the customer.
+
+    Max length: 10000.
+    """
+    imageUrl: String
+
+    """
+    URL to item in the merchant catalog, that will be used in communications between
+    kronor and the customer.
+
+    Max length: 10000.
+    """
+    itemUrl: String
+
+    """
+    The name of the purchased item
+
+    Max length: 100.
+    """
+    name: String!
+
+    """
+    Price per item in this line in minor units. It should include tax, but not any discounts.
+    Example: `1500,25` SEK should be `150025`.
+    Example `100` SEK should be `10000`.
+    """
+    pricePerItem: Int!
+
+    """
+    Number of items ordered by the customer. Needs to be a positive number.
+    """
+    quantity: Int!
+
+    """
+    Merchant's own internal item number or any other reference that may help the
+    merchant in identifying this purchase.
+
+    Max length: 64.
+    """
+    reference: String
+
+    """
+    Tax rate on the items ordered in this line.
+    Needs to be a non-negative number.
+    Example: `15%` discount should be represented as `1500`.
+    """
+    taxRate: Int!
+
+    """
+    Total tax amount on all the items in this line in minor units.
+    Example: 1500,25 SEk should be 150025.
+    Example 100 SEK should be 10000.
+    """
+    totalAmount: Int!
+
+    """
+    Discount applied on all the items in this line in minor units.
+    This value should include any applicable tax.
+    Example: `1500,25` SEK should be `150025`.
+    Example `100` SEK should be `10000`.
+    """
+    totalDiscountAmount: Int
+
+    """
+    Total tax amount on all the items in this line in minor units.
+    Example: 1500,25 SEk should be 150025.
+
+    Example 100 SEK should be 10000.
+    """
+    totalTaxAmount: Int!
+}
 
 """
 Boolean expression to compare columns of type "String". All fields are combined with logical 'AND'.
@@ -1586,11 +1774,9 @@ input StringComparisonExp {
     _gt: String
     _gte: String
 
-
     """does the column match the given case-insensitive pattern"""
     _ilike: String
     _in: [String!]
-
 
     """
     does the column match the given POSIX regular expression, case insensitive
@@ -1598,49 +1784,40 @@ input StringComparisonExp {
     _iregex: String
     _isNull: Boolean
 
-
     """does the column match the given pattern"""
     _like: String
     _lt: String
     _lte: String
     _neq: String
 
-
     """does the column NOT match the given case-insensitive pattern"""
     _nilike: String
     _nin: [String!]
-
 
     """
     does the column NOT match the given POSIX regular expression, case insensitive
     """
     _niregex: String
 
-
     """does the column NOT match the given pattern"""
     _nlike: String
-
 
     """
     does the column NOT match the given POSIX regular expression, case sensitive
     """
     _nregex: String
 
-
     """does the column NOT match the given SQL regular expression"""
     _nsimilar: String
-
 
     """
     does the column match the given POSIX regular expression, case sensitive
     """
     _regex: String
 
-
     """does the column match the given SQL regular expression"""
     _similar: String
 }
-
 
 """Arguments for creating a new PayPal payment"""
 input SupplyPayPalPaymentMethodIdInput {
@@ -1661,7 +1838,6 @@ input SupplyPayPalPaymentMethodIdInput {
     """
     idempotencyKey: String!
 
-
     """
     The payment id of a PayPal payment, this is obtained when a
     payment request is made. As opposed to a payment_reference which
@@ -1672,7 +1848,6 @@ input SupplyPayPalPaymentMethodIdInput {
     """
     paymentId: String!
 
-
     """
     This is obtained from Braintree when you use their client SDK to
     create a payment.
@@ -1681,7 +1856,6 @@ input SupplyPayPalPaymentMethodIdInput {
     """
     paymentMethodId: String!
 }
-
 
 """
 The result of supplying a PayPal paymentMethodId to a PayPal
@@ -1696,24 +1870,37 @@ type SupplyPayPalPaymentMethodIdResult {
     paymentId: String!
 }
 
-
 enum SupportedCurrencyEnum {
+    """Swiss Franc, the currency of Switzerland"""
+    CHF
+
+    """Czech Koruna, the currency of the Czech Republic"""
+    CZK
+
     """Danish Krone, currency of Denmark"""
     DKK
-
 
     """Euro, Currency for the states in Eurozone"""
     EUR
 
+    """Hungarian Forint, the currency of Hungary"""
+    HUF
+
+    """Icelandic Krona, currency of Iceland"""
+    ISK
 
     """Norwegian Krone, currency of Norway"""
     NOK
 
+    """Polish Zloty, currency of Poland"""
+    PLN
+
+    """Romanian Leu, the currency of Romania"""
+    RON
 
     """Swedish Krona, currency of Sweden"""
     SEK
 }
-
 
 """
 Boolean expression to compare columns of type "SupportedCurrencyEnum". All fields are combined with logical 'AND'.
@@ -1726,40 +1913,32 @@ input SupportedCurrencyEnumComparisonExp {
     _nin: [SupportedCurrencyEnum!]
 }
 
-
 """
 Describes the schema for the swish payment transaction details to be used by hasura
 """
 type SwishDetails {
     amount: bigint
 
-
     """A reference sent from the bank once the payment has been made"""
     bankPaymentReference: String
-
 
     """The swish number of the customer"""
     customerSwishNumber: packed_phone_number
 
-
     """Date when the payment is created in SWISH"""
     dateCreated: timestamptz
-
 
     """Date when SWISH received the payment"""
     datePaid: timestamptz
 
-
     """Error code from swish"""
     errorCode: String
-
 
     """Error message from swish"""
     errorMessage: String
     qrCode: String
     returnUrl: String
 }
-
 
 """
 order by aggregate values of table "runtime.transaction_swish_details"
@@ -1770,14 +1949,13 @@ input SwishDetailsAggregateOrderBy {
     max: SwishDetailsMaxOrderBy
     min: SwishDetailsMinOrderBy
     stddev: SwishDetailsStddevOrderBy
-    stddev_pop: SwishDetailsStddevPopOrderBy
-    stddev_samp: SwishDetailsStddevSampOrderBy
+    stddevPop: SwishDetailsStddevPopOrderBy
+    stddevSamp: SwishDetailsStddevSampOrderBy
     sum: SwishDetailsSumOrderBy
-    var_pop: SwishDetailsVarPopOrderBy
-    var_samp: SwishDetailsVarSampOrderBy
+    varPop: SwishDetailsVarPopOrderBy
+    varSamp: SwishDetailsVarSampOrderBy
     variance: SwishDetailsVarianceOrderBy
 }
-
 
 """
 order by avg() on columns of table "runtime.transaction_swish_details"
@@ -1785,7 +1963,6 @@ order by avg() on columns of table "runtime.transaction_swish_details"
 input SwishDetailsAvgOrderBy {
     amount: OrderBy
 }
-
 
 """
 Boolean expression to filter rows from the table "runtime.transaction_swish_details". All fields are combined with a logical 'AND'.
@@ -1805,36 +1982,29 @@ input SwishDetailsBoolExp {
     returnUrl: StringComparisonExp
 }
 
-
 """
 order by max() on columns of table "runtime.transaction_swish_details"
 """
 input SwishDetailsMaxOrderBy {
     amount: OrderBy
 
-
     """A reference sent from the bank once the payment has been made"""
     bankPaymentReference: OrderBy
-
 
     """Date when the payment is created in SWISH"""
     dateCreated: OrderBy
 
-
     """Date when SWISH received the payment"""
     datePaid: OrderBy
 
-
     """Error code from swish"""
     errorCode: OrderBy
-
 
     """Error message from swish"""
     errorMessage: OrderBy
     qrCode: OrderBy
     returnUrl: OrderBy
 }
-
 
 """
 order by min() on columns of table "runtime.transaction_swish_details"
@@ -1842,29 +2012,23 @@ order by min() on columns of table "runtime.transaction_swish_details"
 input SwishDetailsMinOrderBy {
     amount: OrderBy
 
-
     """A reference sent from the bank once the payment has been made"""
     bankPaymentReference: OrderBy
-
 
     """Date when the payment is created in SWISH"""
     dateCreated: OrderBy
 
-
     """Date when SWISH received the payment"""
     datePaid: OrderBy
 
-
     """Error code from swish"""
     errorCode: OrderBy
-
 
     """Error message from swish"""
     errorMessage: OrderBy
     qrCode: OrderBy
     returnUrl: OrderBy
 }
-
 
 """
 Ordering options when selecting data from "runtime.transaction_swish_details".
@@ -1881,7 +2045,6 @@ input SwishDetailsOrderBy {
     returnUrl: OrderBy
 }
 
-
 """
 select columns of table "runtime.transaction_swish_details"
 """
@@ -1889,39 +2052,30 @@ enum SwishDetailsSelectColumn {
     """column name"""
     amount
 
-
     """column name"""
     bankPaymentReference
-
 
     """column name"""
     customerSwishNumber
 
-
     """column name"""
     dateCreated
-
 
     """column name"""
     datePaid
 
-
     """column name"""
     errorCode
-
 
     """column name"""
     errorMessage
 
-
     """column name"""
     qrCode
-
 
     """column name"""
     returnUrl
 }
-
 
 """
 order by stddev() on columns of table "runtime.transaction_swish_details"
@@ -1930,22 +2084,19 @@ input SwishDetailsStddevOrderBy {
     amount: OrderBy
 }
 
-
 """
-order by stddev_pop() on columns of table "runtime.transaction_swish_details"
+order by stddevPop() on columns of table "runtime.transaction_swish_details"
 """
 input SwishDetailsStddevPopOrderBy {
     amount: OrderBy
 }
 
-
 """
-order by stddev_samp() on columns of table "runtime.transaction_swish_details"
+order by stddevSamp() on columns of table "runtime.transaction_swish_details"
 """
 input SwishDetailsStddevSampOrderBy {
     amount: OrderBy
 }
-
 
 """
 order by sum() on columns of table "runtime.transaction_swish_details"
@@ -1954,22 +2105,19 @@ input SwishDetailsSumOrderBy {
     amount: OrderBy
 }
 
-
 """
-order by var_pop() on columns of table "runtime.transaction_swish_details"
+order by varPop() on columns of table "runtime.transaction_swish_details"
 """
 input SwishDetailsVarPopOrderBy {
     amount: OrderBy
 }
 
-
 """
-order by var_samp() on columns of table "runtime.transaction_swish_details"
+order by varSamp() on columns of table "runtime.transaction_swish_details"
 """
 input SwishDetailsVarSampOrderBy {
     amount: OrderBy
 }
-
 
 """
 order by variance() on columns of table "runtime.transaction_swish_details"
@@ -1977,7 +2125,6 @@ order by variance() on columns of table "runtime.transaction_swish_details"
 input SwishDetailsVarianceOrderBy {
     amount: OrderBy
 }
-
 
 """Arguments for cancelling a swish payment"""
 input SwishPaymentCancelInput {
@@ -1998,7 +2145,6 @@ input SwishPaymentCancelInput {
     """
     idempotencyKey: String!
 
-
     """
     The payment id to cancel, this is obtained when a payment
     request is made. As opposed to a payment_reference which is
@@ -2010,7 +2156,6 @@ input SwishPaymentCancelInput {
     paymentId: String!
 }
 
-
 """The result of cancelling a swish payment request."""
 type SwishPaymentCancelResult {
     """
@@ -2020,12 +2165,10 @@ type SwishPaymentCancelResult {
     waitToken: String!
 }
 
-
 """Arguments for creating a new swish payment"""
 input SwishPaymentInput {
     """The Swish number of the customer, required for the 'ecom' flow"""
     customerSwishNumber: String
-
 
     """
     Payment flow, either 'ecom' or 'mcom'
@@ -2033,7 +2176,6 @@ input SwishPaymentInput {
     Max length: 64.
     """
     flow: String!
-
 
     """
     Idempotency key is required to prevent double processing a request.
@@ -2052,11 +2194,9 @@ input SwishPaymentInput {
     """
     idempotencyKey: String!
 
-
     """The url to return to after the payment is done."""
     returnUrl: String!
 }
-
 
 """The result of initiating a swish payment."""
 type SwishPaymentResult {
@@ -2067,7 +2207,6 @@ type SwishPaymentResult {
     """
     waitToken: String!
 }
-
 
 """
 Boolean expression to compare columns of type "timestamptz". All fields are combined with logical 'AND'.
@@ -2084,7 +2223,6 @@ input TimestamptzComparisonExp {
     _nin: [timestamptz!]
 }
 
-
 """
 Boolean expression to compare columns of type "uuid". All fields are combined with logical 'AND'.
 """
@@ -2100,17 +2238,14 @@ input UuidComparisonExp {
     _nin: [uuid!]
 }
 
-
 """Describe the schema for Vipps details."""
 type VippsDetails {
     """Session id"""
     sessionId: String
 
-
     """Session url"""
     sessionUrl: String
 }
-
 
 """
 order by aggregate values of table "runtime.transaction_vipps_details"
@@ -2120,7 +2255,6 @@ input VippsDetailsAggregateOrderBy {
     max: VippsDetailsMaxOrderBy
     min: VippsDetailsMinOrderBy
 }
-
 
 """
 Boolean expression to filter rows from the table "runtime.transaction_vipps_details". All fields are combined with a logical 'AND'.
@@ -2133,7 +2267,6 @@ input VippsDetailsBoolExp {
     sessionUrl: StringComparisonExp
 }
 
-
 """
 order by max() on columns of table "runtime.transaction_vipps_details"
 """
@@ -2141,11 +2274,9 @@ input VippsDetailsMaxOrderBy {
     """Session id"""
     sessionId: OrderBy
 
-
     """Session url"""
     sessionUrl: OrderBy
 }
-
 
 """
 order by min() on columns of table "runtime.transaction_vipps_details"
@@ -2154,11 +2285,9 @@ input VippsDetailsMinOrderBy {
     """Session id"""
     sessionId: OrderBy
 
-
     """Session url"""
     sessionUrl: OrderBy
 }
-
 
 """
 Ordering options when selecting data from "runtime.transaction_vipps_details".
@@ -2168,7 +2297,6 @@ input VippsDetailsOrderBy {
     sessionUrl: OrderBy
 }
 
-
 """
 select columns of table "runtime.transaction_vipps_details"
 """
@@ -2176,11 +2304,9 @@ enum VippsDetailsSelectColumn {
     """column name"""
     sessionId
 
-
     """column name"""
     sessionUrl
 }
-
 
 """Arguments for creating a new Vipps payment"""
 input VippsPaymentInput {
@@ -2201,7 +2327,6 @@ input VippsPaymentInput {
     """
     idempotencyKey: String!
 
-
     """
     The url to return to after the payment is done. If the payment
     screen is opened on a separate window, customer will be redirected
@@ -2209,7 +2334,6 @@ input VippsPaymentInput {
     """
     returnUrl: String!
 }
-
 
 """The result of initiating a Vipps payment."""
 type VippsPaymentResult {
@@ -2221,82 +2345,204 @@ type VippsPaymentResult {
     waitToken: String!
 }
 
-
 scalar bigint
 
+"""Settings for using Braintree"""
+type braintreeSetting {
+    currency: SupportedCurrencyEnum!
+    paypalClientId: String!
+    tokenizationKey: String!
+}
+
+"""
+Boolean expression to filter rows from the table "tenant.braintree_setting". All fields are combined with a logical 'AND'.
+"""
+input braintreeSettingBoolExp {
+    _and: [braintreeSettingBoolExp!]
+    _not: braintreeSettingBoolExp
+    _or: [braintreeSettingBoolExp!]
+    currency: SupportedCurrencyEnumComparisonExp
+    paypalClientId: StringComparisonExp
+    tokenizationKey: StringComparisonExp
+}
+
+"""Ordering options when selecting data from "tenant.braintree_setting"."""
+input braintreeSettingOrderBy {
+    currency: OrderBy
+    paypalClientId: OrderBy
+    tokenizationKey: OrderBy
+}
+
+"""
+select columns of table "tenant.braintree_setting"
+"""
+enum braintreeSettingSelectColumn {
+    """column name"""
+    currency
+
+    """column name"""
+    paypalClientId
+
+    """column name"""
+    tokenizationKey
+}
+
+"""
+Streaming cursor of the table "braintreeSetting"
+"""
+input braintreeSettingStreamCursorInput {
+    """Stream column input with initial value"""
+    initialValue: braintreeSettingStreamCursorValueInput!
+
+    """cursor ordering"""
+    ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input braintreeSettingStreamCursorValueInput {
+    currency: SupportedCurrencyEnum
+    paypalClientId: String
+    tokenizationKey: String
+}
 
 scalar country
 
-
 scalar currency
 
-
 scalar jsonb
-
 
 """mutation root"""
 type mutation_root {
     """Set customer device information for a given payment session."""
     addSessionDeviceInformation(info: AddSessionDeviceInformationInput!): AddSessionDeviceInformationResult!
 
-
     """Cancel payment request made using newDirectDebitPayment."""
     cancelDirectDebitPayment(pay: DirectDebitPaymentCancelInput!): DirectDebitPaymentCancelResult!
-
 
     """Cancel payment request."""
     cancelPayment(cancel: PaymentCancelInput!): PaymentCancelResult!
 
-
     """Cancel payment request made using newSwishPayment."""
     cancelSwishPayment(pay: SwishPaymentCancelInput!): SwishPaymentCancelResult!
 
+    """Capture PayPal payment"""
+    capturePayPalPayment(pay: CapturePayPalPaymentInput!): CapturePayPalPaymentResult!
 
     """Log information about various stages of the payment component."""
     log(info: LogInput!): LogResult!
 
-
     """Create a new payment request to receive money via credit card"""
     newCreditCardPayment(pay: CreditCardPaymentInput!): CreditCardPaymentResult!
 
-
     """Create a new payment request to receive money via Finshark"""
     newDirectDebitPayment(pay: DirectDebitPaymentInput!): DirectDebitPaymentResult!
-
 
     """
     Create a new payment request to receive money via MobilePay, available only in Denmark and Finland.
     """
     newMobilePayPayment(pay: MobilePayPaymentInput!): MobilePayPaymentResult!
 
-
     """Create a new payment request to receive money via PayPal"""
     newPayPalPayment(pay: PayPalPaymentInput!): PayPalPaymentResult!
-
 
     """
     Create a new payment session to start a new stand alone payment. The token from the session can be used in subsequent calls for the payment flow.
     """
     newPaymentSession(payment: PaymentSessionInput!): PaymentSessionResult!
 
-
     """Create a new payment request to receive money via swish"""
     newSwishPayment(pay: SwishPaymentInput!): SwishPaymentResult!
-
 
     """
     Create a new payment request to receive money via Vipps, available only in Norway.
     """
     newVippsPayment(pay: VippsPaymentInput!): VippsPaymentResult!
 
-
     """Supply PaymentMethodId (nonce) to progress PayPal paymeent"""
     supplyPayPalPaymentMethodId(pay: SupplyPayPalPaymentMethodIdInput!): SupplyPayPalPaymentMethodIdResult!
 }
 
-
 scalar packed_phone_number
 
+"""Table to hold PayPal credentials"""
+type paypalSetting {
+    """
+    '
+    BN code is a character string that uniquely identifies us with PayPal to
+    properly attribute payments. We pass this in all PayPal API calls in the
+    `PayPal-Partner-Attribution-Id` header
+    '
+    """
+    bnCode: String!
+
+    """The client_id of the PayPal app"""
+    clientId: String!
+
+    """The intent of a PayPal order: `AUTHORIZE` or `CAPTURE`"""
+    intent: PaypalIntentEnum!
+}
+
+"""
+Boolean expression to filter rows from the table "tenant.paypal_setting". All fields are combined with a logical 'AND'.
+"""
+input paypalSettingBoolExp {
+    _and: [paypalSettingBoolExp!]
+    _not: paypalSettingBoolExp
+    _or: [paypalSettingBoolExp!]
+    bnCode: StringComparisonExp
+    clientId: StringComparisonExp
+    intent: PaypalIntentEnumComparisonExp
+}
+
+"""Ordering options when selecting data from "tenant.paypal_setting"."""
+input paypalSettingOrderBy {
+    bnCode: OrderBy
+    clientId: OrderBy
+    intent: OrderBy
+}
+
+"""
+select columns of table "tenant.paypal_setting"
+"""
+enum paypalSettingSelectColumn {
+    """column name"""
+    bnCode
+
+    """column name"""
+    clientId
+
+    """column name"""
+    intent
+}
+
+"""
+Streaming cursor of the table "paypalSetting"
+"""
+input paypalSettingStreamCursorInput {
+    """Stream column input with initial value"""
+    initialValue: paypalSettingStreamCursorValueInput!
+
+    """cursor ordering"""
+    ordering: CursorOrdering
+}
+
+"""Initial value of the column from where the streaming should start"""
+input paypalSettingStreamCursorValueInput {
+    """
+    '
+    BN code is a character string that uniquely identifies us with PayPal to
+    properly attribute payments. We pass this in all PayPal API calls in the
+    `PayPal-Partner-Attribution-Id` header
+    '
+    """
+    bnCode: String
+
+    """The client_id of the PayPal app"""
+    clientId: String
+
+    """The intent of a PayPal order: `AUTHORIZE` or `CAPTURE`"""
+    intent: PaypalIntentEnum
+}
 
 type query_root {
     """
@@ -2304,29 +2550,23 @@ type query_root {
     """
     braintreeSetting(
         """distinct select on columns"""
-        distinctOn: [BraintreeSettingSelectColumn!]
-
+        distinctOn: [braintreeSettingSelectColumn!]
 
         """limit the number of rows returned"""
         limit: Int
 
-
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
-        orderBy: [BraintreeSettingOrderBy!]
-
+        orderBy: [braintreeSettingOrderBy!]
 
         """filter the rows returned"""
-        where: BraintreeSettingBoolExp
-    ): [BraintreeSetting!]!
-
+        where: braintreeSettingBoolExp
+    ): [braintreeSetting!]!
 
     """Select a single merchant by Id"""
     merchant(id: bigint!): Merchant
-
 
     """
     fetch data from the table: "tenant.payment_method_available"
@@ -2335,74 +2575,107 @@ type query_root {
         """distinct select on columns"""
         distinctOn: [PaymentMethodStatusSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [PaymentMethodStatusOrderBy!]
-
 
         """filter the rows returned"""
         where: PaymentMethodStatusBoolExp
     ): [PaymentMethodStatus!]!
-
 
     """Get the list of payment requests"""
     paymentRequests(
         """distinct select on columns"""
         distinctOn: [PaymentRequestSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [PaymentRequestOrderBy!]
-
 
         """filter the rows returned"""
         where: PaymentRequestBoolExp
     ): [PaymentRequest!]!
+
+    """
+    fetch data from the table: "tenant.paypal_setting"
+    """
+    paypalSetting(
+        """distinct select on columns"""
+        distinctOn: [paypalSettingSelectColumn!]
+
+        """limit the number of rows returned"""
+        limit: Int
+
+        """skip the first n rows. Use only with order_by"""
+        offset: Int
+
+        """sort the rows by one or more columns"""
+        orderBy: [paypalSettingOrderBy!]
+
+        """filter the rows returned"""
+        where: paypalSettingBoolExp
+    ): [paypalSetting!]!
     version: String!
 }
 
-
 type subscription_root {
+    """
+    fetch data from the table in a streaming manner: "tenant.payment_method_available"
+    """
+    PaymentMethodStatusStream(
+        """maximum number of rows returned in a single batch"""
+        batchSize: Int!
+
+        """cursor to stream the results returned by the query"""
+        cursor: [PaymentMethodStatusStreamCursorInput]!
+
+        """filter the rows returned"""
+        where: PaymentMethodStatusBoolExp
+    ): [PaymentMethodStatus!]!
+
     """
     fetch data from the table: "tenant.braintree_setting"
     """
     braintreeSetting(
         """distinct select on columns"""
-        distinctOn: [BraintreeSettingSelectColumn!]
-
+        distinctOn: [braintreeSettingSelectColumn!]
 
         """limit the number of rows returned"""
         limit: Int
 
-
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
-        orderBy: [BraintreeSettingOrderBy!]
-
+        orderBy: [braintreeSettingOrderBy!]
 
         """filter the rows returned"""
-        where: BraintreeSettingBoolExp
-    ): [BraintreeSetting!]!
+        where: braintreeSettingBoolExp
+    ): [braintreeSetting!]!
 
+    """
+    fetch data from the table in a streaming manner: "tenant.braintree_setting"
+    """
+    braintreeSettingStream(
+        """maximum number of rows returned in a single batch"""
+        batchSize: Int!
+
+        """cursor to stream the results returned by the query"""
+        cursor: [braintreeSettingStreamCursorInput]!
+
+        """filter the rows returned"""
+        where: braintreeSettingBoolExp
+    ): [braintreeSetting!]!
 
     """
     fetch data from the table: "tenant.payment_method_available"
@@ -2411,50 +2684,73 @@ type subscription_root {
         """distinct select on columns"""
         distinctOn: [PaymentMethodStatusSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [PaymentMethodStatusOrderBy!]
-
 
         """filter the rows returned"""
         where: PaymentMethodStatusBoolExp
     ): [PaymentMethodStatus!]!
-
 
     """Get the list of payment requests"""
     paymentRequests(
         """distinct select on columns"""
         distinctOn: [PaymentRequestSelectColumn!]
 
-
         """limit the number of rows returned"""
         limit: Int
-
 
         """skip the first n rows. Use only with order_by"""
         offset: Int
 
-
         """sort the rows by one or more columns"""
         orderBy: [PaymentRequestOrderBy!]
-
 
         """filter the rows returned"""
         where: PaymentRequestBoolExp
     ): [PaymentRequest!]!
+
+    """
+    fetch data from the table: "tenant.paypal_setting"
+    """
+    paypalSetting(
+        """distinct select on columns"""
+        distinctOn: [paypalSettingSelectColumn!]
+
+        """limit the number of rows returned"""
+        limit: Int
+
+        """skip the first n rows. Use only with order_by"""
+        offset: Int
+
+        """sort the rows by one or more columns"""
+        orderBy: [paypalSettingOrderBy!]
+
+        """filter the rows returned"""
+        where: paypalSettingBoolExp
+    ): [paypalSetting!]!
+
+    """
+    fetch data from the table in a streaming manner: "tenant.paypal_setting"
+    """
+    paypalSettingStream(
+        """maximum number of rows returned in a single batch"""
+        batchSize: Int!
+
+        """cursor to stream the results returned by the query"""
+        cursor: [paypalSettingStreamCursorInput]!
+
+        """filter the rows returned"""
+        where: paypalSettingBoolExp
+    ): [paypalSetting!]!
 }
 
-
 scalar timestamptz
-
 
 scalar uuid
 

@@ -11,6 +11,7 @@ import com.apollographql.apollo3.network.ws.SubscriptionWsProtocol
 import io.kronor.api.type.AddSessionDeviceInformationInput
 import io.kronor.api.type.CreditCardPaymentInput
 import io.kronor.api.type.MobilePayPaymentInput
+import io.kronor.api.type.PayPalPaymentInput
 import io.kronor.api.type.PaymentCancelInput
 import io.kronor.api.type.SwishPaymentInput
 import io.kronor.api.type.VippsPaymentInput
@@ -181,6 +182,25 @@ suspend fun Requests.makeNewPaymentRequest(
                 )
             )
         ).executeMapKronorError().map { it.newSwishPayment.waitToken }
+
+        is PaymentMethod.PayPal -> {
+            kronorApolloClient.mutation(
+                PayPalPaymentMutation(
+                    payment = PayPalPaymentInput(
+                        idempotencyKey = UUID.randomUUID().toString(),
+                        returnUrl = paymentRequestArgs.returnUrl
+                    ), deviceInfo = AddSessionDeviceInformationInput(
+                        browserName = paymentRequestArgs.appName,
+                        browserVersion = paymentRequestArgs.appVersion,
+                        fingerprint = paymentRequestArgs.deviceFingerprint,
+                        osName = os,
+                        osVersion = androidVersion.toString(),
+                        userAgent = userAgent
+                    )
+                )
+            ).executeMapKronorError().map { it.newPayPalPayment.paymentId }
+        }
+
         is PaymentMethod.Fallback -> {
             failure<String>(Exception("Impossible!"))
         }
