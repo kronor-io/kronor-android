@@ -1,5 +1,8 @@
 name: Publish to MavenCentral
 on:
+  push:
+    branches:
+      - paypalComponent
   workflow_dispatch:
     inputs:
       version:
