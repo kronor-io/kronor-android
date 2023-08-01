@@ -4,7 +4,7 @@ ext['signing.key'] = ''
 ext['ossrhStagingProfileId'] = ''
 ext["ossrhUsername"] = ''
 ext["ossrhPassword"] = ''
-ext["version"] = '2.3.1'
+ext["version"] = VERSION
 
 File secretPropsFile = project.rootProject.file('local.properties')
 if (secretPropsFile.exists()) {
