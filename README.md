@@ -5,6 +5,7 @@
 [![credit_card](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/credit_card/badge.svg?style=plastic&subject=credit_card)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/credit_card/)
 [![mobilepay](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/mobilepay/badge.svg?style=plastic&subject=mobilepay)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/mobilepay/)
 [![vipps](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/vipps/badge.svg?style=plastic&subject=vipps)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/vipps/)
+[![paypal](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/paypal/badge.svg?style=plastic&subject=paypal)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/paypal/)
 [![webview_payment_gateway](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/webview_payment_gateway/badge.svg?style=plastic&subject=webview_payment_gateway)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/webview_payment_gateway/)
 
 Kronor Android provides payment components that you can use to create a custom checkout solution for your customers by using any of our provided payment methods.
@@ -17,6 +18,7 @@ These are the payment methods that are currently provided by this sdk
 - [CreditCard](#credit-card)
 - [MobilePay](#mobilepay)
 - [Vipps](#vipps)
+- [PayPal](#paypal)
 
 ## Additional Setup
 
@@ -40,8 +42,8 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3'
-    implementation 'io.kronor.component:swish:2.3'
+    implementation 'io.kronor:api:2.3.1'
+    implementation 'io.kronor.component:swish:2.3.1'
 }
 ```
 
@@ -103,9 +105,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3'
-    implementation 'io.kronor.component:credit_card:2.3'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3'
+    implementation 'io.kronor:api:2.3.1'
+    implementation 'io.kronor.component:credit_card:2.3.1'
+    implementation 'io.kronor.component:webview_payment_gateway:2.3.1'
 }
 ```
 
@@ -166,9 +168,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3'
-    implementation 'io.kronor.component:mobilepay:2.3'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3'
+    implementation 'io.kronor:api:2.3.1'
+    implementation 'io.kronor.component:mobilepay:2.3.1'
+    implementation 'io.kronor.component:webview_payment_gateway:2.3.1'
 }
 ```
 
@@ -229,9 +231,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3'
-    implementation 'io.kronor.component:vipps:2.3'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3'
+    implementation 'io.kronor:api:2.3.1'
+    implementation 'io.kronor.component:vipps:2.3.1'
+    implementation 'io.kronor.component:webview_payment_gateway:2.3.1'
 }
 ```
 
@@ -286,10 +288,73 @@ lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
 }
 ```
 
+### PayPal
+
+Dependencies:
+
+```groovy
+dependencies {
+    implementation 'io.kronor:api:2.3.1'
+    implementation 'io.kronor.component:paypal:2.3.1'
+    implementation 'io.kronor.component:webview_payment_gateway:2.3.1'
+}
+```
+
+Imports:
+
+```kotlin
+import io.kronor.api.Environment
+import io.kronor.api.PaymentEvent
+import io.kronor.component.paypal.PayPalComponent
+import io.kronor.component.paypal.PayPalConfiguration
+import io.kronor.component.paypal.paypalViewModel
+```
+
+Invoking the PayPal component:
+
+```kotlin
+val viewModelForPayPal : PayPalViewModel = paypalViewModel(paypalConfiguration = paypalConfiguration(
+    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
+    merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress or null
+    environment = Environment.Staging, // environment to point to
+    appName = "your_app_name",
+    appVersion = "your_app_version",
+    redirectUrl = Uri.parse("your_app_uri")
+))
+
+PayPalComponent(viewModelForPayPal)
+```
+
+Handling the payment events:
+
+```kotlin
+lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+    launch {
+        viewModelForPayPal.events.collect { event ->
+            when (event) {
+                PaymentEvent.PaymentFailure -> {
+                    // handle the event here, example:
+                    withContext(Dispatchers.Main) {
+                        navController.navigate("paymentMethods")
+                    }
+                }
+
+                is PaymentEvent.PaymentSuccess -> {
+                    // handle the success event here, example:
+                    withContext(Dispatchers.Main) {
+                        navController.navigate("paymentMethods")
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
 ## Handling redirects
 
 For payment methods that redirect to other apps or the browser, you need to handle a redirect to the
-app. Pass the intent on redirect to `viewModelFor{Swish,CreditCard,MobilePay,Vipps}.handleIntent(intent)`.
+app. Pass the intent on redirect to `viewModelFor{Swish,CreditCard,MobilePay,Vipps,PayPal}.handleIntent(intent)`.
 The redirect uri passed to the view model, will have a paymentMethod and sessionToken added as
 query parameters.
 

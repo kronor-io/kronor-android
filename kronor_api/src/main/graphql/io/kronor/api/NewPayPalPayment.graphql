@@ -1,0 +1,9 @@
+mutation PayPalPayment($payment: PayPalPaymentInput!, $deviceInfo: AddSessionDeviceInformationInput!) {
+    newPayPalPayment(pay: $payment) {
+        paymentId
+    }
+
+    addSessionDeviceInformation(info: $deviceInfo) {
+        result
+    }
+}

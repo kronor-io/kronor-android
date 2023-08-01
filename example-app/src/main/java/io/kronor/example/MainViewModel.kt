@@ -11,10 +11,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
+import io.kronor.example.type.AddressInput
 import io.kronor.example.type.Country
 import io.kronor.example.type.Language
 import io.kronor.example.type.PaymentSessionAdditionalData
 import io.kronor.example.type.PaymentSessionInput
+import io.kronor.example.type.PurchaseOrderLineInput
 import io.kronor.example.type.SupportedCurrencyEnum
 import java.io.IOException
 import java.net.InetAddress
@@ -28,14 +30,13 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
     var paymentSessionToken: String?
         get() = savedStateHandle.get<String>("sessionToken")
         set(value) = savedStateHandle.set("sessionToken", value)
-    
-    private var _paymentMethodSelected : MutableState<String?> = mutableStateOf(null)
+
+    private var _paymentMethodSelected: MutableState<String?> = mutableStateOf(null)
     val paymentMethodSelected: State<String?> = _paymentMethodSelected
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun createNewPaymentSession(
-        amountToPay: String,
-        currency: SupportedCurrencyEnum
+        amountToPay: String, currency: SupportedCurrencyEnum
     ): String? {
         val expiresAt = LocalDateTime.now().plusMinutes(5)
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
@@ -49,7 +50,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
                         country = Optional.present(Country.SE),
                         expiresAt = expiresAt,
                         idempotencyKey = UUID.randomUUID().toString(),
-                        merchantReference = "android-reference",
+                        merchantReference = "android-" + UUID.randomUUID().toString(),
                         message = "random message from android",
                         additionalData = Optional.present(
                             PaymentSessionAdditionalData(
@@ -57,7 +58,32 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
                                 ip = getLocalAddress().toString(),
                                 language = Language.EN,
                                 email = "normal@android.com",
-                                phoneNumber = Optional.absent()
+                                phoneNumber = Optional.absent(),
+                                shippingAddress = Optional.present(
+                                    AddressInput(
+                                        firstName = "test",
+                                        lastName = "user",
+                                        streetAddress = "Hyllie Boulevard",
+                                        postalCode = "21537",
+                                        city = "Malmö",
+                                        country = Country.SE,
+                                        email = "normal@android.com",
+                                        phoneNumber = "+46111111111"
+                                    )
+                                ),
+                                orderLines = Optional.present(
+                                    listOf(
+                                        PurchaseOrderLineInput(
+                                            pricePerItem = amountToPay.toInt(),
+                                            totalAmount = amountToPay.toInt(),
+                                            totalTaxAmount = 0,
+                                            quantity = 1,
+                                            taxRate = 0,
+                                            name = "Item 1",
+                                            reference = Optional.present("ref1")
+                                        )
+                                    )
+                                )
                             )
                         )
                     )
@@ -113,7 +139,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
         }
     }
 
-    fun resetPaymentState() : Unit {
+    fun resetPaymentState(): Unit {
         this._paymentMethodSelected.value = null
         this.paymentSessionToken = null
     }

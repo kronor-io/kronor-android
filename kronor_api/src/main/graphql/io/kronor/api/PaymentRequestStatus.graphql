@@ -31,6 +31,10 @@ subscription PaymentStatus {
             sessionId
             sessionUrl
         }
+        transactionPayPalDetails {
+            orderId
+            paymentUrl
+        }
         paymentFlow
     }
 }

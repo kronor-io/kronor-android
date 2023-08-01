@@ -37,6 +37,8 @@ import io.kronor.component.credit_card.CreditCardComponent
 import io.kronor.component.credit_card.creditCardViewModel
 import io.kronor.component.mobilepay.MobilePayComponent
 import io.kronor.component.mobilepay.mobilePayViewModel
+import io.kronor.component.paypal.PayPalComponent
+import io.kronor.component.paypal.paypalViewModel
 import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
@@ -92,6 +94,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                     navController.navigate("mobilePayScreen/${sessionToken}")
                 }, onNavigateToVipps = { sessionToken ->
                     navController.navigate("vippsScreen/$sessionToken")
+                }, onNavigateToPayPal = { sessionToken ->
+                    navController.navigate("paypalScreen/$sessionToken")
                 })
             }
             composable(
@@ -298,6 +302,53 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                     VippsComponent(vvm)
                 }
             }
+            composable(
+                "paypalScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
+                    type = NavType.StringType
+                })
+            ) {
+                it.arguments?.getString("sessionToken")?.let { sessionToken ->
+                    val ppvm = paypalViewModel(
+                        paypalConfiguration = PaymentConfiguration(
+                            sessionToken = sessionToken,
+                            merchantLogo = R.drawable.kronor_logo,
+                            environment = Environment.Staging,
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
+                            locale = Locale("en_US")
+                        )
+                    )
+
+                    val lifecycle = LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(Unit) {
+                        launch {
+                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                launch {
+                                    ppvm.events.collect {
+                                        when (it) {
+                                            PaymentEvent.PaymentFailure -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+
+                                            is PaymentEvent.PaymentSuccess -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    PayPalComponent(ppvm)
+                }
+            }
         }
     }
 }
@@ -311,6 +362,7 @@ fun PaymentMethodsScreen(
     onNavigateToCreditCard: (String) -> Unit,
     onNavigateToMobilePay: (String) -> Unit,
     onNavigateToVipps: (String) -> Unit,
+    onNavigateToPayPal: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var amount by rememberSaveable(stateSaver = TextFieldValue.Saver) {
@@ -431,6 +483,22 @@ fun PaymentMethodsScreen(
             }) {
                 Text("Pay ${amount.text} with Vipps")
             }
+            Button(onClick = {
+                GlobalScope.launch {
+                    withContext(Dispatchers.Main) {
+                        val sessionToken = viewModel.createNewPaymentSession(
+                            amount.text, SupportedCurrencyEnum.SEK
+                        )
+
+                        sessionToken?.let {
+                            onNavigateToPayPal(it)
+                        }
+                    }
+                }
+            }) {
+                Text("Pay ${amount.text} with PayPal")
+            }
+
         }
     }
 }

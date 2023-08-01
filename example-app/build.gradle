@@ -87,5 +87,6 @@ dependencies {
     implementation project(path: ":kronor_webview_payment_gateway")
     implementation project(path: ":kronor_mobilepay")
     implementation project(path: ":kronor_vipps")
+    implementation project(path: ":kronor_paypal")
 
 }
