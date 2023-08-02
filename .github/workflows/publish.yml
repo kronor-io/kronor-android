@@ -2,7 +2,7 @@ name: Publish to MavenCentral
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
 
 # Cancel previous runs of this workflow on new commits
 concurrency:
