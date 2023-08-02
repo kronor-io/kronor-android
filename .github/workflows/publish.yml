@@ -34,8 +34,7 @@ jobs:
       # Publishes to the repository
       - name: Publish to MavenCentral
         run: |
-          ./gradlew publish --no-daemon --no-parallel
-          ./gradlew closeAndReleaseRepository
+          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
