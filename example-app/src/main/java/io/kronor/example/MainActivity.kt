@@ -43,6 +43,7 @@ import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.vippsViewModel
+import io.kronor.example.type.Country
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
 import kotlinx.coroutines.*
@@ -380,11 +381,15 @@ fun PaymentMethodsScreen(
             }
 
             "mobilepay" -> {
+                Log.d("PaymentMethodsScreen", "I am here!")
                 onNavigateToMobilePay(viewModel.paymentSessionToken!!)
             }
 
             "vipps" -> {
                 onNavigateToVipps(viewModel.paymentSessionToken!!)
+            }
+            "paypal" -> {
+                onNavigateToPayPal(viewModel.paymentSessionToken!!)
             }
         }
     }
@@ -427,7 +432,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text, SupportedCurrencyEnum.SEK
+                            amount.text, Country.SE, SupportedCurrencyEnum.SEK
                         )
 
                         sessionToken?.let {
@@ -442,7 +447,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text, SupportedCurrencyEnum.SEK
+                            amount.text, Country.SE, SupportedCurrencyEnum.SEK
                         )
 
                         sessionToken?.let {
@@ -457,7 +462,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text, SupportedCurrencyEnum.DKK
+                            amount.text, Country.DK, SupportedCurrencyEnum.DKK
                         )
 
                         sessionToken?.let {
@@ -472,7 +477,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text, SupportedCurrencyEnum.NOK
+                            amount.text, Country.NO, SupportedCurrencyEnum.NOK
                         )
 
                         sessionToken?.let {
@@ -487,7 +492,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionToken = viewModel.createNewPaymentSession(
-                            amount.text, SupportedCurrencyEnum.SEK
+                            amount.text, Country.SE, SupportedCurrencyEnum.SEK
                         )
 
                         sessionToken?.let {

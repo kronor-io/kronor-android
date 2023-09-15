@@ -40,8 +40,8 @@ class SwishViewModelFactory(
 class SwishViewModel(
     private val swishConfiguration: PaymentConfiguration
 ) : ViewModel() {
-    private val _subscribeKey: MutableState<Int> = mutableStateOf(0)
-    internal val subscribeKey : Int by _subscribeKey
+    private val _subscribe: MutableState<Boolean> = mutableStateOf(false)
+    internal val subscribe : Boolean by _subscribe
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null
     private val constructedRedirectUrl: Uri =
@@ -173,10 +173,7 @@ class SwishViewModel(
 
             is SwishStatechart.Companion.SideEffect.ListenOnPaymentRequest -> {
                 this.waitToken = sideEffect.waitToken
-            }
-
-            is SwishStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
-                this._subscribeKey.value += 1
+                this._subscribe.value = true
             }
 
             is SwishStatechart.Companion.SideEffect.CancelPaymentRequest -> {
@@ -191,12 +188,14 @@ class SwishViewModel(
                         _transitionToError(waitToken.exceptionOrNull())
                     }
 
-                    waitToken.isSuccess -> {}
+                    waitToken.isSuccess -> {
+                    }
                 }
             }
 
             is SwishStatechart.Companion.SideEffect.ResetState -> {
-
+                this._subscribe.value = false;
+                this.waitToken = null;
             }
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
@@ -231,35 +230,6 @@ class SwishViewModel(
                     }
 
                     this.paymentRequest?.let { paymentRequest ->
-                        paymentRequest.status?.any {
-                            it.status == PaymentStatusEnum.PAID
-                        }?.let {
-                            if (it) {
-                                _transition(
-                                    SwishStatechart.Companion.Event.PaymentAuthorized(
-                                        paymentRequest.resultingPaymentId!!
-                                    )
-                                )
-                            }
-                        }
-
-                        paymentRequest.status?.any {
-                            listOf(
-                                PaymentStatusEnum.ERROR, PaymentStatusEnum.DECLINED
-                            ).contains(it.status)
-                        }?.let {
-                            if (it) {
-                                _transition(SwishStatechart.Companion.Event.PaymentRejected)
-                            }
-                        }
-
-                        paymentRequest.status?.any {
-                            it.status == PaymentStatusEnum.CANCELLED
-                        }?.let {
-                            if (it) {
-                                _transition(SwishStatechart.Companion.Event.Retry)
-                            }
-                        }
                         val selected: SelectedMethod = selectedMethod.value ?: run {
                             when (paymentRequest.paymentFlow) {
                                 "mcom" -> SelectedMethod.QrCode
@@ -267,19 +237,25 @@ class SwishViewModel(
                                 else -> SelectedMethod.QrCode
                             }
                         }
-                        if (_swishState.value is SwishStatechart.Companion.State.WaitingForPaymentRequest) {
-                            _transition(
-                                SwishStatechart.Companion.Event.PaymentRequestInitialized(
-                                    selected
+
+                        paymentRequest.status?.let { statuses ->
+                            if (statuses.any { it.status == PaymentStatusEnum.PAID }) {
+                                _transition(
+                                    SwishStatechart.Companion.Event.PaymentAuthorized(
+                                        paymentRequest.resultingPaymentId!!
+                                    )
                                 )
-                            )
-                        }
-                        if (_swishState.value is SwishStatechart.Companion.State.WaitingForSubscription) {
-                            _transition(
-                                SwishStatechart.Companion.Event.PaymentRequestInitialized(
-                                    selected
+                            } else if (statuses.any { it.status == PaymentStatusEnum.ERROR || it.status == PaymentStatusEnum.DECLINED}) {
+                                _transition(SwishStatechart.Companion.Event.PaymentRejected)
+                            } else if (statuses.any { it.status == PaymentStatusEnum.CANCELLED}) {
+                                _transition(SwishStatechart.Companion.Event.Retry)
+                            } else if (_swishState.value is SwishStatechart.Companion.State.WaitingForPaymentRequest) {
+                                _transition(
+                                    SwishStatechart.Companion.Event.PaymentRequestInitialized(
+                                        selected
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                     return@let waitToken

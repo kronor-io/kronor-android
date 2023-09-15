@@ -1,0 +1,5 @@
+mutation NewPaymentSessionWithReferenceCheck($payment: PaymentSessionWithReferenceCheckInput!) {
+    newPaymentSessionWithReferenceCheck(payment: $payment) {
+        token
+    }
+}

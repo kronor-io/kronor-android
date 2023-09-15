@@ -11,28 +11,7 @@ internal enum class SelectedMethod {
 
 internal class SwishStatechart {
     val stateMachine = StateMachine.create<State, Event, SideEffect> {
-        initialState(State.WaitingForSubscription)
-
-        state<State.WaitingForSubscription> {
-            on<Event.SubscribeToPaymentStatus> {
-                dontTransition(sideEffect = SideEffect.SubscribeToPaymentStatus)
-            }
-            on<Event.Prompt> {
-                transitionTo(
-                    state = State.PromptingMethod
-                )
-            }
-            on<Event.PaymentRequestInitialized> {
-                transitionTo(
-                    state = State.PaymentRequestInitialized(it.selected)
-                )
-            }
-            on<Event.Error> {
-                transitionTo(
-                    state = State.Errored(it.error)
-                )
-            }
-        }
+        initialState(State.PromptingMethod)
 
         state<State.PromptingMethod> {
             on<Event.UseSwishApp> {
@@ -54,6 +33,11 @@ internal class SwishStatechart {
                 transitionTo(
                     state = State.CreatingPaymentRequest(SelectedMethod.PhoneNumber),
                     sideEffect = SideEffect.CreateEcomPaymentRequest(it.phoneNumber)
+                )
+            }
+            on<Event.PaymentRequestInitialized> {
+                transitionTo(
+                    state = State.PaymentRequestInitialized(it.selected)
                 )
             }
             on<Event.Error> {
@@ -194,8 +178,8 @@ internal class SwishStatechart {
 
             on<Event.Retry> {
                 transitionTo(
-                    state = State.WaitingForSubscription,
-                    sideEffect = SideEffect.SubscribeToPaymentStatus
+                    state = State.PromptingMethod,
+                    sideEffect = SideEffect.ResetState
                 )
             }
 
@@ -209,7 +193,6 @@ internal class SwishStatechart {
 
     companion object {
         sealed class State {
-            object WaitingForSubscription : State()
             object PromptingMethod : State()
             object InsertingPhoneNumber : State()
             data class CreatingPaymentRequest(val selected: SelectedMethod) : State()
@@ -222,7 +205,6 @@ internal class SwishStatechart {
         }
 
         sealed class Event {
-            object SubscribeToPaymentStatus : Event()
             object Prompt : Event()
             object UseSwishApp : Event()
             object UsePhoneNumber : Event()
@@ -243,7 +225,6 @@ internal class SwishStatechart {
             object CreateMcomPaymentRequest : SideEffect()
             object CancelPaymentRequest : SideEffect()
             object OpenSwishApp : SideEffect()
-            object SubscribeToPaymentStatus : SideEffect()
             data class ListenOnPaymentRequest(val waitToken: String) : SideEffect()
             data class NotifyPaymentSuccess(val paymentId: String) : SideEffect()
             object NotifyPaymentFailure : SideEffect()

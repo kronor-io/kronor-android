@@ -52,15 +52,10 @@ fun WebviewGatewayComponent(
 
         val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-        LaunchedEffect(Unit) {
-            viewModel.transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
-        }
-        LaunchedEffect(viewModel.subscribeKey) {
-            launch {
+        LaunchedEffect(viewModel.subscribe) {
+            if (viewModel.subscribe) {
                 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    launch {
-                        viewModel.subscription()
-                    }
+                    viewModel.subscription()
                 }
             }
         }
@@ -83,19 +78,14 @@ private fun WebviewGatewayScreen(
     paymentMethod: PaymentMethod,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(Unit) {
-        transition(WebviewGatewayStatechart.Companion.Event.SubscribeToPaymentStatus)
-    }
-
     Surface(
         modifier = modifier, color = MaterialTheme.colors.background
     ) {
         when (state.value) {
-            WebviewGatewayStatechart.Companion.State.WaitingForSubscription -> {
-                WebviewGatewayWrapper { WebviewGatewayInitializing(modifier = Modifier.fillMaxSize()) }
-            }
-
             WebviewGatewayStatechart.Companion.State.Initializing -> {
+                LaunchedEffect(Unit) {
+                    transition(WebviewGatewayStatechart.Companion.Event.Initialize)
+                }
                 WebviewGatewayWrapper { WebviewGatewayInitializing(modifier = Modifier.fillMaxSize()) }
             }
 

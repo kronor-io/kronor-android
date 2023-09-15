@@ -13,6 +13,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import io.kronor.example.databinding.FragmentFirst2Binding
+import io.kronor.example.type.Country
 import io.kronor.example.type.SupportedCurrencyEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -44,7 +45,7 @@ class First2Fragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
                     val sessionToken = viewModel.createNewPaymentSession(
-                        binding.amountField.text.toString(), SupportedCurrencyEnum.SEK
+                        binding.amountField.text.toString(), Country.SE, SupportedCurrencyEnum.SEK
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
@@ -59,7 +60,7 @@ class First2Fragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
                     val sessionToken = viewModel.createNewPaymentSession(
-                        binding.amountField.text.toString(), SupportedCurrencyEnum.SEK
+                        binding.amountField.text.toString(), Country.SE, SupportedCurrencyEnum.SEK
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
@@ -74,7 +75,7 @@ class First2Fragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
                     val sessionToken = viewModel.createNewPaymentSession(
-                        binding.amountField.text.toString(), SupportedCurrencyEnum.DKK
+                        binding.amountField.text.toString(), Country.DK, SupportedCurrencyEnum.DKK
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
