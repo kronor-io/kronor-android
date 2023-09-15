@@ -8,8 +8,11 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
@@ -42,6 +45,8 @@ class WebviewGatewayViewModel(
 ) : ViewModel() {
     private val _subscribeKey: MutableState<Int> = mutableStateOf(0)
     internal val subscribeKey : Int by _subscribeKey
+    private val _subscribe: MutableState<Boolean> = mutableStateOf(false)
+    internal val subscribe : Boolean by _subscribe
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null
     private val constructedRedirectUrl  : Uri =
@@ -113,6 +118,7 @@ class WebviewGatewayViewModel(
     }
 
     private suspend fun handleSideEffect(sideEffect: WebviewGatewayStatechart.Companion.SideEffect) {
+//        Log.d("WebviewGatewayViewModel", "handleSideEffect: ${this._webviewGatewayState}")
         when (sideEffect) {
             is WebviewGatewayStatechart.Companion.SideEffect.CreatePaymentRequest -> {
                 if (this.paymentMethod is PaymentMethod.Fallback) {
@@ -150,10 +156,7 @@ class WebviewGatewayViewModel(
 
             is WebviewGatewayStatechart.Companion.SideEffect.ListenOnPaymentRequest -> {
                 this.waitToken = sideEffect.waitToken
-            }
-
-            is WebviewGatewayStatechart.Companion.SideEffect.SubscribeToPaymentStatus -> {
-                this._subscribeKey.value += 1
+                this._subscribe.value = true
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.CancelPaymentRequest -> {
@@ -184,6 +187,7 @@ class WebviewGatewayViewModel(
                     }
 
                     waitToken.isSuccess -> {
+                        this._subscribe.value = false
                         this.waitToken = null
                     }
                 }
@@ -233,41 +237,22 @@ class WebviewGatewayViewModel(
                     }
 
                     this.paymentRequest?.let { paymentRequest ->
-                        paymentRequest.status?.any {
-                            it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED
-                        }?.let {
-                            if (it) {
+                        paymentRequest.status?.let { statuses ->
+                            if (statuses.any { it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED}) {
                                 _transition(
                                     WebviewGatewayStatechart.Companion.Event.PaymentAuthorized(
                                         paymentRequest.resultingPaymentId!!
                                     )
                                 )
-                            }
-                        }
-
-                        paymentRequest.status?.any {
-                            listOf(
-                                PaymentStatusEnum.ERROR, PaymentStatusEnum.DECLINED
-                            ).contains(it.status)
-                        }?.let {
-                            if (it) {
+                            } else if (statuses.any {it.status == PaymentStatusEnum.ERROR || it.status == PaymentStatusEnum.DECLINED}) {
                                 _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
-                            }
-                        }
 
-                        paymentRequest.status?.any {
-                            it.status == PaymentStatusEnum.CANCELLED
-                        }?.let {
-                            if (it) {
+                            } else if (statuses.any {it.status == PaymentStatusEnum.CANCELLED}) {
                                 _transition(WebviewGatewayStatechart.Companion.Event.Retry)
-                            }
-                        }
 
-                        if (_webviewGatewayState.value is WebviewGatewayStatechart.Companion.State.WaitingForPaymentRequest) {
-                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
-                        }
-                        if (_webviewGatewayState.value is WebviewGatewayStatechart.Companion.State.WaitingForSubscription) {
-                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
+                            } else {
+                                _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestInitialized)
+                            }
                         }
                     }
                     return@let waitToken

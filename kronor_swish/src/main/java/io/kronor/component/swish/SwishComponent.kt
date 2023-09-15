@@ -96,15 +96,10 @@ fun SwishComponent(
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    LaunchedEffect(Unit) {
-        viewModel.transition(SwishStatechart.Companion.Event.SubscribeToPaymentStatus)
-    }
-    LaunchedEffect(viewModel.subscribeKey) {
-        launch {
+    LaunchedEffect(viewModel.subscribe) {
+        if (viewModel.subscribe) {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    viewModel.subscription()
-                }
+                viewModel.subscription()
             }
         }
     }
@@ -132,10 +127,6 @@ private fun SwishScreen(
 
     SwishWrapper(merchantLogo) {
         when (state.value) {
-            SwishStatechart.Companion.State.WaitingForSubscription -> {
-                SwishInitializing()
-            }
-
             SwishStatechart.Companion.State.PromptingMethod -> {
                 SwishPromptScreen(
                     onAppOpen = {

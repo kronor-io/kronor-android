@@ -16,6 +16,7 @@ import io.kronor.example.type.Country
 import io.kronor.example.type.Language
 import io.kronor.example.type.PaymentSessionAdditionalData
 import io.kronor.example.type.PaymentSessionInput
+import io.kronor.example.type.PaymentSessionWithReferenceCheckInput
 import io.kronor.example.type.PurchaseOrderLineInput
 import io.kronor.example.type.SupportedCurrencyEnum
 import java.io.IOException
@@ -36,18 +37,18 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun createNewPaymentSession(
-        amountToPay: String, currency: SupportedCurrencyEnum
+        amountToPay: String, country: Country, currency: SupportedCurrencyEnum
     ): String? {
         val expiresAt = LocalDateTime.now().plusMinutes(5)
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
         Log.d("NewPaymentSession", "test")
         val response = try {
             apolloClient().mutation(
-                NewPaymentSessionMutation(
-                    PaymentSessionInput(
+                NewPaymentSessionWithReferenceCheckMutation(
+                    PaymentSessionWithReferenceCheckInput(
                         amount = amountToPay.toInt(),
-                        currency = Optional.present(currency),
-                        country = Optional.present(Country.SE),
+                        currency = currency,
+                        country = country,
                         expiresAt = expiresAt,
                         idempotencyKey = UUID.randomUUID().toString(),
                         merchantReference = "android-" + UUID.randomUUID().toString(),
@@ -93,7 +94,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
             Log.e("NewPaymentSession", "Failed because: ${e.message}")
             null
         }
-        val sessionToken = response?.data?.newPaymentSession?.token
+        val sessionToken = response?.data?.newPaymentSessionWithReferenceCheck?.token
         Log.d("NewPaymentSession", "Success $sessionToken")
         this.paymentSessionToken = sessionToken
         return sessionToken

@@ -5,41 +5,7 @@ import io.kronor.api.KronorError
 
 internal class WebviewGatewayStatechart {
     val stateMachine = StateMachine.create<State, Event, SideEffect> {
-        initialState(State.WaitingForSubscription)
-
-        state<State.WaitingForSubscription> {
-            on<Event.SubscribeToPaymentStatus> {
-                dontTransition(sideEffect = SideEffect.SubscribeToPaymentStatus)
-            }
-            on<Event.Initialize> {
-                transitionTo(
-                    state = State.CreatingPaymentRequest,
-                    sideEffect = SideEffect.CreatePaymentRequest
-                )
-            }
-            on<Event.PaymentRequestInitialized> {
-                transitionTo(
-                    state = State.PaymentRequestInitialized,
-                    sideEffect = SideEffect.OpenEmbeddedSite
-                )
-            }
-            on<Event.PaymentAuthorized> {
-                transitionTo(
-                    state = State.PaymentCompleted,
-                    sideEffect = SideEffect.NotifyPaymentSuccess(paymentId = it.paymentId)
-                )
-            }
-            on<Event.PaymentRejected> {
-                transitionTo(
-                    state = State.PaymentRejected, sideEffect = SideEffect.NotifyPaymentFailure
-                )
-            }
-            on<Event.Error> {
-                transitionTo(
-                    state = State.Errored(it.error)
-                )
-            }
-        }
+        initialState(State.Initializing)
 
         state<State.Initializing> {
             on<Event.Initialize> {
@@ -72,6 +38,19 @@ internal class WebviewGatewayStatechart {
                 transitionTo(
                     state = State.PaymentRequestInitialized,
                     sideEffect = SideEffect.OpenEmbeddedSite
+                )
+            }
+
+            on<Event.PaymentAuthorized> {
+                transitionTo(
+                    state = State.PaymentCompleted,
+                    sideEffect = SideEffect.NotifyPaymentSuccess(paymentId = it.paymentId)
+                )
+            }
+
+            on<Event.PaymentRejected> {
+                transitionTo(
+                    state = State.PaymentRejected, sideEffect = SideEffect.NotifyPaymentFailure
                 )
             }
 
@@ -159,8 +138,8 @@ internal class WebviewGatewayStatechart {
             }
             on<Event.Retry> {
                 transitionTo(
-                    state = State.WaitingForSubscription,
-                    sideEffect = SideEffect.SubscribeToPaymentStatus
+                    state = State.Initializing,
+                    sideEffect = SideEffect.ResetState
                 )
             }
             on<Event.Error> {
@@ -173,7 +152,6 @@ internal class WebviewGatewayStatechart {
 
     companion object {
         sealed class State {
-            object WaitingForSubscription : State()
             object Initializing : State()
             object CreatingPaymentRequest : State()
             object WaitingForPaymentRequest : State()
@@ -185,7 +163,6 @@ internal class WebviewGatewayStatechart {
         }
 
         sealed class Event {
-            object SubscribeToPaymentStatus : Event()
             object Initialize : Event()
             data class PaymentRequestCreated(val waitToken: String) : Event()
             object PaymentRequestInitialized : Event()
@@ -204,7 +181,6 @@ internal class WebviewGatewayStatechart {
             object CreatePaymentRequest : SideEffect()
             object OpenEmbeddedSite : SideEffect()
             object CancelPaymentRequest : SideEffect()
-            object SubscribeToPaymentStatus : SideEffect()
             data class ListenOnPaymentRequest(val waitToken: String) : SideEffect()
             data class NotifyPaymentSuccess(val paymentId: String) : SideEffect()
             object NotifyPaymentFailure : SideEffect()
