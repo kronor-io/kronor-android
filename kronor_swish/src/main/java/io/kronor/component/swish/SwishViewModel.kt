@@ -205,7 +205,7 @@ class SwishViewModel(
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 Log.d("SwishViewModel", "Emitting failure")
-                _events.emit(PaymentEvent.PaymentFailure)
+                _events.emit(PaymentEvent.PaymentFailure(sideEffect.failureReason))
             }
 
             SwishStatechart.Companion.SideEffect.OpenSwishApp -> {

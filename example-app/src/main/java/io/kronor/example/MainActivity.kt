@@ -123,7 +123,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 launch {
                                     svm.events.collect { event ->
                                         when (event) {
-                                            PaymentEvent.PaymentFailure -> {
+                                            is PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
                                                     viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
@@ -176,7 +176,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 launch {
                                     ccvm.events.collect {
                                         when (it) {
-                                            PaymentEvent.PaymentFailure -> {
+                                            is PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
                                                     viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
@@ -222,7 +222,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 launch {
                                     mpvm.events.collect {
                                         when (it) {
-                                            PaymentEvent.PaymentFailure -> {
+                                            is PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
                                                     viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
@@ -275,7 +275,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 launch {
                                     vvm.events.collect {
                                         when (it) {
-                                            PaymentEvent.PaymentFailure -> {
+                                            is PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
                                                     viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")
@@ -328,7 +328,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 launch {
                                     ppvm.events.collect {
                                         when (it) {
-                                            PaymentEvent.PaymentFailure -> {
+                                            is PaymentEvent.PaymentFailure -> {
                                                 withContext(Dispatchers.Main) {
                                                     viewModel.resetPaymentState()
                                                     navController.navigate("paymentMethods")

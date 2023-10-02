@@ -43,8 +43,6 @@ class WebviewGatewayViewModel(
     val webviewGatewayConfiguration: PaymentConfiguration,
     val paymentMethod: PaymentMethod
 ) : ViewModel() {
-    private val _subscribeKey: MutableState<Int> = mutableStateOf(0)
-    internal val subscribeKey : Int by _subscribeKey
     private val _subscribe: MutableState<Boolean> = mutableStateOf(false)
     internal val subscribe : Boolean by _subscribe
     private var intentReceived: Boolean = false
@@ -200,7 +198,7 @@ class WebviewGatewayViewModel(
 
             is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 Log.d("WebviewGatewayViewModel", "Emitting failure")
-                _events.emit(PaymentEvent.PaymentFailure)
+                _events.emit(PaymentEvent.PaymentFailure(sideEffect.failureReason))
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.OpenEmbeddedSite -> {
@@ -208,7 +206,7 @@ class WebviewGatewayViewModel(
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.CancelAndNotifyFailure -> {
-                _events.emit(PaymentEvent.PaymentFailure)
+                _events.emit(PaymentEvent.PaymentFailure(FailureReason.Cancelled))
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.CancelAfterDeadline -> {
@@ -245,7 +243,7 @@ class WebviewGatewayViewModel(
                                     )
                                 )
                             } else if (statuses.any {it.status == PaymentStatusEnum.ERROR || it.status == PaymentStatusEnum.DECLINED}) {
-                                _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
+                                _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected(FailureReason.Declined))
 
                             } else if (statuses.any {it.status == PaymentStatusEnum.CANCELLED}) {
                                 _transition(WebviewGatewayStatechart.Companion.Event.Retry)
@@ -273,7 +271,7 @@ class WebviewGatewayViewModel(
                         )
                     } ?: run {
                         if (this.intentReceived && !(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.Initializing)) {
-                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
+                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected(FailureReason.Declined))
                         } else {
                             if (!(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized)) {
                                 _transition(WebviewGatewayStatechart.Companion.Event.Initialize)
