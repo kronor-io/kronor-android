@@ -81,7 +81,6 @@ class WebviewGatewayViewModel(
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 _transition(event)
-
             }
         }
     }
