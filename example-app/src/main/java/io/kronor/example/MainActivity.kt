@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,7 +34,6 @@ import androidx.navigation.navArgument
 import io.kronor.api.Environment
 import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentEvent
-import io.kronor.api.PaymentMethod
 import io.kronor.component.credit_card.CreditCardComponent
 import io.kronor.component.credit_card.creditCardViewModel
 import io.kronor.component.mobilepay.MobilePayComponent
@@ -49,12 +50,23 @@ import io.kronor.example.ui.theme.KronorSDKTheme
 import kotlinx.coroutines.*
 import java.util.*
 
+
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+        StrictMode.setThreadPolicy(
+            ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectAll() //for all detectable problems
+
+                .penaltyLog()
+                .build()
+        )
+        StrictMode.noteSlowCall("SlowCall")
         super.onCreate(savedInstanceState)
         Log.d("onCreate", "${viewModel.paymentSessionToken}")
         setContent {

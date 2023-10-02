@@ -73,7 +73,10 @@ import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.KronorError
 import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentStatusSubscription
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -90,7 +93,9 @@ fun SwishComponent(
 
     if (!LocalInspectionMode.current) {
         LaunchedEffect(Unit) {
-            viewModel.setDeviceFingerPrint(getWeakFingerprint(context))
+            withContext(Dispatchers.Default) {
+                viewModel.setDeviceFingerPrint(getWeakFingerprint(context))
+            }
         }
     }
 
@@ -99,7 +104,9 @@ fun SwishComponent(
     LaunchedEffect(viewModel.subscribe) {
         if (viewModel.subscribe) {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.subscription()
+                withContext(Dispatchers.IO) {
+                    viewModel.subscription()
+                }
             }
         }
     }
