@@ -49,12 +49,19 @@ publishing {
 }
 
 android {
+    lint {
+        disable 'MissingTranslation'
+    }
+}
+
+
+android {
     namespace 'io.kronor.component.webview_payment_gateway'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         minSdk 21
-        targetSdk 33
+        targetSdk 34
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -119,10 +126,5 @@ dependencies {
     implementation project(path: ':kronor_api')
 }
 
-android {
-    lintOptions {
-        disable 'MissingTranslation'
-    }
-}
 
 apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"

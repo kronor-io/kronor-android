@@ -95,6 +95,7 @@ suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D
 
 data class PaymentRequestArgs(
     val returnUrl: String,
+    val merchantReturnUrl: String,
     val deviceFingerprint: String,
     val appName: String,
     val appVersion: String,
@@ -109,14 +110,15 @@ suspend fun Requests.makeNewPaymentRequest(
         java.lang.String(Build.VERSION.RELEASE).replaceAll("(\\d+[.]\\d+)(.*)", "$1")
     )
     val os = "android"
-    val userAgent = "kronor_android_sdk"
+    val userAgent = "kronor_android_sdk/${BuildConfig.VERSION}"
     return when (paymentRequestArgs.paymentMethod) {
         is PaymentMethod.CreditCard -> {
             kronorApolloClient.mutation(
                 CreditCardPaymentMutation(
                     payment = CreditCardPaymentInput(
                         idempotencyKey = UUID.randomUUID().toString(),
-                        returnUrl = paymentRequestArgs.returnUrl
+                        returnUrl = paymentRequestArgs.merchantReturnUrl,
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                     ), deviceInfo = AddSessionDeviceInformationInput(
                         browserName = paymentRequestArgs.appName,
                         browserVersion = paymentRequestArgs.appVersion,
@@ -134,7 +136,8 @@ suspend fun Requests.makeNewPaymentRequest(
                 MobilePayPaymentMutation(
                     payment = MobilePayPaymentInput(
                         idempotencyKey = UUID.randomUUID().toString(),
-                        returnUrl = paymentRequestArgs.returnUrl
+                        returnUrl = paymentRequestArgs.merchantReturnUrl,
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                     ), deviceInfo = AddSessionDeviceInformationInput(
                         browserName = paymentRequestArgs.appName,
                         browserVersion = paymentRequestArgs.appVersion,
@@ -152,7 +155,8 @@ suspend fun Requests.makeNewPaymentRequest(
                 VippsPaymentMutation(
                     payment = VippsPaymentInput(
                         idempotencyKey = UUID.randomUUID().toString(),
-                        returnUrl = paymentRequestArgs.returnUrl
+                        returnUrl = paymentRequestArgs.merchantReturnUrl,
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                     ), deviceInfo = AddSessionDeviceInformationInput(
                         browserName = paymentRequestArgs.appName,
                         browserVersion = paymentRequestArgs.appVersion,
@@ -171,7 +175,8 @@ suspend fun Requests.makeNewPaymentRequest(
                     customerSwishNumber = Optional.presentIfNotNull(paymentRequestArgs.paymentMethod.customerSwishNumber),
                     flow = if (paymentRequestArgs.paymentMethod.customerSwishNumber == null) "mcom" else "ecom",
                     idempotencyKey = UUID.randomUUID().toString(),
-                    returnUrl = paymentRequestArgs.returnUrl
+                    returnUrl = paymentRequestArgs.merchantReturnUrl,
+                    merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                 ), deviceInfo = AddSessionDeviceInformationInput(
                     browserName = paymentRequestArgs.appName,
                     browserVersion = paymentRequestArgs.appVersion,
@@ -188,7 +193,8 @@ suspend fun Requests.makeNewPaymentRequest(
                 PayPalPaymentMutation(
                     payment = PayPalPaymentInput(
                         idempotencyKey = UUID.randomUUID().toString(),
-                        returnUrl = paymentRequestArgs.returnUrl
+                        returnUrl = paymentRequestArgs.returnUrl,
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                     ), deviceInfo = AddSessionDeviceInformationInput(
                         browserName = paymentRequestArgs.appName,
                         browserVersion = paymentRequestArgs.appVersion,

@@ -116,6 +116,7 @@ class SwishViewModel(
                 val waitToken = requests.makeNewPaymentRequest(
                     paymentRequestArgs = PaymentRequestArgs(
                         returnUrl = constructedRedirectUrl.toString(),
+                        merchantReturnUrl = constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
                         appVersion = swishConfiguration.appVersion,
@@ -147,6 +148,7 @@ class SwishViewModel(
                     paymentRequestArgs = PaymentRequestArgs(
                         paymentMethod = PaymentMethod.Swish(sideEffect.phoneNumber),
                         returnUrl = constructedRedirectUrl.toString(),
+                        merchantReturnUrl = constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
                         appVersion = swishConfiguration.appVersion

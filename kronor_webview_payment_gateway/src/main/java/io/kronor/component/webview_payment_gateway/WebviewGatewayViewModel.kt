@@ -1,7 +1,14 @@
 package io.kronor.component.webview_payment_gateway
 
+import android.annotation.SuppressLint
+import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
+import android.database.Cursor
+import android.media.MediaDrm
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -14,6 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.*
@@ -24,6 +32,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.Exception
+import java.security.MessageDigest
+import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -41,7 +52,7 @@ class WebviewGatewayViewModelFactory(
 
 class WebviewGatewayViewModel(
     val webviewGatewayConfiguration: PaymentConfiguration,
-    val paymentMethod: PaymentMethod
+    val paymentMethod: PaymentMethod,
 ) : ViewModel() {
     private val _subscribeKey: MutableState<Int> = mutableStateOf(0)
     internal val subscribeKey : Int by _subscribeKey
@@ -70,8 +81,17 @@ class WebviewGatewayViewModel(
     val paymentGatewayUrl: Uri = constructPaymentGatewayUrl(
         environment = webviewGatewayConfiguration.environment,
         sessionToken = webviewGatewayConfiguration.sessionToken,
-        paymentMethod = paymentMethod.toPaymentGatewayMethod(),
-        merchantReturnUrl = this.constructedRedirectUrl
+        paymentMethod = paymentMethod,
+        merchantReturnUrl = this.constructedRedirectUrl,
+        isRedirectPage = false
+    )
+
+    val paymentRedirectUrl: Uri = constructPaymentGatewayUrl(
+        environment = webviewGatewayConfiguration.environment,
+        sessionToken = webviewGatewayConfiguration.sessionToken,
+        paymentMethod = paymentMethod,
+        merchantReturnUrl = this.constructedRedirectUrl,
+        isRedirectPage = true
     )
 
     private val _events = MutableSharedFlow<PaymentEvent>()
@@ -85,8 +105,8 @@ class WebviewGatewayViewModel(
         }
     }
 
-    fun setDeviceFingerPrint(fingerprint: String) {
-        this.deviceFingerprint = fingerprint.take(64)
+    fun setDeviceFingerPrint(context: Context) {
+        this.deviceFingerprint = getWeakFingerprint(context).take(64)
     }
 
     private suspend fun _transition(event: WebviewGatewayStatechart.Companion.Event) {
@@ -125,9 +145,11 @@ class WebviewGatewayViewModel(
                     return
                 }
                 Log.d("WebviewGatewayViewModel", "Creating Payment Request")
+                setDeviceFingerPrint(sideEffect.context)
                 val waitToken = requests.makeNewPaymentRequest(
                     paymentRequestArgs = PaymentRequestArgs(
-                        returnUrl = this.constructedRedirectUrl.toString(),
+                        returnUrl = this.paymentRedirectUrl.toString(),
+                        merchantReturnUrl = this.constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = webviewGatewayConfiguration.appName,
                         appVersion = webviewGatewayConfiguration.appVersion,
@@ -219,7 +241,7 @@ class WebviewGatewayViewModel(
         }
     }
 
-    internal suspend fun subscription() {
+    internal suspend fun subscription(context: Context) {
         // If we have a waitToken set in our view model, get the payment request
         // associated with that waitToken and in a status that is not initializing
 
@@ -275,7 +297,7 @@ class WebviewGatewayViewModel(
                             _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
                         } else {
                             if (!(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized)) {
-                                _transition(WebviewGatewayStatechart.Companion.Event.Initialize)
+                                _transition(WebviewGatewayStatechart.Companion.Event.Initialize(context))
                             }
                         }
                     }
@@ -302,7 +324,7 @@ class WebviewGatewayViewModel(
 }
 
 private fun constructPaymentGatewayUrl(
-    environment: Environment, sessionToken: String, paymentMethod: String, merchantReturnUrl: Uri
+    environment: Environment, sessionToken: String, paymentMethod: PaymentMethod, merchantReturnUrl: Uri, isRedirectPage : Boolean
 ): Uri {
     val paymentGatewayHost = when (environment) {
         Environment.Staging -> {
@@ -313,11 +335,22 @@ private fun constructPaymentGatewayUrl(
             "payment-gateway.kronor.io"
         }
     }
-    return Uri.Builder().scheme("https").authority(paymentGatewayHost).appendPath("payment")
+    return Uri.Builder().scheme("https").authority(paymentGatewayHost).appendPath(if (isRedirectPage) getRedirectPage(paymentMethod) else "payment")
         .appendQueryParameter("env", toGatewayEnvName(environment))
-        .appendQueryParameter("paymentMethod", paymentMethod)
+        .appendQueryParameter("paymentMethod", paymentMethod.toPaymentGatewayMethod())
         .appendQueryParameter("token", sessionToken)
         .appendQueryParameter("merchantReturnUrl", merchantReturnUrl.toString()).build()
+}
+
+fun getRedirectPage(paymentMethod: PaymentMethod): String {
+    return when (paymentMethod) {
+        is PaymentMethod.Swish -> "swish-redirect"
+        is PaymentMethod.MobilePay -> "reepay-redirect"
+        is PaymentMethod.Vipps -> "reepay-redirect"
+        is PaymentMethod.CreditCard -> "reepay-redirect"
+        is PaymentMethod.PayPal -> "paypal-redirect"
+        is PaymentMethod.Fallback -> "payment"
+    }
 }
 
 private fun toGatewayEnvName(environment: Environment): String {
@@ -330,4 +363,85 @@ private fun toGatewayEnvName(environment: Environment): String {
             "prod"
         }
     }
+}
+
+@SuppressLint("HardwareIds")
+private fun getWeakFingerprint(context: Context) : String {
+    val contentResolver : ContentResolver = context.contentResolver!!
+
+    val androidId: String? by lazy {
+        try {
+            Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getGsfId(): String? {
+        val URI = Uri.parse("content://com.google.android.gsf.gservices")
+        val params = arrayOf("android_id")
+        return try {
+            val cursor: Cursor = contentResolver
+                .query(URI, null, null, params, null) ?: return null
+
+            if (!cursor.moveToFirst() || cursor.columnCount < 2) {
+                cursor.close()
+                return null
+            }
+            try {
+                val result = java.lang.Long.toHexString(cursor.getString(1).toLong())
+                cursor.close()
+                result
+            } catch (e: NumberFormatException) {
+                cursor.close()
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    val gsfId : String? by lazy {
+        try {
+            getGsfId()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
+    fun releaseMediaDRM(mediaDrm: MediaDrm) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            mediaDrm.close()
+        } else {
+            mediaDrm.release()
+        }
+    }
+
+    fun mediaDrmId(): String {
+        val wIDEWINE_UUID_MOST_SIG_BITS = -0x121074568629b532L
+        val wIDEWINE_UUID_LEAST_SIG_BITS = -0x5c37d8232ae2de13L
+        val widevineUUID = UUID(wIDEWINE_UUID_MOST_SIG_BITS, wIDEWINE_UUID_LEAST_SIG_BITS)
+        val wvDrm: MediaDrm?
+
+        wvDrm = MediaDrm(widevineUUID)
+        val mivevineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
+        releaseMediaDRM(wvDrm)
+        val md: MessageDigest = MessageDigest.getInstance("SHA-256")
+        md.update(mivevineId)
+
+        return md.digest().joinToString("") {
+            java.lang.String.format("%02x", it)
+        }
+    }
+
+    val drmId : String? by lazy {
+        try {
+            mediaDrmId()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    return gsfId ?: drmId ?: androidId ?: "nofingerprintandroid"
 }

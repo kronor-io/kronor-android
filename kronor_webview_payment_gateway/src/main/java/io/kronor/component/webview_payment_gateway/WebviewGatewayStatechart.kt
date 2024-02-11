@@ -1,5 +1,6 @@
 package io.kronor.component.webview_payment_gateway
 
+import android.content.Context
 import com.tinder.StateMachine
 import io.kronor.api.KronorError
 
@@ -11,7 +12,7 @@ internal class WebviewGatewayStatechart {
             on<Event.Initialize> {
                 transitionTo(
                     state = State.CreatingPaymentRequest,
-                    sideEffect = SideEffect.CreatePaymentRequest
+                    sideEffect = SideEffect.CreatePaymentRequest(it.context)
                 )
             }
         }
@@ -163,7 +164,7 @@ internal class WebviewGatewayStatechart {
         }
 
         sealed class Event {
-            object Initialize : Event()
+            data class Initialize(val context: Context) : Event()
             data class PaymentRequestCreated(val waitToken: String) : Event()
             object PaymentRequestInitialized : Event()
             data class PaymentAuthorized(val paymentId: String) : Event()
@@ -178,7 +179,7 @@ internal class WebviewGatewayStatechart {
         }
 
         sealed class SideEffect {
-            object CreatePaymentRequest : SideEffect()
+            data class CreatePaymentRequest(val context: Context) : SideEffect()
             object OpenEmbeddedSite : SideEffect()
             object CancelPaymentRequest : SideEffect()
             data class ListenOnPaymentRequest(val waitToken: String) : SideEffect()

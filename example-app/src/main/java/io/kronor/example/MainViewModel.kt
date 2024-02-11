@@ -11,6 +11,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
+import io.kronor.api.ApiError
+import io.kronor.api.PaymentMethod
 import io.kronor.example.type.AddressInput
 import io.kronor.example.type.Country
 import io.kronor.example.type.Language
@@ -26,19 +28,27 @@ import java.net.SocketException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.Result.Companion.failure
+import kotlin.Result.Companion.success
+
+sealed class KronorApiResponse {
+    data class Error(val e: String?) : KronorApiResponse()
+
+    data class Response(val token: String) : KronorApiResponse()
+}
 
 class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
     var paymentSessionToken: String?
         get() = savedStateHandle.get<String>("sessionToken")
         set(value) = savedStateHandle.set("sessionToken", value)
 
-    private var _paymentMethodSelected: MutableState<String?> = mutableStateOf(null)
-    val paymentMethodSelected: State<String?> = _paymentMethodSelected
+    private var _paymentMethodSelected: MutableState<PaymentMethod?> = mutableStateOf(null)
+    val paymentMethodSelected: State<PaymentMethod?> = _paymentMethodSelected
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun createNewPaymentSession(
         amountToPay: String, country: Country, currency: SupportedCurrencyEnum
-    ): String? {
+    ): KronorApiResponse {
         val expiresAt = LocalDateTime.now().plusMinutes(5)
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
         Log.d("NewPaymentSession", "test")
@@ -92,12 +102,28 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
             ).execute()
         } catch (e: ApolloException) {
             Log.e("NewPaymentSession", "Failed because: ${e.message}")
-            null
+            return KronorApiResponse.Error(e.message)
         }
-        val sessionToken = response?.data?.newPaymentSessionWithReferenceCheck?.token
-        Log.d("NewPaymentSession", "Success $sessionToken")
-        this.paymentSessionToken = sessionToken
-        return sessionToken
+
+        return response.data?.newPaymentSessionWithReferenceCheck?.let { it ->
+            Log.d("NewPaymentSession", "Success ${it.token}")
+            this.paymentSessionToken = it.token
+            KronorApiResponse.Response(it.token)
+        } ?: run {
+            var extensionMsgs : String = ""
+            response.errors?.let {
+                extensionMsgs += it.joinToString("\n")
+            } ?: run {
+                response.extensions.forEach {
+                    key, value ->
+                        extensionMsgs += "$key: $value\n"
+                }
+            }
+            if (extensionMsgs.isEmpty()) {
+                extensionMsgs = "Something went wrong"
+            }
+            return KronorApiResponse.Error(extensionMsgs)
+        }
     }
 
 
@@ -127,13 +153,17 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
                 this.paymentSessionToken = st
                 uri.getQueryParameter("paymentMethod")?.let {
                     if (it == "swish") {
-                        this._paymentMethodSelected.value = "swish"
+                        this._paymentMethodSelected.value = PaymentMethod.Swish()
                     } else if (it == "creditcard") {
-                        this._paymentMethodSelected.value = "creditcard"
+                        this._paymentMethodSelected.value = PaymentMethod.CreditCard
                     } else if (it == "mobilepay") {
-                        this._paymentMethodSelected.value = "mobilepay"
+                        this._paymentMethodSelected.value = PaymentMethod.MobilePay
                     } else if (it == "vipps") {
-                        this._paymentMethodSelected.value = "vipps"
+                        this._paymentMethodSelected.value = PaymentMethod.Vipps
+                    } else if (it == "paypal") {
+                        this._paymentMethodSelected.value = PaymentMethod.PayPal
+                    } else {
+                        this._paymentMethodSelected.value = PaymentMethod.Fallback(it)
                     }
                 }
             }
