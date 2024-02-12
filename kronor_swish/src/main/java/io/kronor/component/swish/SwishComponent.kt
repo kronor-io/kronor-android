@@ -89,15 +89,6 @@ fun swishViewModel(swishConfiguration: PaymentConfiguration): SwishViewModel {
 fun SwishComponent(
     viewModel: SwishViewModel,
 ) {
-    val context = LocalContext.current
-
-    if (!LocalInspectionMode.current) {
-        LaunchedEffect(Unit) {
-            withContext(Dispatchers.Default) {
-                viewModel.setDeviceFingerPrint(getWeakFingerprint(context))
-            }
-        }
-    }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -132,22 +123,25 @@ private fun SwishScreen(
     @DrawableRes merchantLogo: Int? = null
 ) {
 
+    val context = LocalContext.current
+
     SwishWrapper(merchantLogo) {
         when (state.value) {
             SwishStatechart.Companion.State.PromptingMethod -> {
                 SwishPromptScreen(
                     onAppOpen = {
                         updateSelectedMethod(SelectedMethod.SwishApp)
-                        transition(SwishStatechart.Companion.Event.UseSwishApp)
+                        transition(SwishStatechart.Companion.Event.UseSwishApp(context))
                     },
                     onQrCode = {
                         updateSelectedMethod(SelectedMethod.QrCode)
-                        transition(SwishStatechart.Companion.Event.UseQR)
+                        transition(SwishStatechart.Companion.Event.UseQR(context))
                     },
                     onPhoneNumberPayNow = { phoneNumber ->
                         updateSelectedMethod(SelectedMethod.PhoneNumber)
                         transition(
                             SwishStatechart.Companion.Event.PhoneNumberInserted(
+                                context,
                                 phoneNumber
                             )
                         )
@@ -612,83 +606,3 @@ private fun PreviewSwishPaymentErrored() {
     }
 }
 
-@SuppressLint("HardwareIds")
-private fun getWeakFingerprint(context: Context): String {
-    val contentResolver: ContentResolver = context.contentResolver!!
-
-    val androidId: String? by lazy {
-        try {
-            Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    fun getGsfId(): String? {
-        val URI = Uri.parse("content://com.google.android.gsf.gservices")
-        val params = arrayOf("android_id")
-        return try {
-            val cursor: Cursor = contentResolver
-                .query(URI, null, null, params, null) ?: return null
-
-            if (!cursor.moveToFirst() || cursor.columnCount < 2) {
-                cursor.close()
-                return null
-            }
-            try {
-                val result = java.lang.Long.toHexString(cursor.getString(1).toLong())
-                cursor.close()
-                result
-            } catch (e: NumberFormatException) {
-                cursor.close()
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    val gsfId: String? by lazy {
-        try {
-            getGsfId()
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-
-    fun releaseMediaDRM(mediaDrm: MediaDrm) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            mediaDrm.close()
-        } else {
-            mediaDrm.release()
-        }
-    }
-
-    fun mediaDrmId(): String {
-        val wIDEWINE_UUID_MOST_SIG_BITS = -0x121074568629b532L
-        val wIDEWINE_UUID_LEAST_SIG_BITS = -0x5c37d8232ae2de13L
-        val widevineUUID = UUID(wIDEWINE_UUID_MOST_SIG_BITS, wIDEWINE_UUID_LEAST_SIG_BITS)
-        val wvDrm: MediaDrm?
-
-        wvDrm = MediaDrm(widevineUUID)
-        val mivevineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
-        releaseMediaDRM(wvDrm)
-        val md: MessageDigest = MessageDigest.getInstance("SHA-256")
-        md.update(mivevineId)
-
-        return md.digest().joinToString("") {
-            java.lang.String.format("%02x", it)
-        }
-    }
-
-    val drmId: String? by lazy {
-        try {
-            mediaDrmId()
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    return gsfId ?: drmId ?: androidId ?: "nofingerprintandroid"
-}

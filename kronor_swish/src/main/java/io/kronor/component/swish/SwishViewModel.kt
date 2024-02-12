@@ -1,7 +1,14 @@
 package io.kronor.component.swish
 
+import android.annotation.SuppressLint
+import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
+import android.database.Cursor
+import android.media.MediaDrm
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -27,6 +34,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.security.MessageDigest
+import java.util.UUID
 
 class SwishViewModelFactory(
     private val swishConfiguration: PaymentConfiguration
@@ -75,12 +84,14 @@ class SwishViewModel(
         return swishConfiguration.merchantLogo
     }
 
-    fun setDeviceFingerPrint(fingerprint: String) {
-        this.deviceFingerprint = fingerprint.take(64)
-    }
-
     internal fun updateSelectedMethod(selected: SelectedMethod) {
         _selectedMethod.value = selected
+    }
+
+    fun setDeviceFingerPrint(context: Context) {
+        this.deviceFingerprint ?: {
+            this.deviceFingerprint = getWeakFingerprint(context)?.take(64)
+        }
     }
 
     private suspend fun _transition(event: SwishStatechart.Companion.Event) {
@@ -113,6 +124,8 @@ class SwishViewModel(
         when (sideEffect) {
             is SwishStatechart.Companion.SideEffect.CreateMcomPaymentRequest -> {
                 Log.d("SwishViewModel", "Creating Mcom Payment Request")
+
+                this.setDeviceFingerPrint(sideEffect.context)
                 val waitToken = requests.makeNewPaymentRequest(
                     paymentRequestArgs = PaymentRequestArgs(
                         returnUrl = constructedRedirectUrl.toString(),
@@ -144,6 +157,7 @@ class SwishViewModel(
 
             is SwishStatechart.Companion.SideEffect.CreateEcomPaymentRequest -> {
                 Log.d("SwishViewModel", "Creating Ecom Payment Request")
+                this.setDeviceFingerPrint(sideEffect.context)
                 val waitToken = requests.makeNewPaymentRequest(
                     paymentRequestArgs = PaymentRequestArgs(
                         paymentMethod = PaymentMethod.Swish(sideEffect.phoneNumber),
@@ -301,4 +315,85 @@ class SwishViewModel(
         }
     }
 
+}
+
+@SuppressLint("HardwareIds")
+private fun getWeakFingerprint(context: Context): String? {
+    val contentResolver: ContentResolver = context.contentResolver!!
+
+    val androidId: String? by lazy {
+        try {
+            Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getGsfId(): String? {
+        val URI = Uri.parse("content://com.google.android.gsf.gservices")
+        val params = arrayOf("android_id")
+        return try {
+            val cursor: Cursor = contentResolver
+                .query(URI, null, null, params, null) ?: return null
+
+            if (!cursor.moveToFirst() || cursor.columnCount < 2) {
+                cursor.close()
+                return null
+            }
+            try {
+                val result = java.lang.Long.toHexString(cursor.getString(1).toLong())
+                cursor.close()
+                result
+            } catch (e: NumberFormatException) {
+                cursor.close()
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    val gsfId: String? by lazy {
+        try {
+            getGsfId()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
+    fun releaseMediaDRM(mediaDrm: MediaDrm) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            mediaDrm.close()
+        } else {
+            mediaDrm.release()
+        }
+    }
+
+    fun mediaDrmId(): String {
+        val wIDEWINE_UUID_MOST_SIG_BITS = -0x121074568629b532L
+        val wIDEWINE_UUID_LEAST_SIG_BITS = -0x5c37d8232ae2de13L
+        val widevineUUID = UUID(wIDEWINE_UUID_MOST_SIG_BITS, wIDEWINE_UUID_LEAST_SIG_BITS)
+        val wvDrm: MediaDrm?
+
+        wvDrm = MediaDrm(widevineUUID)
+        val mivevineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
+        releaseMediaDRM(wvDrm)
+        val md: MessageDigest = MessageDigest.getInstance("SHA-256")
+        md.update(mivevineId)
+
+        return md.digest().joinToString("") {
+            java.lang.String.format("%02x", it)
+        }
+    }
+
+    val drmId: String? by lazy {
+        try {
+            mediaDrmId()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    return gsfId ?: drmId ?: androidId
 }

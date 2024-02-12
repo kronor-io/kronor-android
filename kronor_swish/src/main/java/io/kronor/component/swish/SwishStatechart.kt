@@ -1,5 +1,6 @@
 package io.kronor.component.swish
 
+import android.content.Context
 import com.tinder.StateMachine
 import io.kronor.api.KronorError
 
@@ -17,13 +18,13 @@ internal class SwishStatechart {
             on<Event.UseSwishApp> {
                 transitionTo(
                     state = State.CreatingPaymentRequest(SelectedMethod.SwishApp),
-                    sideEffect = SideEffect.CreateMcomPaymentRequest
+                    sideEffect = SideEffect.CreateMcomPaymentRequest(it.context)
                 )
             }
             on<Event.UseQR> {
                 transitionTo(
                     state = State.CreatingPaymentRequest(SelectedMethod.QrCode),
-                    sideEffect = SideEffect.CreateMcomPaymentRequest
+                    sideEffect = SideEffect.CreateMcomPaymentRequest(it.context)
                 )
             }
             on<Event.UsePhoneNumber> {
@@ -32,7 +33,7 @@ internal class SwishStatechart {
             on<Event.PhoneNumberInserted> {
                 transitionTo(
                     state = State.CreatingPaymentRequest(SelectedMethod.PhoneNumber),
-                    sideEffect = SideEffect.CreateEcomPaymentRequest(it.phoneNumber)
+                    sideEffect = SideEffect.CreateEcomPaymentRequest(it.context, it.phoneNumber)
                 )
             }
             on<Event.PaymentRequestInitialized> {
@@ -51,7 +52,7 @@ internal class SwishStatechart {
             on<Event.PhoneNumberInserted> {
                 transitionTo(
                     state = State.CreatingPaymentRequest(SelectedMethod.PhoneNumber),
-                    sideEffect = SideEffect.CreateEcomPaymentRequest(it.phoneNumber)
+                    sideEffect = SideEffect.CreateEcomPaymentRequest(it.context, it.phoneNumber)
                 )
             }
             on<Event.Error> {
@@ -206,10 +207,10 @@ internal class SwishStatechart {
 
         sealed class Event {
             object Prompt : Event()
-            object UseSwishApp : Event()
+            data class UseSwishApp(val context: Context) : Event()
             object UsePhoneNumber : Event()
-            data class PhoneNumberInserted(val phoneNumber: String) : Event()
-            object UseQR : Event()
+            data class PhoneNumberInserted(val context: Context, val phoneNumber: String) : Event()
+            data class UseQR(val context: Context) : Event()
             data class PaymentRequestCreated(val waitToken: String) : Event()
             data class PaymentRequestInitialized(val selected: SelectedMethod) : Event()
             data class PaymentAuthorized(val paymentId: String) : Event()
@@ -221,8 +222,8 @@ internal class SwishStatechart {
         }
 
         sealed class SideEffect {
-            data class CreateEcomPaymentRequest(val phoneNumber: String) : SideEffect()
-            object CreateMcomPaymentRequest : SideEffect()
+            data class CreateEcomPaymentRequest(val context: Context, val phoneNumber: String) : SideEffect()
+            data class CreateMcomPaymentRequest(val context: Context) : SideEffect()
             object CancelPaymentRequest : SideEffect()
             object OpenSwishApp : SideEffect()
             data class ListenOnPaymentRequest(val waitToken: String) : SideEffect()

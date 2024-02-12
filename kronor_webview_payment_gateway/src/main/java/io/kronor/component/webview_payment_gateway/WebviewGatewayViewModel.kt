@@ -106,7 +106,9 @@ class WebviewGatewayViewModel(
     }
 
     fun setDeviceFingerPrint(context: Context) {
-        this.deviceFingerprint = getWeakFingerprint(context).take(64)
+        this.deviceFingerprint ?: {
+            this.deviceFingerprint = getWeakFingerprint(context)?.take(64)
+        }
     }
 
     private suspend fun _transition(event: WebviewGatewayStatechart.Companion.Event) {
@@ -366,7 +368,7 @@ private fun toGatewayEnvName(environment: Environment): String {
 }
 
 @SuppressLint("HardwareIds")
-private fun getWeakFingerprint(context: Context) : String {
+private fun getWeakFingerprint(context: Context) : String? {
     val contentResolver : ContentResolver = context.contentResolver!!
 
     val androidId: String? by lazy {
@@ -443,5 +445,5 @@ private fun getWeakFingerprint(context: Context) : String {
         }
     }
 
-    return gsfId ?: drmId ?: androidId ?: "nofingerprintandroid"
+    return gsfId ?: drmId ?: androidId
 }
