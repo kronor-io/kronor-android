@@ -25,7 +25,11 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.SocketException
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.Result.Companion.failure
@@ -49,8 +53,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
     suspend fun createNewPaymentSession(
         amountToPay: String, country: Country, currency: SupportedCurrencyEnum
     ): KronorApiResponse {
-        val expiresAt = LocalDateTime.now().plusMinutes(5)
-            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
+        val expiresAt = Instant.now().plusSeconds(300).toString()
         Log.d("NewPaymentSession", "test")
         val response = try {
             apolloClient().mutation(
