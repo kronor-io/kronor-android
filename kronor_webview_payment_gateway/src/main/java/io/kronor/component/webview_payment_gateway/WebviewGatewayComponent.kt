@@ -44,19 +44,14 @@ import java.lang.Thread.sleep
 import java.security.MessageDigest
 import java.util.UUID
 
+@SuppressLint("ComposeViewModelForwarding")
 @Composable
 fun WebviewGatewayComponent(
-    viewModel: WebviewGatewayViewModel,
-    modifier: Modifier = Modifier
+    viewModel: WebviewGatewayViewModel, modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
     if (!LocalInspectionMode.current) {
-        LaunchedEffect(Unit) {
-            withContext(Dispatchers.Default) {
-                viewModel.setDeviceFingerPrint(getWeakFingerprint(context))
-            }
-        }
 
         val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -64,7 +59,7 @@ fun WebviewGatewayComponent(
             if (viewModel.subscribe) {
                 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     withContext(Dispatchers.IO) {
-                        viewModel.subscription()
+                        viewModel.subscription(context)
                     }
                 }
             }
@@ -75,7 +70,6 @@ fun WebviewGatewayComponent(
         viewModel::transition,
         viewModel.webviewGatewayState,
         viewModel.paymentGatewayUrl,
-        viewModel.paymentMethod,
         modifier = modifier
     )
 }
@@ -85,16 +79,16 @@ private fun WebviewGatewayScreen(
     transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
     state: State<WebviewGatewayStatechart.Companion.State>,
     paymentGatewayUrl: Uri,
-    paymentMethod: PaymentMethod,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     Surface(
         modifier = modifier, color = MaterialTheme.colors.background
     ) {
         when (state.value) {
             WebviewGatewayStatechart.Companion.State.Initializing -> {
                 LaunchedEffect(Unit) {
-                    transition(WebviewGatewayStatechart.Companion.Event.Initialize)
+                    transition(WebviewGatewayStatechart.Companion.Event.Initialize(context))
                 }
                 WebviewGatewayWrapper { WebviewGatewayInitializing(modifier = Modifier.fillMaxSize()) }
             }
@@ -111,18 +105,19 @@ private fun WebviewGatewayScreen(
                 WebviewGatewayWrapper {
                     WebviewGatewayErrored(error = (state.value as WebviewGatewayStatechart.Companion.State.Errored).error,
                         onPaymentRetry = { transition(WebviewGatewayStatechart.Companion.Event.Retry) },
-                        onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) }
-                    , modifier = Modifier.fillMaxSize())
+                        onGoBack = { transition(WebviewGatewayStatechart.Companion.Event.CancelFlow) },
+                        modifier = Modifier.fillMaxSize())
                 }
             }
 
             is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
-                PaymentGatewayView(gatewayUrl = paymentGatewayUrl.toString(),
-                    paymentMethod = paymentMethod,
+                PaymentGatewayView(
+                    gatewayUrl = paymentGatewayUrl.toString(),
                     onPaymentCancel = {
                         transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                     },
-                modifier = Modifier.fillMaxSize())
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             is WebviewGatewayStatechart.Companion.State.WaitingForPayment -> {
@@ -161,7 +156,6 @@ private fun WebviewGatewayWrapper(modifier: Modifier = Modifier, content: @Compo
 @Composable
 private fun PaymentGatewayView(
     gatewayUrl: String,
-    paymentMethod: PaymentMethod,
     onPaymentCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -196,7 +190,7 @@ private fun PaymentGatewayView(
                                 ), null
                             )
                             true
-                        } catch (e : ActivityNotFoundException) {
+                        } catch (e: ActivityNotFoundException) {
                             true
                         }
                     }
@@ -299,83 +293,3 @@ private fun WebviewGatewayPaymentRejected(modifier: Modifier = Modifier) {
     }
 }
 
-@SuppressLint("HardwareIds")
-private fun getWeakFingerprint(context: Context) : String {
-    val contentResolver : ContentResolver = context.contentResolver!!
-
-    val androidId: String? by lazy {
-        try {
-            Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    fun getGsfId(): String? {
-        val URI = Uri.parse("content://com.google.android.gsf.gservices")
-        val params = arrayOf("android_id")
-        return try {
-            val cursor: Cursor = contentResolver
-                .query(URI, null, null, params, null) ?: return null
-
-            if (!cursor.moveToFirst() || cursor.columnCount < 2) {
-                cursor.close()
-                return null
-            }
-            try {
-                val result = java.lang.Long.toHexString(cursor.getString(1).toLong())
-                cursor.close()
-                result
-            } catch (e: NumberFormatException) {
-                cursor.close()
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    val gsfId : String? by lazy {
-        try {
-            getGsfId()
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-
-    fun releaseMediaDRM(mediaDrm: MediaDrm) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            mediaDrm.close()
-        } else {
-            mediaDrm.release()
-        }
-    }
-
-    fun mediaDrmId(): String {
-        val wIDEWINE_UUID_MOST_SIG_BITS = -0x121074568629b532L
-        val wIDEWINE_UUID_LEAST_SIG_BITS = -0x5c37d8232ae2de13L
-        val widevineUUID = UUID(wIDEWINE_UUID_MOST_SIG_BITS, wIDEWINE_UUID_LEAST_SIG_BITS)
-        val wvDrm: MediaDrm?
-
-        wvDrm = MediaDrm(widevineUUID)
-        val mivevineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID)
-        releaseMediaDRM(wvDrm)
-        val md: MessageDigest = MessageDigest.getInstance("SHA-256")
-        md.update(mivevineId)
-
-        return md.digest().joinToString("") {
-            java.lang.String.format("%02x", it)
-        }
-    }
-
-    val drmId : String? by lazy {
-        try {
-            mediaDrmId()
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    return gsfId ?: drmId ?: androidId ?: "nofingerprintandroid"
-}
