@@ -44,6 +44,7 @@ import java.lang.Thread.sleep
 import java.security.MessageDigest
 import java.util.UUID
 
+@SuppressLint("ComposeViewModelForwarding")
 @Composable
 fun WebviewGatewayComponent(
     viewModel: WebviewGatewayViewModel, modifier: Modifier = Modifier
@@ -69,7 +70,6 @@ fun WebviewGatewayComponent(
         viewModel::transition,
         viewModel.webviewGatewayState,
         viewModel.paymentGatewayUrl,
-        viewModel.paymentMethod,
         modifier = modifier
     )
 }
@@ -79,7 +79,6 @@ private fun WebviewGatewayScreen(
     transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
     state: State<WebviewGatewayStatechart.Companion.State>,
     paymentGatewayUrl: Uri,
-    paymentMethod: PaymentMethod,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -114,7 +113,6 @@ private fun WebviewGatewayScreen(
             is WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized -> {
                 PaymentGatewayView(
                     gatewayUrl = paymentGatewayUrl.toString(),
-                    paymentMethod = paymentMethod,
                     onPaymentCancel = {
                         transition(WebviewGatewayStatechart.Companion.Event.WaitForCancel)
                     },
@@ -158,7 +156,6 @@ private fun WebviewGatewayWrapper(modifier: Modifier = Modifier, content: @Compo
 @Composable
 private fun PaymentGatewayView(
     gatewayUrl: String,
-    paymentMethod: PaymentMethod,
     onPaymentCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {

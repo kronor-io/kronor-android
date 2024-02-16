@@ -113,7 +113,7 @@ dependencies {
     implementation "com.tinder.statemachine:statemachine:0.2.0"
     implementation("com.apollographql.apollo3:apollo-runtime:3.7.3")
 
-    lintChecks("com.slack.lint.compose:compose-lint-checks:1.2.0")
+    lintChecks("com.slack.lint.compose:compose-lint-checks:$compose_lint_version")
 
     implementation project(path: ':kronor_api')
     implementation project(path: ':kronor_webview_payment_gateway')
