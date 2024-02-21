@@ -2,15 +2,8 @@ package io.kronor.component.webview_payment_gateway
 
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
-import android.content.ContentResolver
-import android.content.Context
 import android.content.Intent
-import android.database.Cursor
-import android.media.MediaDrm
 import android.net.Uri
-import android.os.Build
-import android.os.Looper
-import android.provider.Settings
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
@@ -33,16 +26,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.Event.*
 import androidx.lifecycle.repeatOnLifecycle
 import io.kronor.api.KronorError
-import io.kronor.api.PaymentMethod
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
-import okhttp3.Dispatcher
-import java.lang.Exception
-import java.lang.Thread.sleep
-import java.security.MessageDigest
-import java.util.UUID
 
 @SuppressLint("ComposeViewModelForwarding")
 @Composable
