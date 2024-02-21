@@ -17,7 +17,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -417,6 +416,12 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 }
                             }
                         }
+                        LaunchedEffect(newIntent.value?.data) {
+                            newIntent.value?.let {
+                                Log.d("FallbackComponent", "${it.data}")
+                                fbvm.handleIntent(it)
+                            }
+                        }
                         FallbackComponent(fbvm)
                     }
                 }
@@ -426,7 +431,6 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
 }
 
 
-@OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PaymentMethodsScreen(
@@ -671,7 +675,7 @@ fun PaymentMethodsScreen(
                                     PaymentMethod.Vipps -> onNavigateToVipps(sessionResponse.token)
                                     PaymentMethod.PayPal -> onNavigateToPayPal(sessionResponse.token)
                                     is PaymentMethod.Fallback -> onNavigateToFallback(
-                                        (paymentMethod as PaymentMethod.Fallback).paymentMethod,
+                                        paymentMethod.paymentMethod,
                                         sessionResponse.token
                                     )
                                 }
@@ -844,8 +848,7 @@ fun nativeImplementationExists(selectedPaymentMethod: PaymentMethod): Boolean {
         PaymentMethod.MobilePay -> true
         PaymentMethod.Vipps -> true
         PaymentMethod.PayPal -> true
-        PaymentMethod.Fallback("p24") -> false
-        else -> false
+        is PaymentMethod.Fallback -> false
     }
 }
 
@@ -879,14 +882,6 @@ fun setDefaultConfiguration(
     }
 }
 
-
-fun isConfigurationSupported(
-    selectedPaymentMethod: PaymentMethod,
-    selectedCountry: Country,
-    selectedCurrencyEnum: SupportedCurrencyEnum
-): Boolean {
-    return true
-}
 
 /*
 @RequiresApi(Build.VERSION_CODES.O)

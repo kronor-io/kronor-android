@@ -15,13 +15,9 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.*
@@ -32,7 +28,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.lang.Exception
 import java.security.MessageDigest
 import java.util.UUID
 import kotlin.time.Duration
@@ -54,8 +49,6 @@ class WebviewGatewayViewModel(
     val webviewGatewayConfiguration: PaymentConfiguration,
     val paymentMethod: PaymentMethod,
 ) : ViewModel() {
-    private val _subscribeKey: MutableState<Int> = mutableStateOf(0)
-    internal val subscribeKey : Int by _subscribeKey
     private val _subscribe: MutableState<Boolean> = mutableStateOf(false)
     internal val subscribe : Boolean by _subscribe
     private var intentReceived: Boolean = false
@@ -144,6 +137,7 @@ class WebviewGatewayViewModel(
             is WebviewGatewayStatechart.Companion.SideEffect.CreatePaymentRequest -> {
                 if (this.paymentMethod is PaymentMethod.Fallback) {
                     _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestWillBeCreatedElsewhere)
+                    this._subscribe.value = true
                     return
                 }
                 Log.d("WebviewGatewayViewModel", "Creating Payment Request")
