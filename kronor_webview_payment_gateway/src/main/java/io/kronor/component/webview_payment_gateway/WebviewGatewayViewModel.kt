@@ -217,7 +217,7 @@ class WebviewGatewayViewModel(
 
             is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 Log.d("WebviewGatewayViewModel", "Emitting failure")
-                _events.emit(PaymentEvent.PaymentFailure)
+                _events.emit(PaymentEvent.PaymentFailure(sideEffect.failureReason))
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.OpenEmbeddedSite -> {
@@ -225,7 +225,7 @@ class WebviewGatewayViewModel(
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.CancelAndNotifyFailure -> {
-                _events.emit(PaymentEvent.PaymentFailure)
+                _events.emit(PaymentEvent.PaymentFailure(FailureReason.Cancelled))
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.CancelAfterDeadline -> {
@@ -262,7 +262,7 @@ class WebviewGatewayViewModel(
                                     )
                                 )
                             } else if (statuses.any {it.status == PaymentStatusEnum.ERROR || it.status == PaymentStatusEnum.DECLINED}) {
-                                _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
+                                _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected(FailureReason.Declined))
 
                             } else if (statuses.any {it.status == PaymentStatusEnum.CANCELLED}) {
                                 _transition(WebviewGatewayStatechart.Companion.Event.Retry)
@@ -290,7 +290,7 @@ class WebviewGatewayViewModel(
                         )
                     } ?: run {
                         if (this.intentReceived && !(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.Initializing)) {
-                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
+                            _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected(FailureReason.Declined))
                         } else {
                             if (!(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized)) {
                                 _transition(WebviewGatewayStatechart.Companion.Event.Initialize(context))

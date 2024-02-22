@@ -2,6 +2,7 @@ package io.kronor.component.webview_payment_gateway
 
 import android.content.Context
 import com.tinder.StateMachine
+import io.kronor.api.FailureReason
 import io.kronor.api.KronorError
 
 internal class WebviewGatewayStatechart {
@@ -51,7 +52,7 @@ internal class WebviewGatewayStatechart {
 
             on<Event.PaymentRejected> {
                 transitionTo(
-                    state = State.PaymentRejected, sideEffect = SideEffect.NotifyPaymentFailure
+                    state = State.PaymentRejected, sideEffect = SideEffect.NotifyPaymentFailure(it.failureReason)
                 )
             }
 
@@ -73,7 +74,7 @@ internal class WebviewGatewayStatechart {
             on<Event.PaymentRejected> {
                 transitionTo(
                     state = State.PaymentRejected,
-                    sideEffect = SideEffect.NotifyPaymentFailure
+                    sideEffect = SideEffect.NotifyPaymentFailure(it.failureReason)
                 )
             }
             on<Event.Error> {
@@ -101,7 +102,7 @@ internal class WebviewGatewayStatechart {
             on<Event.PaymentRejected> {
                 transitionTo(
                     state = State.PaymentRejected,
-                    sideEffect = SideEffect.NotifyPaymentFailure
+                    sideEffect = SideEffect.NotifyPaymentFailure(it.failureReason)
                 )
             }
             on<Event.Error> {
@@ -119,7 +120,7 @@ internal class WebviewGatewayStatechart {
 
         state<State.PaymentRejected> {
             on<Event.CancelFlow> {
-                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure)
+                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure(FailureReason.Cancelled))
             }
             on<Event.Retry> {
                 transitionTo(State.Initializing, sideEffect = SideEffect.ResetState)
@@ -135,7 +136,7 @@ internal class WebviewGatewayStatechart {
         }
         state<State.Errored> {
             on<Event.CancelFlow> {
-                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure)
+                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure(FailureReason.Declined))
             }
             on<Event.Retry> {
                 transitionTo(
@@ -168,7 +169,7 @@ internal class WebviewGatewayStatechart {
             data class PaymentRequestCreated(val waitToken: String) : Event()
             object PaymentRequestInitialized : Event()
             data class PaymentAuthorized(val paymentId: String) : Event()
-            object PaymentRejected : Event()
+            data class PaymentRejected(val failureReason: FailureReason) : Event()
             object Cancel : Event()
             object Retry : Event()
             object CancelFlow : Event()
@@ -184,7 +185,7 @@ internal class WebviewGatewayStatechart {
             object CancelPaymentRequest : SideEffect()
             data class ListenOnPaymentRequest(val waitToken: String) : SideEffect()
             data class NotifyPaymentSuccess(val paymentId: String) : SideEffect()
-            object NotifyPaymentFailure : SideEffect()
+            data class NotifyPaymentFailure(val failureReason: FailureReason) : SideEffect()
             object ResetState : SideEffect()
             object CancelAndNotifyFailure : SideEffect()
             object CancelAfterDeadline : SideEffect()

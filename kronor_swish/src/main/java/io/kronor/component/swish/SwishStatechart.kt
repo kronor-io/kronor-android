@@ -2,6 +2,7 @@ package io.kronor.component.swish
 
 import android.content.Context
 import com.tinder.StateMachine
+import io.kronor.api.FailureReason
 import io.kronor.api.KronorError
 
 internal enum class SelectedMethod {
@@ -111,7 +112,7 @@ internal class SwishStatechart {
             }
 
             on<Event.PaymentRejected> {
-                transitionTo(state = State.PaymentRejected, sideEffect = SideEffect.NotifyPaymentFailure)
+                transitionTo(state = State.PaymentRejected, sideEffect = SideEffect.NotifyPaymentFailure(FailureReason.Declined))
             }
 
             on<Event.Error> {
@@ -142,7 +143,7 @@ internal class SwishStatechart {
             on<Event.PaymentRejected> {
                 transitionTo(
                     state = State.PaymentRejected,
-                    sideEffect = SideEffect.NotifyPaymentFailure
+                    sideEffect = SideEffect.NotifyPaymentFailure(FailureReason.Declined)
                 )
             }
 
@@ -153,7 +154,7 @@ internal class SwishStatechart {
 
         state<State.PaymentRejected> {
             on<Event.CancelFlow> {
-                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure)
+                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure(FailureReason.Cancelled))
             }
 
             on<Event.Retry> {
@@ -174,7 +175,7 @@ internal class SwishStatechart {
         }
         state<State.Errored> {
             on<Event.CancelFlow> {
-                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure)
+                dontTransition(sideEffect = SideEffect.NotifyPaymentFailure(FailureReason.Cancelled))
             }
 
             on<Event.Retry> {
@@ -228,7 +229,7 @@ internal class SwishStatechart {
             object OpenSwishApp : SideEffect()
             data class ListenOnPaymentRequest(val waitToken: String) : SideEffect()
             data class NotifyPaymentSuccess(val paymentId: String) : SideEffect()
-            object NotifyPaymentFailure : SideEffect()
+            data class NotifyPaymentFailure(val failureReason: FailureReason) : SideEffect()
             object ResetState : SideEffect()
         }
     }
