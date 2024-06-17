@@ -879,6 +879,11 @@ fun setDefaultConfiguration(
             setSupportedCurrency(SupportedCurrencyEnum.PLN)
         }
 
+        PaymentMethod.Fallback("bankTransfer") -> {
+            setSupportedCountry(Country.FI)
+            setSupportedCurrency(SupportedCurrencyEnum.EUR)
+        }
+
         else -> {}
     }
 }
