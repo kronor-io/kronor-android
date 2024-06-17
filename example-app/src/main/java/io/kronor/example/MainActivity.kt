@@ -720,7 +720,8 @@ private fun PaymentMethodsDropDown(
                 PaymentMethod.MobilePay,
                 PaymentMethod.Vipps,
                 PaymentMethod.PayPal,
-                PaymentMethod.Fallback("p24")
+                PaymentMethod.Fallback("p24"),
+                PaymentMethod.Fallback("bankTransfer")
             ).forEach {
                 DropdownMenuItem(onClick = {
                     setSelectedPaymentMethod(it)
