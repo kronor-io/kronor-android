@@ -279,7 +279,7 @@ class WebviewGatewayViewModel(
                     Log.d("WebviewGatewayViewModel", "intentReceived : ${this.intentReceived}")
                     this.paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
                         paymentRequest.status?.any {
-                            it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED
+                            it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED || it.status == PaymentStatusEnum.ACCEPTED
                         } ?: false
                     }
                     this.paymentRequest?.let { paymentRequest ->
@@ -289,10 +289,10 @@ class WebviewGatewayViewModel(
                             )
                         )
                     } ?: run {
-                        if (this.intentReceived && !(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.Initializing)) {
+                        if (this.intentReceived && _webviewGatewayState.value != WebviewGatewayStatechart.Companion.State.Initializing) {
                             _transition(WebviewGatewayStatechart.Companion.Event.PaymentRejected)
                         } else {
-                            if (!(_webviewGatewayState.value == WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized)) {
+                            if (_webviewGatewayState.value != WebviewGatewayStatechart.Companion.State.PaymentRequestInitialized) {
                                 _transition(WebviewGatewayStatechart.Companion.Event.Initialize(context))
                             }
                         }

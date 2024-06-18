@@ -720,7 +720,8 @@ private fun PaymentMethodsDropDown(
                 PaymentMethod.MobilePay,
                 PaymentMethod.Vipps,
                 PaymentMethod.PayPal,
-                PaymentMethod.Fallback("p24")
+                PaymentMethod.Fallback("p24"),
+                PaymentMethod.Fallback("bankTransfer")
             ).forEach {
                 DropdownMenuItem(onClick = {
                     setSelectedPaymentMethod(it)
@@ -876,6 +877,11 @@ fun setDefaultConfiguration(
         PaymentMethod.Fallback("p24") -> {
             setSupportedCountry(Country.PL)
             setSupportedCurrency(SupportedCurrencyEnum.PLN)
+        }
+
+        PaymentMethod.Fallback("bankTransfer") -> {
+            setSupportedCountry(Country.FI)
+            setSupportedCurrency(SupportedCurrencyEnum.EUR)
         }
 
         else -> {}
