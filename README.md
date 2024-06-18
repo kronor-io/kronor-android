@@ -366,11 +366,6 @@ Payment method to fallback mapping:
 
 | Payment Method  | Fallback  |
 |--- |--- |
-| Swish   | swish   |
-| Credit Card | creditCard |
-| MobilePay | mobilePay |
-| Vipps | vipps |
-| PayPal | paypal |
 | P24   | p24   |
 | Bank Transfer   | bankTransfer   |
 
