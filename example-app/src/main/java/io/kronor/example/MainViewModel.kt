@@ -53,23 +53,24 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
     suspend fun createNewPaymentSession(
         amountToPay: String, country: Country, currency: SupportedCurrencyEnum
     ): KronorApiResponse {
-        val expiresAt = Instant.now().plusSeconds(300).toString()
+        val expiresAt = Instant.now().plusSeconds(86000).toString()
         Log.d("NewPaymentSession", "test")
         val response = try {
             apolloClient().mutation(
-                NewPaymentSessionWithReferenceCheckMutation(
-                    PaymentSessionWithReferenceCheckInput(
+                NewPaymentSessionMutation(
+                    PaymentSessionInput(
                         amount = amountToPay.toInt(),
-                        currency = currency,
-                        country = country,
+                        currency = Optional.present(currency),
+                        country = Optional.present(country),
                         expiresAt = expiresAt,
                         idempotencyKey = UUID.randomUUID().toString(),
-                        merchantReference = "android-" + UUID.randomUUID().toString(),
-                        message = "random message from android",
+                        merchantReference = "bz1223232",
+                        message = "payment testing hello world",
+                        preferredGateway = Optional.present("Kronor"),
                         additionalData = Optional.present(
                             PaymentSessionAdditionalData(
                                 name = "Normal Android User",
-                                ip = getLocalAddress().toString(),
+                                ip = "127.0.0.1",
                                 language = Language.EN,
                                 email = "normal@android.com",
                                 phoneNumber = Optional.absent(),
@@ -108,7 +109,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
             return KronorApiResponse.Error(e.message)
         }
 
-        return response.data?.newPaymentSessionWithReferenceCheck?.let { it ->
+        return response.data?.newPaymentSession?.let { it ->
             Log.d("NewPaymentSession", "Success ${it.token}")
             this.paymentSessionToken = it.token
             KronorApiResponse.Response(it.token)

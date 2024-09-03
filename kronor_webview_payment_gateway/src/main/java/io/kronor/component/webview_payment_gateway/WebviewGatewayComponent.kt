@@ -147,7 +147,7 @@ private fun PaymentGatewayView(
     Column(
         modifier.fillMaxSize()
     ) {
-
+        Log.d("WebviewGatewayComponent", "Gateway URL received: ${gatewayUrl}")
         val context = LocalContext.current
         AndroidView(factory = {
             WebView(it).apply {

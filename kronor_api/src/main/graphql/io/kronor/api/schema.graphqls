@@ -509,6 +509,7 @@ type CreditCardPaymentResult {
     of the payment, with paymentRequests query.
     """
     waitToken: String!
+    authToken: String
 }
 
 """

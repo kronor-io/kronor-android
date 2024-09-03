@@ -8601,6 +8601,8 @@ input PaymentSessionInput {
   """Additional data about the customer attempting the payment."""
   additionalData: PaymentSessionAdditionalData
 
+  preferredGateway: String
+
   """
   The amount the customer pays in minor units.
   So 100,56 kr would be 10056
@@ -8689,6 +8691,8 @@ type PaymentSessionResult {
 input PaymentSessionWithReferenceCheckInput {
   """Additional data about the customer attempting the payment."""
   additionalData: PaymentSessionAdditionalData
+
+  preferredGateway: String
 
   """
   The amount the customer pays in minor units.

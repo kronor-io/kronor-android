@@ -1,6 +1,7 @@
 package io.kronor.api
 
 import android.os.Build
+import android.util.Log
 import com.apollographql.apollo3.ApolloCall
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.api.Operation
@@ -128,7 +129,10 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newCreditCardPayment.waitToken }
+            ).executeMapKronorError().map {
+                Log.d("Requests", it.newCreditCardPayment.authToken!!)
+                it.newCreditCardPayment.waitToken
+            }
         }
 
         is PaymentMethod.MobilePay -> {
