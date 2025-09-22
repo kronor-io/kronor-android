@@ -880,8 +880,8 @@ fun setDefaultConfiguration(
         }
 
         PaymentMethod.Fallback("bankTransfer") -> {
-            setSupportedCountry(Country.FI)
-            setSupportedCurrency(SupportedCurrencyEnum.EUR)
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
         }
 
         else -> {}

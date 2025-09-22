@@ -160,14 +160,23 @@ private fun PaymentGatewayView(
                     override fun shouldOverrideUrlLoading(
                         view: WebView?, request: WebResourceRequest
                     ): Boolean {
-                        Log.d("WebviewGatewayComponent", "Request URL received: ${request.url}")
-                        if (request.url.queryParameterNames.contains("cancel")) {
-                            onPaymentCancel()
-                            return false
-                        }
-                        if (request.url.scheme == "http" || request.url.scheme == "https") {
-                            return false
-                        }
+                        Log.d("WebviewGatewayComponent", "Request URL received: ${request.url} ${request.url.host}")
+//                        if (request.url.queryParameterNames.contains("cancel")) {
+//                            onPaymentCancel()
+//                            return false
+//                        }
+//                        val host = request.url.host.orEmpty()
+//                        if (host == "trustly.com" || host.endsWith(".trustly.com")) {
+//                            startActivity(
+//                                context, Intent(
+//                                    Intent.ACTION_VIEW, request.url
+//                                ), null
+//                            )
+//                            return true
+//                        }
+//                        if (request.url.scheme == "http" || request.url.scheme == "https") {
+//                            return false
+//                        }
                         return try {
                             startActivity(
                                 context, Intent(
@@ -176,6 +185,7 @@ private fun PaymentGatewayView(
                             )
                             true
                         } catch (e: ActivityNotFoundException) {
+                            Log.e("WebviewGatewayComponent", "No activity found to handle URL: ${request.url}", e)
                             true
                         }
                     }

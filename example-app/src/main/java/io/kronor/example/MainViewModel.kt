@@ -69,10 +69,10 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
                         additionalData = Optional.present(
                             PaymentSessionAdditionalData(
                                 name = "Normal Android User",
-                                ip = getLocalAddress().toString(),
+                                ip = "192.168.1.1",
                                 language = Language.EN,
                                 email = "normal@android.com",
-                                phoneNumber = Optional.absent(),
+                                phoneNumber = Optional.present("+46740555111"),
                                 shippingAddress = Optional.present(
                                     AddressInput(
                                         firstName = "test",
@@ -82,7 +82,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
                                         city = "Malmö",
                                         country = Country.SE,
                                         email = "normal@android.com",
-                                        phoneNumber = "+46111111111"
+                                        phoneNumber = "+46740555111"
                                     )
                                 ),
                                 orderLines = Optional.present(
