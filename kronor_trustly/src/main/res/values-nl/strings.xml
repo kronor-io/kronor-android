@@ -1,0 +1,17 @@
+<resources>
+  <string name="secure_connection">
+    Beveiligde verbinding tot stand brengen
+  </string>
+  <string name="try_again">
+    probeer het opnieuw?
+  </string>
+  <string name="payment_rejected">
+    Betaling mislukt
+  </string>
+  <string name="payment_completed">
+    Betaling voltooid
+  </string>
+  <string name="waiting_for_payment">
+    De betaling wordt afgerond, een ogenblik geduld alsjeblieft.
+  </string>
+</resources>

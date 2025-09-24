@@ -1,0 +1,17 @@
+<resources>
+  <string name="secure_connection">
+    Nawiązywanie bezpiecznego połączenia
+  </string>
+  <string name="try_again">
+    Spróbuj jeszcze raz?
+  </string>
+  <string name="payment_rejected">
+    Płatność nie powiodła się
+  </string>
+  <string name="payment_completed">
+    Płatność zrealizowana
+  </string>
+  <string name="waiting_for_payment">
+    Dokonujemy płatności, proszę czekać
+  </string>
+</resources>

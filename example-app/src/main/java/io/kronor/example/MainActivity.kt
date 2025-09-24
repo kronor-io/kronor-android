@@ -50,6 +50,8 @@ import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.vippsViewModel
+import io.kronor.component.trustly.BankTransferComponent
+import io.kronor.component.trustly.BankTransferViewModel
 import io.kronor.example.type.Country
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
@@ -57,6 +59,7 @@ import kotlinx.coroutines.*
 import java.util.Locale
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import io.kronor.component.trustly.bankTransferViewModel
 
 
 class MainActivity : ComponentActivity() {
@@ -369,6 +372,58 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                         }
                     }
                     PayPalComponent(ppvm)
+                }
+            }
+            composable(
+                "bankTransferScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
+                    type = NavType.StringType
+                })
+            ) {
+                it.arguments?.getString("sessionToken")?.let { sessionToken ->
+                    val svm = bankTransferViewModel(
+                        PaymentConfiguration(
+                            sessionToken = sessionToken,
+                            merchantLogo = R.drawable.kronor_logo,
+                            environment = Environment.Staging,
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build(),
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                        )
+                    )
+                    val lifecycle = LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(Unit) {
+                        launch {
+                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                launch {
+                                    svm.events.collect { event ->
+                                        when (event) {
+                                            PaymentEvent.PaymentFailure -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+
+                                            is PaymentEvent.PaymentSuccess -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    LaunchedEffect(newIntent.value?.data) {
+                        newIntent.value?.let {
+                            Log.d("BankTransferComponent", "${it.data}")
+                            svm.handleIntent(it)
+                        }
+                    }
+                    BankTransferComponent(svm)
                 }
             }
             composable(

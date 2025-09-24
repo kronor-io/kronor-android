@@ -214,10 +214,7 @@ suspend fun Requests.makeNewPaymentRequest(
                     payment = BankTransferPaymentInput(
                         idempotencyKey = UUID.randomUUID().toString(),
                         returnUrl = paymentRequestArgs.returnUrl,
-                        merchantReturnUrl = paymentRequestArgs.merchantReturnUrl,
-                        aspspId = "aspspId",
-                        requestRedirectState = "asdg",
-                        executionDate = Optional.absent()
+                        merchantReturnUrl = paymentRequestArgs.merchantReturnUrl
                     ), deviceInfo = AddSessionDeviceInformationInput(
                         browserName = paymentRequestArgs.appName,
                         browserVersion = paymentRequestArgs.appVersion,
@@ -227,7 +224,7 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newBankTransferPayment.paymentRequestId }
+            ).executeMapKronorError().map { it.newBankTransferPayment.paymentId }
         }
 
         is PaymentMethod.Fallback -> {

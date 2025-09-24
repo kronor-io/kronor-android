@@ -279,7 +279,7 @@ class WebviewGatewayViewModel(
                     Log.d("WebviewGatewayViewModel", "intentReceived : ${this.intentReceived}")
                     this.paymentRequest = paymentRequestList.firstOrNull { paymentRequest ->
                         paymentRequest.status?.any {
-                            it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED || it.status == PaymentStatusEnum.ACCEPTED
+                            it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.AUTHORIZED
                         } ?: false
                     }
                     this.paymentRequest?.let { paymentRequest ->

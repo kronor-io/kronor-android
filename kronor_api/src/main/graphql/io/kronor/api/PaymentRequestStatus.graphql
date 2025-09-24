@@ -35,6 +35,9 @@ subscription PaymentStatus {
             orderId
             paymentUrl
         }
+        transactionBankTransferDetails {
+            payUrl
+        }
         paymentFlow
     }
 }

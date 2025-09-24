@@ -1,6 +1,6 @@
 mutation BankTransferPayment($payment: BankTransferPaymentInput!, $deviceInfo: AddSessionDeviceInformationInput!) {
     newBankTransferPayment(pay: $payment) {
-        paymentRequestId
+        paymentId
     }
 
     addSessionDeviceInformation(info: $deviceInfo) {
