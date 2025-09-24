@@ -17,6 +17,7 @@
             <option value="$PROJECT_DIR$/kronor_mobilepay" />
             <option value="$PROJECT_DIR$/kronor_paypal" />
             <option value="$PROJECT_DIR$/kronor_swish" />
+            <option value="$PROJECT_DIR$/kronor_trustly" />
             <option value="$PROJECT_DIR$/kronor_vipps" />
             <option value="$PROJECT_DIR$/kronor_webview_payment_gateway" />
           </set>

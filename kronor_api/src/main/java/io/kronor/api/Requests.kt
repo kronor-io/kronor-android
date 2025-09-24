@@ -9,6 +9,7 @@ import com.apollographql.apollo3.exception.ApolloException
 import com.apollographql.apollo3.network.okHttpClient
 import com.apollographql.apollo3.network.ws.SubscriptionWsProtocol
 import io.kronor.api.type.AddSessionDeviceInformationInput
+import io.kronor.api.type.BankTransferPaymentInput
 import io.kronor.api.type.CreditCardPaymentInput
 import io.kronor.api.type.MobilePayPaymentInput
 import io.kronor.api.type.PayPalPaymentInput
@@ -208,9 +209,25 @@ suspend fun Requests.makeNewPaymentRequest(
         }
 
         is PaymentMethod.BankTransfer -> {
-//            kronorApolloClient.mutation{
-//                BankTransferMutation()
-//            }
+            kronorApolloClient.mutation(
+                BankTransferPaymentMutation(
+                    payment = BankTransferPaymentInput(
+                        idempotencyKey = UUID.randomUUID().toString(),
+                        returnUrl = paymentRequestArgs.returnUrl,
+                        merchantReturnUrl = paymentRequestArgs.merchantReturnUrl,
+                        aspspId = "aspspId",
+                        requestRedirectState = "asdg",
+                        executionDate = Optional.absent()
+                    ), deviceInfo = AddSessionDeviceInformationInput(
+                        browserName = paymentRequestArgs.appName,
+                        browserVersion = paymentRequestArgs.appVersion,
+                        fingerprint = paymentRequestArgs.deviceFingerprint,
+                        osName = os,
+                        osVersion = androidVersion.toString(),
+                        userAgent = userAgent
+                    )
+                )
+            ).executeMapKronorError().map { it.newBankTransferPayment.paymentRequestId }
         }
 
         is PaymentMethod.Fallback -> {

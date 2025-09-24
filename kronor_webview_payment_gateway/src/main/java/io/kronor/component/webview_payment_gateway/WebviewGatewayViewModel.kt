@@ -32,6 +32,7 @@ import java.security.MessageDigest
 import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import androidx.core.net.toUri
 
 private val DelayBeforeCallback: Duration = 2.seconds // 2000 milliseconds = 2 seconds
 
@@ -272,7 +273,7 @@ class WebviewGatewayViewModel(
                             }
                         }
                     }
-                    return@let waitToken
+                    waitToken
                 } ?: run {
                     // When no waitToken is set, we should create a new payment request
                     Log.d("WebviewGatewayViewModel", "${this.waitToken}")
@@ -345,6 +346,7 @@ fun getRedirectPage(paymentMethod: PaymentMethod): String {
         is PaymentMethod.Vipps -> "reepay-redirect"
         is PaymentMethod.CreditCard -> "reepay-redirect"
         is PaymentMethod.PayPal -> "paypal-redirect"
+        is PaymentMethod.BankTransfer -> "payment-redirect"
         is PaymentMethod.Fallback -> "payment"
     }
 }
@@ -374,7 +376,7 @@ private fun getWeakFingerprint(context: Context) : String? {
     }
 
     fun getGsfId(): String? {
-        val URI = Uri.parse("content://com.google.android.gsf.gservices")
+        val URI = "content://com.google.android.gsf.gservices".toUri()
         val params = arrayOf("android_id")
         return try {
             val cursor: Cursor = contentResolver

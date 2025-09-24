@@ -58,11 +58,11 @@ android {
 
 android {
     namespace 'io.kronor.component.webview_payment_gateway'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         minSdk 21
-        targetSdk 34
+        targetSdk 36
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -113,7 +113,7 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
 
     implementation "com.tinder.statemachine:statemachine:0.2.0"
-    implementation 'com.apollographql.apollo3:apollo-api:3.7.3'
+    implementation 'com.apollographql.apollo3:apollo-api:3.8.6'
 
     lintChecks "com.slack.lint.compose:compose-lint-checks:$compose_lint_version"
 

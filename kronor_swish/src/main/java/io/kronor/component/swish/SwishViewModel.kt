@@ -274,7 +274,7 @@ class SwishViewModel(
                             }
                         }
                     }
-                    return@let waitToken
+                    waitToken
                 } ?: run {
                     // When no waitToken is set, we should create a new payment request
                     Log.d("SwishViewModel", "${this.waitToken}")

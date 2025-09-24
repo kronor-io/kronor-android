@@ -1,7 +1,6 @@
 package io.kronor.example
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
@@ -22,7 +21,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -56,7 +54,9 @@ import io.kronor.example.type.Country
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
 import kotlinx.coroutines.*
-import java.util.*
+import java.util.Locale
+import androidx.core.net.toUri
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 
 class MainActivity : ComponentActivity() {
@@ -91,8 +91,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        intent?.let(viewModel::handleIntent)
+    override fun onNewIntent(intent: Intent) {
+        intent.let(viewModel::handleIntent)
         super.onNewIntent(intent)
     }
 }
@@ -114,6 +114,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                     navController.navigate("vippsScreen/$sessionToken")
                 }, onNavigateToPayPal = { sessionToken ->
                     navController.navigate("paypalScreen/$sessionToken")
+                }, onNavigateToBankTransfer = { sessionToken ->
+                    navController.navigate("bankTransferScreen/$sessionToken")
                 }, onNavigateToFallback = { pm, sessionToken ->
                     navController.navigate("fallbackScreen/$pm/$sessionToken")
                 })
@@ -131,8 +133,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            locale = Locale("en_US"),
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build(),
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
                         )
                     )
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -183,8 +185,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US")
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                         )
                     )
 
@@ -230,8 +232,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US")
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                         )
                     )
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -282,8 +284,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US")
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                         )
                     )
 
@@ -335,8 +337,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US")
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                         )
                     )
 
@@ -385,8 +387,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 environment = Environment.Staging,
                                 appName = "kronor-android-test",
                                 appVersion = "0.1.0",
-                                redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                                locale = Locale("en_US")
+                                redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                                locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                             ), paymentMethod = pm
                         )
 
@@ -431,6 +433,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
 }
 
 
+@OptIn(DelicateCoroutinesApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PaymentMethodsScreen(
@@ -440,6 +443,7 @@ fun PaymentMethodsScreen(
     onNavigateToMobilePay: (String) -> Unit,
     onNavigateToVipps: (String) -> Unit,
     onNavigateToPayPal: (String) -> Unit,
+    onNavigateToBankTransfer: (String) -> Unit,
     onNavigateToFallback: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -480,6 +484,9 @@ fun PaymentMethodsScreen(
 
             PaymentMethod.PayPal -> {
                 onNavigateToPayPal(viewModel.paymentSessionToken!!)
+            }
+            PaymentMethod.BankTransfer -> {
+                onNavigateToBankTransfer(viewModel.paymentSessionToken!!)
             }
             is PaymentMethod.Fallback -> {
                 onNavigateToFallback((viewModel.paymentMethodSelected.value as PaymentMethod.Fallback).paymentMethod, viewModel.paymentSessionToken!!)
@@ -674,6 +681,7 @@ fun PaymentMethodsScreen(
                                     PaymentMethod.MobilePay -> onNavigateToMobilePay(sessionResponse.token)
                                     PaymentMethod.Vipps -> onNavigateToVipps(sessionResponse.token)
                                     PaymentMethod.PayPal -> onNavigateToPayPal(sessionResponse.token)
+                                    PaymentMethod.BankTransfer -> onNavigateToBankTransfer(sessionResponse.token)
                                     is PaymentMethod.Fallback -> onNavigateToFallback(
                                         paymentMethod.paymentMethod,
                                         sessionResponse.token
@@ -720,8 +728,8 @@ private fun PaymentMethodsDropDown(
                 PaymentMethod.MobilePay,
                 PaymentMethod.Vipps,
                 PaymentMethod.PayPal,
+                PaymentMethod.BankTransfer,
                 PaymentMethod.Fallback("p24"),
-                PaymentMethod.Fallback("bankTransfer")
             ).forEach {
                 DropdownMenuItem(onClick = {
                     setSelectedPaymentMethod(it)
@@ -830,6 +838,11 @@ fun setSupportedCountriesAndCurrencies(
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.NOK))
         }
 
+        PaymentMethod.BankTransfer -> {
+            setSupportedCountries(arrayOf(Country.SE))
+            setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK))
+        }
+
         PaymentMethod.Fallback("p24") -> {
             setSupportedCountries(arrayOf(Country.PL))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.PLN))
@@ -849,6 +862,7 @@ fun nativeImplementationExists(selectedPaymentMethod: PaymentMethod): Boolean {
         PaymentMethod.MobilePay -> true
         PaymentMethod.Vipps -> true
         PaymentMethod.PayPal -> true
+        PaymentMethod.BankTransfer -> true
         is PaymentMethod.Fallback -> false
     }
 }
@@ -872,6 +886,11 @@ fun setDefaultConfiguration(
         PaymentMethod.Vipps -> {
             setSupportedCountry(Country.NO)
             setSupportedCurrency(SupportedCurrencyEnum.NOK)
+        }
+
+        PaymentMethod.BankTransfer -> {
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
         }
 
         PaymentMethod.Fallback("p24") -> {
