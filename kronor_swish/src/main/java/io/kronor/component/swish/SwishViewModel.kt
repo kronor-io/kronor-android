@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 import java.util.UUID
+import androidx.core.net.toUri
 
 class SwishViewModelFactory(
     private val swishConfiguration: PaymentConfiguration
@@ -274,7 +275,6 @@ class SwishViewModel(
                             }
                         }
                     }
-                    waitToken
                 } ?: run {
                     // When no waitToken is set, we should create a new payment request
                     Log.d("SwishViewModel", "${this.waitToken}")
@@ -330,7 +330,7 @@ private fun getWeakFingerprint(context: Context): String? {
     }
 
     fun getGsfId(): String? {
-        val URI = Uri.parse("content://com.google.android.gsf.gservices")
+        val URI = "content://com.google.android.gsf.gservices".toUri()
         val params = arrayOf("android_id")
         return try {
             val cursor: Cursor = contentResolver

@@ -273,7 +273,6 @@ class WebviewGatewayViewModel(
                             }
                         }
                     }
-                    waitToken
                 } ?: run {
                     // When no waitToken is set, we should create a new payment request
                     Log.d("WebviewGatewayViewModel", "${this.waitToken}")
