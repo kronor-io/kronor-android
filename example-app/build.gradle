@@ -2,6 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id("com.apollographql.apollo3").version("3.7.3")
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 def kronorMerchantToken = project.hasProperty('KRONOR_MERCHANT_TOKEN') ? project.property('KRONOR_MERCHANT_TOKEN') : System.getenv('KRONOR_MERCHANT_TOKEN') ?: '""'
@@ -89,6 +90,7 @@ dependencies {
     implementation project(path: ":kronor_mobilepay")
     implementation project(path: ":kronor_vipps")
     implementation project(path: ":kronor_paypal")
+    implementation project(path: ":kronor_trustly")
     implementation project(path: ":kronor_fallback")
 
 }

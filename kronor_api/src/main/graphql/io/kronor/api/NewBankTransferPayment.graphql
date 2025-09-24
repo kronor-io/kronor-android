@@ -1,0 +1,9 @@
+mutation SwishPayment($payment: BankTransferPaymentInput!, $deviceInfo: AddSessionDeviceInformationInput!) {
+    newBankTransferPayment(pay: $payment) {
+        paymentId
+    }
+
+    addSessionDeviceInformation(info: $deviceInfo) {
+        result
+    }
+}

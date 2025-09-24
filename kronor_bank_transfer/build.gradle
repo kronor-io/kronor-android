@@ -1,0 +1,129 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'maven-publish'
+    id 'signing'
+    id 'org.jetbrains.kotlin.plugin.compose'
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId 'io.kronor.component'
+            artifactId 'bank_transfer'
+            version rootProject.ext['version']
+
+            afterEvaluate {
+                from components.release
+            }
+
+            pom {
+                name = 'bank_transfer'
+                description = 'Kronor Bank Transfer Component for Kronor API'
+                url = 'https://github.com/kronor-io/kronor-android'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://github.com/kronor-io/kronor-android/blob/main/LICENSE'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'iAmMrinal0'
+                        name = 'Mrinal Purohit'
+                        email = 'mrinal@kronor.io'
+                    }
+                    developer {
+                        id = 'pranaysashank'
+                        name = 'Pranay Sashank'
+                        email = 'pranay.sashank@kronor.io'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:github.com/kronor-io/kronor-android.git'
+                    developerConnection = 'scm:git:ssh://github.com/kronor-io/kronor-android.git'
+                    url = 'https://github.com/kronor-io/kronor-android/tree/main'
+                }
+            }
+        }
+    }
+}
+
+android {
+    lint {
+        disable 'MissingTranslation'
+    }
+}
+
+
+android {
+    namespace 'io.kronor.component.bank_transfer'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 21
+        targetSdk 34
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+
+        aarMetadata {
+            minCompileSdk = 21
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        viewBinding true
+        compose true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.5.2'
+    }
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+
+dependencies {
+
+    implementation "androidx.navigation:navigation-compose:$compose_nav_version"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
+    implementation "androidx.compose.ui:ui:$compose_ui_version"
+    implementation "androidx.compose.ui:ui-tooling-preview:$compose_ui_version"
+    implementation "androidx.compose.material:material:$compose_material_version"
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    implementation 'com.apollographql.apollo3:apollo-api:3.7.3'
+    debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
+    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
+
+    implementation "com.tinder.statemachine:statemachine:0.2.0"
+    implementation 'com.trustly:trustly-android-library:4.0.2'
+
+    lintChecks "com.slack.lint.compose:compose-lint-checks:$compose_lint_version"
+
+    api project(path: ":kronor_api")
+    api project(path: ':kronor_webview_payment_gateway')
+
+}
+
+
+apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"

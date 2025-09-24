@@ -207,6 +207,12 @@ suspend fun Requests.makeNewPaymentRequest(
             ).executeMapKronorError().map { it.newPayPalPayment.paymentId }
         }
 
+        is PaymentMethod.BankTransfer -> {
+//            kronorApolloClient.mutation{
+//                BankTransferMutation()
+//            }
+        }
+
         is PaymentMethod.Fallback -> {
             failure<String>(Exception("Impossible!"))
         }
