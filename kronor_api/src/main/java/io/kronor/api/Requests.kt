@@ -214,7 +214,8 @@ suspend fun Requests.makeNewPaymentRequest(
                     payment = BankTransferPaymentInput(
                         idempotencyKey = UUID.randomUUID().toString(),
                         returnUrl = paymentRequestArgs.returnUrl,
-                        merchantReturnUrl = paymentRequestArgs.merchantReturnUrl
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl),
+                        flow = Optional.present("mcom")
                     ), deviceInfo = AddSessionDeviceInformationInput(
                         browserName = paymentRequestArgs.appName,
                         browserVersion = paymentRequestArgs.appVersion,

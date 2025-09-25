@@ -1,9 +1,13 @@
 package io.kronor.component.trustly
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.util.Log
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -157,7 +162,6 @@ private fun BankTransferWebView(
     Column(
         modifier.fillMaxSize()
     ) {
-
         val currentActivity = LocalActivity.current
         AndroidView(factory = {
             WebView(it).apply {
@@ -172,10 +176,6 @@ private fun BankTransferWebView(
             }
         }, update = {
             val trustlyView = TrustlyWebView(currentActivity, trustlyCheckoutUrl)
-
-            trustlyView.successHandler = TrustlyCheckoutSuccessHandler {
-                onPaymentSuccess()
-            }
             it.addView(trustlyView)
         })
     }

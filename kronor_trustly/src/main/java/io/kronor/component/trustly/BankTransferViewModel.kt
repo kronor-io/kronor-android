@@ -211,7 +211,7 @@ class BankTransferViewModel(
                     this.paymentRequest?.let { paymentRequest ->
 
                         paymentRequest.status?.let { statuses ->
-                            if (statuses.any { it.status == PaymentStatusEnum.PAID }) {
+                            if (statuses.any { it.status == PaymentStatusEnum.PAID || it.status == PaymentStatusEnum.FLOW_COMPLETED}) {
                                 _transition(
                                     BankTransferStatechart.Companion.Event.PaymentAuthorized(
                                         paymentRequest.resultingPaymentId!!
