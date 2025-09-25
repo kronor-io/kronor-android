@@ -12,12 +12,12 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/example-app" />
             <option value="$PROJECT_DIR$/kronor_api" />
+            <option value="$PROJECT_DIR$/kronor_bank_transfer" />
             <option value="$PROJECT_DIR$/kronor_credit_card" />
             <option value="$PROJECT_DIR$/kronor_fallback" />
             <option value="$PROJECT_DIR$/kronor_mobilepay" />
             <option value="$PROJECT_DIR$/kronor_paypal" />
             <option value="$PROJECT_DIR$/kronor_swish" />
-            <option value="$PROJECT_DIR$/kronor_trustly" />
             <option value="$PROJECT_DIR$/kronor_vipps" />
             <option value="$PROJECT_DIR$/kronor_webview_payment_gateway" />
           </set>

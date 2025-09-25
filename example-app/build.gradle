@@ -90,7 +90,7 @@ dependencies {
     implementation project(path: ":kronor_mobilepay")
     implementation project(path: ":kronor_vipps")
     implementation project(path: ":kronor_paypal")
-    implementation project(path: ":kronor_trustly")
+    implementation project(path: ':kronor_bank_transfer')
     implementation project(path: ":kronor_fallback")
 
 }

@@ -1,13 +1,8 @@
 package io.kronor.component.trustly
 
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.util.Log
 import android.view.ViewGroup
-import android.webkit.WebResourceRequest
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,11 +24,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.trustlyAndroidLibrary.TrustlyCheckoutAbortHandler
+import com.trustlyAndroidLibrary.TrustlyCheckoutErrorHandler
 import com.trustlyAndroidLibrary.TrustlyCheckoutSuccessHandler
 import com.trustlyAndroidLibrary.TrustlyWebView
 import io.kronor.api.KronorError
@@ -112,8 +108,11 @@ private fun BankTransferScreen(
                     onPaymentSuccess = {
                         transition(BankTransferStatechart.Companion.Event.BankTransferWebViewOpened )
                     },
-                    onPaymentCancel = {
-                        Log.d("BankTransferScreen", "TODO: invoked onPaymentCancel")
+                    onPaymentError = {
+                        transition(BankTransferStatechart.Companion.Event.PaymentRejected)
+                    },
+                    onPaymentAbort = {
+                        transition(BankTransferStatechart.Companion.Event.PaymentRejected)
                     },
                     modifier = Modifier.fillMaxSize()
                 )
@@ -156,7 +155,8 @@ private fun BankTransferWrapper(modifier: Modifier = Modifier, content: @Composa
 private fun BankTransferWebView(
     trustlyCheckoutUrl: String,
     onPaymentSuccess: () -> Unit,
-    onPaymentCancel: () -> Unit,
+    onPaymentError: () -> Unit,
+    onPaymentAbort: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -176,6 +176,16 @@ private fun BankTransferWebView(
             }
         }, update = {
             val trustlyView = TrustlyWebView(currentActivity, trustlyCheckoutUrl)
+
+            trustlyView.successHandler = TrustlyCheckoutSuccessHandler {
+                onPaymentSuccess()
+            }
+            trustlyView.errorHandler = TrustlyCheckoutErrorHandler {
+                onPaymentError()
+            }
+            trustlyView.abortHandler = TrustlyCheckoutAbortHandler {
+                onPaymentAbort()
+            }
             it.addView(trustlyView)
         })
     }
