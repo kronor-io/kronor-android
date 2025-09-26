@@ -10,14 +10,51 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -26,7 +63,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.core.util.Consumer
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -38,6 +78,8 @@ import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentEvent
 import io.kronor.api.PaymentMethod
 import io.kronor.api.toPaymentGatewayMethod
+import io.kronor.component.bank_transfer.BankTransferComponent
+import io.kronor.component.bank_transfer.bankTransferViewModel
 import io.kronor.component.credit_card.CreditCardComponent
 import io.kronor.component.credit_card.creditCardViewModel
 import io.kronor.component.fallback.FallbackComponent
@@ -50,16 +92,15 @@ import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.vippsViewModel
-import io.kronor.component.bank_transfer.BankTransferComponent
-import io.kronor.component.bank_transfer.BankTransferViewModel
 import io.kronor.example.type.Country
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
-import androidx.core.net.toUri
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import io.kronor.component.bank_transfer.bankTransferViewModel
 
 
 class MainActivity : ComponentActivity() {
@@ -79,7 +120,7 @@ class MainActivity : ComponentActivity() {
         Log.d("onCreate", "${viewModel.paymentSessionToken}")
         setContent {
             val newIntent = produceState(initialValue = null as Intent?) {
-                val consumer = androidx.core.util.Consumer<Intent> {
+                val consumer = Consumer<Intent> {
                     this.value = it
                     viewModel.handleIntent(it)
                 }
@@ -219,7 +260,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             }
                         }
                     }
-                    CreditCardComponent(ccvm)
+                    CreditCardComponent(ccvm, modifier = Modifier.statusBarsPadding())
                 }
             }
             composable(
@@ -488,7 +529,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
 }
 
 
-@OptIn(DelicateCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PaymentMethodsScreen(
@@ -556,9 +597,9 @@ fun PaymentMethodsScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        scaffoldState = scaffoldState, modifier = modifier.fillMaxSize(), topBar = {
-            TopAppBar(title = { Text("Kronor Payments Demo") })
-        }, contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+        modifier = modifier.fillMaxSize(), topBar = {
+            TopAppBar(title = { Text("Kronor Payments Demo") }, )
+        }
     ) { paddingValues ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -595,21 +636,32 @@ fun PaymentMethodsScreen(
             }
 
             if (showErrorDialog) {
-                AlertDialog(onDismissRequest = { showErrorDialog = false }, title = {
-                    Text(text = "Session error")
-                }, text = {
-                    Text(text = errorMessage ?: "Something went wrong. Check logs")
-                }, buttons = {
-                    Row(
-                        modifier = Modifier.padding(all = 8.dp),
-                        horizontalArrangement = Arrangement.End
+                BasicAlertDialog(onDismissRequest = { showErrorDialog = false }) {
+                    Surface(
+                        modifier = Modifier.wrapContentWidth().wrapContentHeight(),
+                        shape = MaterialTheme.shapes.large,
+                        tonalElevation = AlertDialogDefaults.TonalElevation,
                     ) {
-                        Button(modifier = Modifier.fillMaxWidth(),
-                            onClick = { showErrorDialog = false }) {
-                            Text("Ok")
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text =
+                                    "Session error"
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(text = errorMessage ?: "Something went wrong. Check logs")
+                            Row(
+                                modifier = Modifier.padding(all = 8.dp),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Button(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = { showErrorDialog = false }) {
+                                    Text("Ok")
+                                }
+                            }
                         }
                     }
-                })
+                }
             }
 
             PaymentMethodsDropDown(selectedPaymentMethod) { pm ->
@@ -660,7 +712,7 @@ fun PaymentMethodsScreen(
                             onClick = { useFallbackState = false })
                         Text(
                             text = "Use Native",
-                            style = MaterialTheme.typography.body1.merge(),
+                            style = MaterialTheme.typography.bodyMedium.merge(),
                             modifier = Modifier.padding(start = 16.dp)
                         )
                     }
@@ -682,7 +734,7 @@ fun PaymentMethodsScreen(
                             onClick = { useFallbackState = true })
                         Text(
                             text = "Use Fallback",
-                            style = MaterialTheme.typography.body1.merge(),
+                            style = MaterialTheme.typography.bodyMedium.merge(),
                             modifier = Modifier.padding(start = 16.dp)
                         )
                     }
@@ -754,7 +806,7 @@ fun PaymentMethodsScreen(
 }
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 private fun PaymentMethodsDropDown(
     selectedPaymentMethod: PaymentMethod, setSelectedPaymentMethod: (PaymentMethod) -> (Unit)
 ) {
@@ -772,7 +824,8 @@ private fun PaymentMethodsDropDown(
                     expanded = paymentMethodsDropDownExpanded
                 )
             },
-            colors = ExposedDropdownMenuDefaults.textFieldColors()
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(expanded = paymentMethodsDropDownExpanded,
@@ -786,19 +839,21 @@ private fun PaymentMethodsDropDown(
                 PaymentMethod.BankTransfer,
                 PaymentMethod.Fallback("p24"),
             ).forEach {
-                DropdownMenuItem(onClick = {
-                    setSelectedPaymentMethod(it)
-                    paymentMethodsDropDownExpanded = false
-                }) {
-                    Text(it.toPaymentGatewayMethod())
-                }
+                DropdownMenuItem(
+                    onClick = {
+                        setSelectedPaymentMethod(it)
+                        paymentMethodsDropDownExpanded = false
+                    },
+                    text =
+                        { Text(it.toPaymentGatewayMethod())}
+                )
             }
         }
     }
 }
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 private fun CurrenciesDropDown(
     availableCurrencies: Array<SupportedCurrencyEnum>,
     selectedCurrency: SupportedCurrencyEnum,
@@ -817,25 +872,27 @@ private fun CurrenciesDropDown(
                     expanded = currenciesDropDownExpanded
                 )
             },
-            colors = ExposedDropdownMenuDefaults.textFieldColors()
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(expanded = currenciesDropDownExpanded,
             onDismissRequest = { currenciesDropDownExpanded = false }) {
             availableCurrencies.forEach {
-                DropdownMenuItem(onClick = {
-                    setSelectedCurrency(it)
-                    currenciesDropDownExpanded = false
-                }) {
-                    Text(it.toString())
-                }
+                DropdownMenuItem(
+                    onClick = {
+                        setSelectedCurrency(it)
+                        currenciesDropDownExpanded = false
+                    },
+                    text = {Text(it.toString())}
+                )
             }
         }
     }
 }
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 private fun CountriesDropDown(
     availableCountries: Array<Country>,
     selectedCountry: Country,
@@ -855,18 +912,19 @@ private fun CountriesDropDown(
                     expanded = countriesDropDownExpanded
                 )
             },
-            colors = ExposedDropdownMenuDefaults.textFieldColors()
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(expanded = countriesDropDownExpanded,
             onDismissRequest = { countriesDropDownExpanded = false }) {
             availableCountries.forEach {
-                DropdownMenuItem(onClick = {
-                    setSelectedCountry(it)
-                    countriesDropDownExpanded = false
-                }) {
-                    Text(it.toString())
-                }
+                DropdownMenuItem(
+                    onClick = {
+                        setSelectedCountry(it)
+                        countriesDropDownExpanded = false
+                    },
+                    text = { Text(it.toString())})
             }
         }
     }
@@ -963,17 +1021,19 @@ fun setDefaultConfiguration(
 }
 
 
-/*
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun DefaultPaymentMethodsPreview() {
-    PaymentMethodsScreen(
-        onNavigateToSwish = {},
-        onNavigateToCreditCard = {},
-        onNavigateToMobilePay = {},
-        onNavigateToVipps = {},
-        onNavigateToPayPal = {}
-    )
-}
-*/
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Preview(showBackground = true)
+//@Composable
+//private fun DefaultPaymentMethodsPreview() {
+//    PaymentMethodsScreen(
+//        onNavigateToSwish = {},
+//        onNavigateToCreditCard = {},
+//        onNavigateToMobilePay = {},
+//        onNavigateToVipps = {},
+//        onNavigateToPayPal = {},
+//        viewModel = viewModel(),
+//        onNavigateToBankTransfer = {},
+//        onNavigateToFallback = { _, _ -> {}},
+//    )
+//}
