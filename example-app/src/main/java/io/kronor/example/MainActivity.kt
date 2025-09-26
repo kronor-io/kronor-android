@@ -26,21 +26,19 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.rememberScaffoldState
-import androidx.compose.material3.*
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -143,7 +141,7 @@ class MainActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
+fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>, modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     KronorSDKTheme {
         NavHost(navController = navController, startDestination = "paymentMethods") {
@@ -260,7 +258,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             }
                         }
                     }
-                    CreditCardComponent(ccvm, modifier = Modifier.statusBarsPadding())
+                    CreditCardComponent(ccvm, modifier = modifier.statusBarsPadding())
                 }
             }
             composable(
