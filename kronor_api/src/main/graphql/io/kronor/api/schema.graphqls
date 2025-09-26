@@ -1677,6 +1677,9 @@ type PaymentRequest {
   merchantReturnUrl: String
   message: String!
   paymentFlow: String
+
+  """An object relationship"""
+  paymentMethodUsed: PaymentMethodStatus
   paymentProvider: PaymentMethodEnum
 
   """An object relationship"""
@@ -1953,6 +1956,7 @@ input PaymentRequestBoolExp {
   merchantReturnUrl: StringComparisonExp
   message: StringComparisonExp
   paymentFlow: StringComparisonExp
+  paymentMethodUsed: PaymentMethodStatusBoolExp
   paymentProvider: PaymentMethodEnumComparisonExp
   payment_method_used: PaymentMethodStatusBoolExp
   reference: StringComparisonExp
@@ -1985,6 +1989,7 @@ input PaymentRequestOrderBy {
   merchantReturnUrl: OrderBy
   message: OrderBy
   paymentFlow: OrderBy
+  paymentMethodUsed: PaymentMethodStatusOrderBy
   paymentProvider: OrderBy
   payment_method_used: PaymentMethodStatusOrderBy
   reference: OrderBy
