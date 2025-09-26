@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import io.kronor.example.databinding.FragmentFirst2Binding
 import io.kronor.example.type.Country
+import io.kronor.example.type.GatewayEnum
 import io.kronor.example.type.SupportedCurrencyEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -45,7 +46,7 @@ class First2Fragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
                     val sessionToken = viewModel.createNewPaymentSession(
-                        binding.amountField.text.toString(), Country.SE, SupportedCurrencyEnum.SEK
+                        binding.amountField.text.toString(), Country.SE, SupportedCurrencyEnum.SEK, GatewayEnum.KRONOR
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
@@ -60,7 +61,7 @@ class First2Fragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
                     val sessionToken = viewModel.createNewPaymentSession(
-                        binding.amountField.text.toString(), Country.SE, SupportedCurrencyEnum.SEK
+                        binding.amountField.text.toString(), Country.SE, SupportedCurrencyEnum.SEK, GatewayEnum.KRONOR
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))
@@ -75,7 +76,7 @@ class First2Fragment : Fragment() {
             lifecycleScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
                     val sessionToken = viewModel.createNewPaymentSession(
-                        binding.amountField.text.toString(), Country.DK, SupportedCurrencyEnum.DKK
+                        binding.amountField.text.toString(), Country.DK, SupportedCurrencyEnum.DKK, GatewayEnum.KRONOR
                     )
                     sessionToken?.let {
                         setFragmentResult("sessionKey", bundleOf("sessionToken" to it))

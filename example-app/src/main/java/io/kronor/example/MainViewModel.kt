@@ -13,6 +13,7 @@ import com.apollographql.apollo3.api.Optional
 import com.apollographql.apollo3.exception.ApolloException
 import io.kronor.api.ApiError
 import io.kronor.api.PaymentMethod
+import io.kronor.example.type.GatewayEnum
 import io.kronor.example.type.AddressInput
 import io.kronor.example.type.Country
 import io.kronor.example.type.Language
@@ -51,7 +52,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun createNewPaymentSession(
-        amountToPay: String, country: Country, currency: SupportedCurrencyEnum
+        amountToPay: String, country: Country, currency: SupportedCurrencyEnum, gateway: GatewayEnum?
     ): KronorApiResponse {
         val expiresAt = Instant.now().plusSeconds(300).toString()
         Log.d("NewPaymentSession", "test")
@@ -66,6 +67,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
                         idempotencyKey = UUID.randomUUID().toString(),
                         merchantReference = "android-" + UUID.randomUUID().toString(),
                         message = "random message from android",
+                        preferredGateway = Optional.present(gateway),
                         additionalData = Optional.present(
                             PaymentSessionAdditionalData(
                                 name = "Normal Android User",

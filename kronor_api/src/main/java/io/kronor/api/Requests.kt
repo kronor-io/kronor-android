@@ -13,6 +13,7 @@ import io.kronor.api.type.BankTransferPaymentInput
 import io.kronor.api.type.CreditCardPaymentInput
 import io.kronor.api.type.GatewayEnum
 import io.kronor.api.type.MobilePayPaymentInput
+import io.kronor.api.type.MobilePayUserFlow
 import io.kronor.api.type.PayPalPaymentInput
 import io.kronor.api.type.PaymentCancelInput
 import io.kronor.api.type.SwishPaymentInput
@@ -144,14 +145,15 @@ suspend fun Requests.makeNewPaymentRequest(
                     payment = MobilePayPaymentInput(
                         idempotencyKey = UUID.randomUUID().toString(),
                         returnUrl = paymentRequestArgs.merchantReturnUrl,
-                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl),
+                        userFlow = Optional.present(MobilePayUserFlow.NativeRedirect)
                     ), deviceInfo = AddSessionDeviceInformationInput(
                         browserName = paymentRequestArgs.appName,
                         browserVersion = paymentRequestArgs.appVersion,
                         fingerprint = paymentRequestArgs.deviceFingerprint,
                         osName = os,
                         osVersion = androidVersion.toString(),
-                        userAgent = userAgent
+                        userAgent = userAgent,
                     )
                 )
             ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newMobilePayPayment.waitToken, gateway = it.newMobilePayPayment.gateway) }

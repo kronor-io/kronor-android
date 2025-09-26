@@ -76,6 +76,7 @@ import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentEvent
 import io.kronor.api.PaymentMethod
 import io.kronor.api.toPaymentGatewayMethod
+import io.kronor.example.type.GatewayEnum
 import io.kronor.component.bank_transfer.BankTransferComponent
 import io.kronor.component.bank_transfer.bankTransferViewModel
 import io.kronor.component.credit_card.CreditCardComponent
@@ -547,10 +548,14 @@ fun PaymentMethodsScreen(
     var availableCountries: Array<Country> by remember {
         mutableStateOf(arrayOf(Country.SE))
     }
+    var availableGateways: Array<GatewayEnum> by remember {
+        mutableStateOf(arrayOf(GatewayEnum.KRONOR))
+    }
     var availableCurrencies: Array<SupportedCurrencyEnum> by remember {
         mutableStateOf(arrayOf(SupportedCurrencyEnum.SEK))
     }
     var selectedPaymentMethod: PaymentMethod by remember { mutableStateOf(PaymentMethod.Swish()) }
+    var selectedGateway: GatewayEnum by remember { mutableStateOf(GatewayEnum.KRONOR) }
     var selectedCountry by remember { mutableStateOf(Country.SE) }
     var selectedCurrency by remember { mutableStateOf(SupportedCurrencyEnum.SEK) }
     var useFallbackState by remember { mutableStateOf(false) }
@@ -636,7 +641,9 @@ fun PaymentMethodsScreen(
             if (showErrorDialog) {
                 BasicAlertDialog(onDismissRequest = { showErrorDialog = false }) {
                     Surface(
-                        modifier = Modifier.wrapContentWidth().wrapContentHeight(),
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .wrapContentHeight(),
                         shape = MaterialTheme.shapes.large,
                         tonalElevation = AlertDialogDefaults.TonalElevation,
                     ) {
@@ -662,21 +669,37 @@ fun PaymentMethodsScreen(
                 }
             }
 
-            PaymentMethodsDropDown(selectedPaymentMethod) { pm ->
-                selectedPaymentMethod = pm
-                if (!nativeImplementationExists(selectedPaymentMethod)) {
-                    useFallbackState = true
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                PaymentMethodsDropDown(selectedPaymentMethod) { pm ->
+                    selectedPaymentMethod = pm
+                    if (!nativeImplementationExists(selectedPaymentMethod)) {
+                        useFallbackState = true
+                    }
+                    setDefaultConfiguration(pm, {
+                        selectedCountry = it
+                    }, {
+                        selectedCurrency = it
+                    }, {
+                        selectedGateway = it
+                    })
+                    setSupportedCountriesAndCurrencies(pm, {
+                        availableCountries = it
+                    }, {
+                        availableCurrencies = it
+                    }, setSupportedGateways = {
+                        availableGateways = it
+                    })
                 }
-                setDefaultConfiguration(pm, {
-                    selectedCountry = it
-                }, {
-                    selectedCurrency = it
-                })
-                setSupportedCountriesAndCurrencies(pm, {
-                    availableCountries = it
-                }, {
-                    availableCurrencies = it
-                })
+
+                GatewaysDropDown(availableGateways, selectedGateway) {gateway ->
+                    selectedGateway = gateway
+                }
             }
 
             Row(
@@ -762,7 +785,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionResponse = viewModel.createNewPaymentSession(
-                            amount.text, selectedCountry, selectedCurrency
+                            amount.text, selectedCountry, selectedCurrency, selectedGateway
                         )
 
                         when (sessionResponse) {
@@ -802,6 +825,48 @@ fun PaymentMethodsScreen(
         }
     }
 }
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun GatewaysDropDown(
+    availableGateways: Array<GatewayEnum>,
+    selectedGateway: GatewayEnum, setSelectedGateway: (GatewayEnum) -> (Unit)
+) {
+    var gatewaysDropDownExpanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(expanded = gatewaysDropDownExpanded,
+        onExpandedChange = { gatewaysDropDownExpanded = it }) {
+        TextField(
+            readOnly = true,
+            value = selectedGateway.toString(),
+            onValueChange = { },
+            label = { Text("Gateways") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(
+                    expanded = gatewaysDropDownExpanded
+                )
+            },
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+        )
+
+        ExposedDropdownMenu(expanded = gatewaysDropDownExpanded,
+            onDismissRequest = { gatewaysDropDownExpanded = false }) {
+            availableGateways
+                .forEach {
+                DropdownMenuItem(
+                    onClick = {
+                        setSelectedGateway(it)
+                        gatewaysDropDownExpanded = false
+                    },
+                    text =
+                        { Text(it.toString())}
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -931,37 +996,50 @@ private fun CountriesDropDown(
 fun setSupportedCountriesAndCurrencies(
     paymentMethod: PaymentMethod,
     setSupportedCountries: (Array<Country>) -> (Unit),
-    setSupportedCurrencies: (Array<SupportedCurrencyEnum>) -> (Unit)
+    setSupportedCurrencies: (Array<SupportedCurrencyEnum>) -> (Unit),
+    setSupportedGateways: (Array<GatewayEnum>) -> (Unit)
 ) {
     return when (paymentMethod) {
         is PaymentMethod.Swish -> {
             setSupportedCountries(arrayOf(Country.SE))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR))
         }
 
         PaymentMethod.MobilePay -> {
             setSupportedCountries(arrayOf(Country.DK))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.DKK))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
         }
 
         PaymentMethod.Vipps -> {
             setSupportedCountries(arrayOf(Country.NO))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.NOK))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
         }
 
         PaymentMethod.BankTransfer -> {
-            setSupportedCountries(arrayOf(Country.SE))
-            setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK))
+            setSupportedCountries(arrayOf(Country.SE, Country.DE, Country.FI, Country.LT, Country.EE, Country.NL))
+            setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK, SupportedCurrencyEnum.EUR))
+            setSupportedGateways(arrayOf(GatewayEnum.TRUSTLY))
+        }
+
+        PaymentMethod.CreditCard -> {
+            setSupportedCountries(arrayOf(Country.SE, Country.DE, Country.DK, Country.CH))
+            setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK, SupportedCurrencyEnum.DKK, SupportedCurrencyEnum.CHF, SupportedCurrencyEnum.EUR))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
         }
 
         PaymentMethod.Fallback("p24") -> {
             setSupportedCountries(arrayOf(Country.PL))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.PLN))
+            setSupportedGateways(GatewayEnum.entries.toTypedArray())
         }
 
         else -> {
             setSupportedCountries(enumValues())
             setSupportedCurrencies(enumValues())
+            setSupportedGateways(enumValues())
         }
     }
 }
@@ -981,27 +1059,38 @@ fun nativeImplementationExists(selectedPaymentMethod: PaymentMethod): Boolean {
 fun setDefaultConfiguration(
     paymentMethod: PaymentMethod,
     setSupportedCountry: (Country) -> Unit,
-    setSupportedCurrency: (SupportedCurrencyEnum) -> Unit
+    setSupportedCurrency: (SupportedCurrencyEnum) -> Unit,
+    setDefaultGateway: (GatewayEnum) -> Unit
 ) {
     return when (paymentMethod) {
         is PaymentMethod.Swish -> {
             setSupportedCountry(Country.SE)
             setSupportedCurrency(SupportedCurrencyEnum.SEK)
+            setDefaultGateway(GatewayEnum.KRONOR)
+        }
+
+        PaymentMethod.CreditCard -> {
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
+            setDefaultGateway(GatewayEnum.KRONOR)
         }
 
         PaymentMethod.MobilePay -> {
             setSupportedCountry(Country.DK)
             setSupportedCurrency(SupportedCurrencyEnum.DKK)
+            setDefaultGateway(GatewayEnum.KRONOR)
         }
 
         PaymentMethod.Vipps -> {
             setSupportedCountry(Country.NO)
             setSupportedCurrency(SupportedCurrencyEnum.NOK)
+            setDefaultGateway(GatewayEnum.KRONOR)
         }
 
         PaymentMethod.BankTransfer -> {
             setSupportedCountry(Country.SE)
             setSupportedCurrency(SupportedCurrencyEnum.SEK)
+            setDefaultGateway(GatewayEnum.TRUSTLY)
         }
 
         PaymentMethod.Fallback("p24") -> {
