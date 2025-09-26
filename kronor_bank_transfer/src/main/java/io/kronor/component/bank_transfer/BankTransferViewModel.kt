@@ -1,4 +1,4 @@
-package io.kronor.component.trustly
+package io.kronor.component.bank_transfer
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
@@ -143,7 +143,7 @@ class BankTransferViewModel(
                     waitToken.isSuccess -> {
                         _transition(
                             BankTransferStatechart.Companion.Event.PaymentRequestCreated(
-                                waitToken = waitToken.getOrNull()!!
+                                waitToken = waitToken.getOrNull()!!.paymentId
                             )
                         )
                     }

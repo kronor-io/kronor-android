@@ -1,4 +1,4 @@
-package io.kronor.component.trustly
+package io.kronor.component.bank_transfer
 
 import android.annotation.SuppressLint
 import android.view.ViewGroup

@@ -2,6 +2,9 @@ subscription PaymentStatus {
     paymentRequests(orderBy: {createdAt: ASC}) {
         waitToken
         amount
+        paymentMethodUsed {
+            gateway
+        }
         merchant {
             currency
         }

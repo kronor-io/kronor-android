@@ -149,7 +149,7 @@ class SwishViewModel(
                     waitToken.isSuccess -> {
                         _transition(
                             SwishStatechart.Companion.Event.PaymentRequestCreated(
-                                waitToken = waitToken.getOrNull()!!
+                                waitToken = waitToken.getOrNull()!!.paymentId
                             )
                         )
                     }
@@ -181,7 +181,7 @@ class SwishViewModel(
                     waitToken.isSuccess -> {
                         _transition(
                             SwishStatechart.Companion.Event.PaymentRequestCreated(
-                                waitToken = waitToken.getOrNull()!!
+                                waitToken = waitToken.getOrNull()!!.paymentId
                             )
                         )
                     }

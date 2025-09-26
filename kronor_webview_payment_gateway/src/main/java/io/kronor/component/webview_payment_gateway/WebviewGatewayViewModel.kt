@@ -165,7 +165,7 @@ class WebviewGatewayViewModel(
                     waitToken.isSuccess -> {
                         _transition(
                             WebviewGatewayStatechart.Companion.Event.PaymentRequestCreated(
-                                waitToken = waitToken.getOrNull()!!
+                                waitToken = waitToken.getOrNull()!!.paymentId
                             )
                         )
                     }

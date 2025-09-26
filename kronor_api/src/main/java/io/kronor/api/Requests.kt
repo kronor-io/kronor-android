@@ -11,6 +11,7 @@ import com.apollographql.apollo3.network.ws.SubscriptionWsProtocol
 import io.kronor.api.type.AddSessionDeviceInformationInput
 import io.kronor.api.type.BankTransferPaymentInput
 import io.kronor.api.type.CreditCardPaymentInput
+import io.kronor.api.type.GatewayEnum
 import io.kronor.api.type.MobilePayPaymentInput
 import io.kronor.api.type.PayPalPaymentInput
 import io.kronor.api.type.PaymentCancelInput
@@ -19,9 +20,7 @@ import io.kronor.api.type.VippsPaymentInput
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.Response
 import java.lang.Exception
 import java.util.*
 import kotlin.Result.Companion.failure
@@ -103,10 +102,15 @@ data class PaymentRequestArgs(
     val paymentMethod: PaymentMethod
 )
 
+data class PaymentRequestResult(
+    val paymentId: String,
+    val gateway: GatewayEnum?
+)
+
 
 suspend fun Requests.makeNewPaymentRequest(
     paymentRequestArgs: PaymentRequestArgs
-): Result<String> {
+): Result<PaymentRequestResult> {
     val androidVersion = java.lang.Double.parseDouble(
         java.lang.String(Build.VERSION.RELEASE).replaceAll("(\\d+[.]\\d+)(.*)", "$1")
     )
@@ -129,7 +133,7 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newCreditCardPayment.waitToken }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId =it.newCreditCardPayment.waitToken, gateway = it.newCreditCardPayment.gateway) }
         }
 
         is PaymentMethod.MobilePay -> {
@@ -148,7 +152,7 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newMobilePayPayment.waitToken }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newMobilePayPayment.waitToken, gateway = it.newMobilePayPayment.gateway) }
         }
 
         is PaymentMethod.Vipps -> {
@@ -167,7 +171,7 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newVippsPayment.waitToken }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newVippsPayment.waitToken, gateway = it.newVippsPayment.gateway) }
         }
 
         is PaymentMethod.Swish -> kronorApolloClient.mutation(
@@ -187,7 +191,7 @@ suspend fun Requests.makeNewPaymentRequest(
                     userAgent = userAgent
                 )
             )
-        ).executeMapKronorError().map { it.newSwishPayment.waitToken }
+        ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newSwishPayment.waitToken, gateway = null) }
 
         is PaymentMethod.PayPal -> {
             kronorApolloClient.mutation(
@@ -205,7 +209,7 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newPayPalPayment.paymentId }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newPayPalPayment.paymentId, gateway = null) }
         }
 
         is PaymentMethod.BankTransfer -> {
@@ -225,11 +229,11 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newBankTransferPayment.paymentId }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newBankTransferPayment.paymentId, gateway = it.newBankTransferPayment.gateway) }
         }
 
         is PaymentMethod.Fallback -> {
-            failure<String>(Exception("Impossible!"))
+            failure(Exception("Impossible!"))
         }
     }
 }

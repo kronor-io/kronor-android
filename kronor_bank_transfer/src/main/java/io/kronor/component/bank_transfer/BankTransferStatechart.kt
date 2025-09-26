@@ -1,4 +1,4 @@
-package io.kronor.component.trustly
+package io.kronor.component.bank_transfer
 
 import android.content.Context
 import com.tinder.StateMachine

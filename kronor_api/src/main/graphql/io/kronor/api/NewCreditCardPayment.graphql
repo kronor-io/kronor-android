@@ -1,6 +1,7 @@
 mutation CreditCardPayment($payment: CreditCardPaymentInput!, $deviceInfo: AddSessionDeviceInformationInput!) {
     newCreditCardPayment(pay: $payment) {
         waitToken
+        gateway
     }
 
     addSessionDeviceInformation(info: $deviceInfo) {

@@ -50,8 +50,8 @@ import io.kronor.component.swish.SwishComponent
 import io.kronor.component.swish.swishViewModel
 import io.kronor.component.vipps.VippsComponent
 import io.kronor.component.vipps.vippsViewModel
-import io.kronor.component.trustly.BankTransferComponent
-import io.kronor.component.trustly.BankTransferViewModel
+import io.kronor.component.bank_transfer.BankTransferComponent
+import io.kronor.component.bank_transfer.BankTransferViewModel
 import io.kronor.example.type.Country
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
@@ -59,7 +59,7 @@ import kotlinx.coroutines.*
 import java.util.Locale
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import io.kronor.component.trustly.bankTransferViewModel
+import io.kronor.component.bank_transfer.bankTransferViewModel
 
 
 class MainActivity : ComponentActivity() {

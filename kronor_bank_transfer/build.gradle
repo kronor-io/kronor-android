@@ -10,7 +10,7 @@ publishing {
     publications {
         release(MavenPublication) {
             groupId 'io.kronor.component'
-            artifactId 'trustly'
+            artifactId 'bank_transfer'
             version rootProject.ext['version']
 
             afterEvaluate {
@@ -18,8 +18,8 @@ publishing {
             }
 
             pom {
-                name = 'trustly'
-                description = 'Kronor Trustly Component for Kronor API'
+                name = 'bank_transfer'
+                description = 'Kronor Bank Transfer Component for Kronor API'
                 url = 'https://github.com/kronor-io/kronor-android'
                 licenses {
                     license {
@@ -57,7 +57,7 @@ android {
 
 
 android {
-    namespace 'io.kronor.component.trustly'
+    namespace 'io.kronor.component.bank_transfer'
     compileSdk 36
 
     defaultConfig {

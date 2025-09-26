@@ -1,6 +1,7 @@
 mutation VippsPayment($payment: VippsPaymentInput!, $deviceInfo: AddSessionDeviceInformationInput!) {
     newVippsPayment(pay: $payment) {
         waitToken
+        gateway
     }
 
     addSessionDeviceInformation(info: $deviceInfo) {
