@@ -74,6 +74,8 @@ sealed class KronorError : Throwable() {
     data class NetworkError(val e: ApolloException) : KronorError()
 
     data class GraphQlError(val e: ApiError) : KronorError()
+
+    data class FlowError(val e: String) : KronorError()
 }
 
 suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D> {

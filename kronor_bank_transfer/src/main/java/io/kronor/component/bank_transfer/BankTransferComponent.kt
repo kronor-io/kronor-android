@@ -216,6 +216,11 @@ private fun BankTransferErrored(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
                 )
             }
+            is KronorError.FlowError -> {
+                Text(
+                    error.e
+                )
+            }
         }
         Button(onClick = {
             onPaymentRetry()

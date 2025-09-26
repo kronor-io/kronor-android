@@ -30,6 +30,7 @@ import io.kronor.api.PaymentRequestArgs
 import io.kronor.api.PaymentStatusSubscription
 import io.kronor.api.Requests
 import io.kronor.api.makeNewPaymentRequest
+import io.kronor.api.type.GatewayEnum
 import io.kronor.api.type.PaymentStatusEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -222,14 +223,24 @@ class BankTransferViewModel(
                             } else if (statuses.any { it.status == PaymentStatusEnum.CANCELLED}) {
                                 _transition(BankTransferStatechart.Companion.Event.Retry)
                             } else if (_BankTransferState.value is BankTransferStatechart.Companion.State.WaitingForPaymentRequest) {
-                                paymentRequest.transactionBankTransferDetails ?. let {
-                                    it[0].payUrl?. let { authorizationUrl ->
-                                        _transition(
-                                            BankTransferStatechart.Companion.Event.PaymentRequestInitialized(
-                                                authorizationUrl
-                                            )
-                                        )
+                                paymentRequest.paymentMethodUsed?.let { paymentMethod ->
+                                    when (paymentMethod.gateway) {
+                                        GatewayEnum.TRUSTLY -> {
+                                            paymentRequest.transactionBankTransferDetails?.let {
+                                                it[0].payUrl?.let { authorizationUrl ->
+                                                    _transition(
+                                                        BankTransferStatechart.Companion.Event.PaymentRequestInitialized(
+                                                            authorizationUrl
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        else -> {
+                                           _transition(BankTransferStatechart.Companion.Event.Error(KronorError.FlowError("Unsupported gateway: ${paymentMethod.gateway}")))
+                                        }
                                     }
+
                                 }
                             }
                         }
