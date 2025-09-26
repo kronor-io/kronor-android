@@ -21,6 +21,7 @@ sealed class PaymentMethod {
     object MobilePay : PaymentMethod()
     object Vipps: PaymentMethod()
     object PayPal: PaymentMethod()
+    object BankTransfer: PaymentMethod()
 
     data class Fallback(val paymentMethod : String) : PaymentMethod()
 }
@@ -33,6 +34,7 @@ fun PaymentMethod.toRedirectMethod() : String {
         is PaymentMethod.Vipps -> "vipps"
         is PaymentMethod.Swish -> "swish"
         is PaymentMethod.PayPal -> "paypal"
+        is PaymentMethod.BankTransfer -> "bankTransfer"
         is PaymentMethod.Fallback -> this.paymentMethod
     }
 }
@@ -44,6 +46,7 @@ fun PaymentMethod.toPaymentGatewayMethod() : String {
         is PaymentMethod.Vipps -> "vipps"
         is PaymentMethod.Swish -> "swish"
         is PaymentMethod.PayPal -> "paypal"
+        is PaymentMethod.BankTransfer -> "bankTransfer"
         is PaymentMethod.Fallback -> this.paymentMethod
     }
 }

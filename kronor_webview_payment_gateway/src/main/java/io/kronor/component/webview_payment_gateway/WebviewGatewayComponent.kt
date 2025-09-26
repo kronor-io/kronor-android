@@ -169,13 +169,13 @@ private fun PaymentGatewayView(
                             return false
                         }
                         return try {
-                            startActivity(
-                                context, Intent(
+                            context.startActivity(Intent(
                                     Intent.ACTION_VIEW, request.url
                                 ), null
                             )
                             true
                         } catch (e: ActivityNotFoundException) {
+                            Log.e("WebviewGatewayComponent", "No activity found to handle URL: ${request.url}", e)
                             true
                         }
                     }
@@ -212,6 +212,12 @@ private fun WebviewGatewayErrored(
             is KronorError.GraphQlError -> {
                 Text(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
+                )
+            }
+
+            is KronorError.FlowError -> {
+                Text(
+                    error.e
                 )
             }
         }

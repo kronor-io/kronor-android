@@ -9,8 +9,11 @@ import com.apollographql.apollo3.exception.ApolloException
 import com.apollographql.apollo3.network.okHttpClient
 import com.apollographql.apollo3.network.ws.SubscriptionWsProtocol
 import io.kronor.api.type.AddSessionDeviceInformationInput
+import io.kronor.api.type.BankTransferPaymentInput
 import io.kronor.api.type.CreditCardPaymentInput
+import io.kronor.api.type.GatewayEnum
 import io.kronor.api.type.MobilePayPaymentInput
+import io.kronor.api.type.MobilePayUserFlow
 import io.kronor.api.type.PayPalPaymentInput
 import io.kronor.api.type.PaymentCancelInput
 import io.kronor.api.type.SwishPaymentInput
@@ -18,9 +21,7 @@ import io.kronor.api.type.VippsPaymentInput
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.Response
 import java.lang.Exception
 import java.util.*
 import kotlin.Result.Companion.failure
@@ -74,6 +75,8 @@ sealed class KronorError : Throwable() {
     data class NetworkError(val e: ApolloException) : KronorError()
 
     data class GraphQlError(val e: ApiError) : KronorError()
+
+    data class FlowError(val e: String) : KronorError()
 }
 
 suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D> {
@@ -102,10 +105,15 @@ data class PaymentRequestArgs(
     val paymentMethod: PaymentMethod
 )
 
+data class PaymentRequestResult(
+    val paymentId: String,
+    val gateway: GatewayEnum?
+)
+
 
 suspend fun Requests.makeNewPaymentRequest(
     paymentRequestArgs: PaymentRequestArgs
-): Result<String> {
+): Result<PaymentRequestResult> {
     val androidVersion = java.lang.Double.parseDouble(
         java.lang.String(Build.VERSION.RELEASE).replaceAll("(\\d+[.]\\d+)(.*)", "$1")
     )
@@ -128,7 +136,7 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newCreditCardPayment.waitToken }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId =it.newCreditCardPayment.waitToken, gateway = it.newCreditCardPayment.gateway) }
         }
 
         is PaymentMethod.MobilePay -> {
@@ -137,17 +145,18 @@ suspend fun Requests.makeNewPaymentRequest(
                     payment = MobilePayPaymentInput(
                         idempotencyKey = UUID.randomUUID().toString(),
                         returnUrl = paymentRequestArgs.merchantReturnUrl,
-                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl),
+                        userFlow = Optional.present(MobilePayUserFlow.NativeRedirect)
                     ), deviceInfo = AddSessionDeviceInformationInput(
                         browserName = paymentRequestArgs.appName,
                         browserVersion = paymentRequestArgs.appVersion,
                         fingerprint = paymentRequestArgs.deviceFingerprint,
                         osName = os,
                         osVersion = androidVersion.toString(),
-                        userAgent = userAgent
+                        userAgent = userAgent,
                     )
                 )
-            ).executeMapKronorError().map { it.newMobilePayPayment.waitToken }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newMobilePayPayment.waitToken, gateway = it.newMobilePayPayment.gateway) }
         }
 
         is PaymentMethod.Vipps -> {
@@ -166,7 +175,7 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newVippsPayment.waitToken }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newVippsPayment.waitToken, gateway = it.newVippsPayment.gateway) }
         }
 
         is PaymentMethod.Swish -> kronorApolloClient.mutation(
@@ -186,7 +195,7 @@ suspend fun Requests.makeNewPaymentRequest(
                     userAgent = userAgent
                 )
             )
-        ).executeMapKronorError().map { it.newSwishPayment.waitToken }
+        ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newSwishPayment.waitToken, gateway = null) }
 
         is PaymentMethod.PayPal -> {
             kronorApolloClient.mutation(
@@ -204,11 +213,31 @@ suspend fun Requests.makeNewPaymentRequest(
                         userAgent = userAgent
                     )
                 )
-            ).executeMapKronorError().map { it.newPayPalPayment.paymentId }
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newPayPalPayment.paymentId, gateway = null) }
+        }
+
+        is PaymentMethod.BankTransfer -> {
+            kronorApolloClient.mutation(
+                BankTransferPaymentMutation(
+                    payment = BankTransferPaymentInput(
+                        idempotencyKey = UUID.randomUUID().toString(),
+                        returnUrl = paymentRequestArgs.returnUrl,
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl),
+                        flow = Optional.present("mcom")
+                    ), deviceInfo = AddSessionDeviceInformationInput(
+                        browserName = paymentRequestArgs.appName,
+                        browserVersion = paymentRequestArgs.appVersion,
+                        fingerprint = paymentRequestArgs.deviceFingerprint,
+                        osName = os,
+                        osVersion = androidVersion.toString(),
+                        userAgent = userAgent
+                    )
+                )
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newBankTransferPayment.paymentId, gateway = it.newBankTransferPayment.gateway) }
         }
 
         is PaymentMethod.Fallback -> {
-            failure<String>(Exception("Impossible!"))
+            failure(Exception("Impossible!"))
         }
     }
 }

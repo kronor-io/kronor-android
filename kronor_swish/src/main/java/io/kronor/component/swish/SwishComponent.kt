@@ -1,18 +1,11 @@
 package io.kronor.component.swish
 
-import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.media.MediaDrm
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -51,7 +44,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -60,8 +52,11 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.startActivity
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -74,11 +69,7 @@ import io.kronor.api.KronorError
 import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentStatusSubscription
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
-import java.util.UUID
 
 @Composable
 fun swishViewModel(swishConfiguration: PaymentConfiguration): SwishViewModel {
@@ -214,17 +205,6 @@ private fun SwishScreen(
 }
 
 @Composable
-private fun SwishInitializing() {
-    Column(
-        modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(stringResource(R.string.initializing))
-        Spacer(modifier = Modifier.height(30.dp))
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
 private fun SwishWrapper(@DrawableRes merchantLogo: Int? = null, content: @Composable () -> Unit) {
     // A surface container using the 'background' color from the theme
     Surface(
@@ -339,6 +319,12 @@ private fun SwishPaymentErrored(
                     stringResource(R.string.graphql_error), textAlign = TextAlign.Center
                 )
             }
+
+            is KronorError.FlowError -> {
+                Text(
+                    error.e
+                )
+            }
         }
         Button(onClick = {
             onPaymentRetry()
@@ -404,7 +390,7 @@ private fun SwishCreatingPaymentRequest() {
 }
 
 private fun swishAppExists(context: Context): Boolean {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("swish://"))
+    val intent = Intent(Intent.ACTION_VIEW, "swish://".toUri())
     val appIntentMatch = context.packageManager.queryIntentActivities(
         intent, MATCH_DEFAULT_ONLY
     )
@@ -475,7 +461,7 @@ private fun SwishPromptMethods(
 
 @Composable
 private fun OpenSwishApp(context: Context, returnUrl: String?, onAppOpened: () -> Unit) {
-    val swishUrl = Uri.parse(returnUrl)
+    val swishUrl = returnUrl?.toUri()
     val intent = Intent(Intent.ACTION_VIEW, swishUrl)
     val appIntentMatch = context.packageManager.queryIntentActivities(intent, MATCH_DEFAULT_ONLY)
     val doesSwishAppExist = appIntentMatch.any { resolveInfo ->
@@ -485,7 +471,7 @@ private fun OpenSwishApp(context: Context, returnUrl: String?, onAppOpened: () -
 
     if (doesSwishAppExist) {
         try {
-            startActivity(context, intent, null)
+            context.startActivity(intent, null)
             onAppOpened()
         } catch (e: ActivityNotFoundException) {
             Text("No Swish App Found")
@@ -501,10 +487,10 @@ private fun OpenSwishApp(context: Context, returnUrl: String?, onAppOpened: () -
 private fun SwishQrCode(qrToken: String) {
     val size = 512
     val qrBits = QRCodeWriter().encode(qrToken, BarcodeFormat.QR_CODE, size, size)
-    val qrBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565).also {
+    val qrBitmap = createBitmap(size, size, Bitmap.Config.RGB_565).also {
         for (x in 0 until size) {
             for (y in 0 until size) {
-                it.setPixel(x, y, if (qrBits[x, y]) Color.BLACK else Color.WHITE)
+                it[x, y] = if (qrBits[x, y]) Color.BLACK else Color.WHITE
             }
         }
     }

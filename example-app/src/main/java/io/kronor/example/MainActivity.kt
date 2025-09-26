@@ -1,7 +1,6 @@
 package io.kronor.example
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
@@ -11,24 +10,61 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.core.util.Consumer
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -40,6 +76,9 @@ import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentEvent
 import io.kronor.api.PaymentMethod
 import io.kronor.api.toPaymentGatewayMethod
+import io.kronor.example.type.GatewayEnum
+import io.kronor.component.bank_transfer.BankTransferComponent
+import io.kronor.component.bank_transfer.bankTransferViewModel
 import io.kronor.component.credit_card.CreditCardComponent
 import io.kronor.component.credit_card.creditCardViewModel
 import io.kronor.component.fallback.FallbackComponent
@@ -55,8 +94,12 @@ import io.kronor.component.vipps.vippsViewModel
 import io.kronor.example.type.Country
 import io.kronor.example.type.SupportedCurrencyEnum
 import io.kronor.example.ui.theme.KronorSDKTheme
-import kotlinx.coroutines.*
-import java.util.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 
 class MainActivity : ComponentActivity() {
@@ -76,7 +119,7 @@ class MainActivity : ComponentActivity() {
         Log.d("onCreate", "${viewModel.paymentSessionToken}")
         setContent {
             val newIntent = produceState(initialValue = null as Intent?) {
-                val consumer = androidx.core.util.Consumer<Intent> {
+                val consumer = Consumer<Intent> {
                     this.value = it
                     viewModel.handleIntent(it)
                 }
@@ -91,15 +134,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        intent?.let(viewModel::handleIntent)
+    override fun onNewIntent(intent: Intent) {
+        intent.let(viewModel::handleIntent)
         super.onNewIntent(intent)
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
+fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>, modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     KronorSDKTheme {
         NavHost(navController = navController, startDestination = "paymentMethods") {
@@ -114,6 +157,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                     navController.navigate("vippsScreen/$sessionToken")
                 }, onNavigateToPayPal = { sessionToken ->
                     navController.navigate("paypalScreen/$sessionToken")
+                }, onNavigateToBankTransfer = { sessionToken ->
+                    navController.navigate("bankTransferScreen/$sessionToken")
                 }, onNavigateToFallback = { pm, sessionToken ->
                     navController.navigate("fallbackScreen/$pm/$sessionToken")
                 })
@@ -131,8 +176,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            locale = Locale("en_US"),
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build(),
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
                         )
                     )
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -183,8 +228,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US")
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                         )
                     )
 
@@ -214,7 +259,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             }
                         }
                     }
-                    CreditCardComponent(ccvm)
+                    CreditCardComponent(ccvm, modifier = modifier.statusBarsPadding())
                 }
             }
             composable(
@@ -230,8 +275,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US")
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                         )
                     )
                     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -282,8 +327,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US")
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                         )
                     )
 
@@ -335,8 +380,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                             environment = Environment.Staging,
                             appName = "kronor-android-test",
                             appVersion = "0.1.0",
-                            redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                            locale = Locale("en_US")
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                         )
                     )
 
@@ -370,6 +415,58 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                 }
             }
             composable(
+                "bankTransferScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
+                    type = NavType.StringType
+                })
+            ) {
+                it.arguments?.getString("sessionToken")?.let { sessionToken ->
+                    val svm = bankTransferViewModel(
+                        PaymentConfiguration(
+                            sessionToken = sessionToken,
+                            merchantLogo = R.drawable.kronor_logo,
+                            environment = Environment.Staging,
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build(),
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                        )
+                    )
+                    val lifecycle = LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(Unit) {
+                        launch {
+                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                launch {
+                                    svm.events.collect { event ->
+                                        when (event) {
+                                            PaymentEvent.PaymentFailure -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+
+                                            is PaymentEvent.PaymentSuccess -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    LaunchedEffect(newIntent.value?.data) {
+                        newIntent.value?.let {
+                            Log.d("BankTransferComponent", "${it.data}")
+                            svm.handleIntent(it)
+                        }
+                    }
+                    BankTransferComponent(svm)
+                }
+            }
+            composable(
                 "fallbackScreen/{pm}/{sessionToken}", arguments = listOf(navArgument("pm") {
                     type = NavType.StringType
                 }, navArgument("sessionToken") {
@@ -385,8 +482,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
                                 environment = Environment.Staging,
                                 appName = "kronor-android-test",
                                 appVersion = "0.1.0",
-                                redirectUrl = Uri.parse("kronorcheckout://io.kronor.example/"),
-                                locale = Locale("en_US")
+                                redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                                locale = Locale.Builder().setRegion("US").setLanguage("en").build()
                             ), paymentMethod = pm
                         )
 
@@ -431,6 +528,7 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>) {
 }
 
 
+@OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PaymentMethodsScreen(
@@ -440,6 +538,7 @@ fun PaymentMethodsScreen(
     onNavigateToMobilePay: (String) -> Unit,
     onNavigateToVipps: (String) -> Unit,
     onNavigateToPayPal: (String) -> Unit,
+    onNavigateToBankTransfer: (String) -> Unit,
     onNavigateToFallback: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -449,10 +548,14 @@ fun PaymentMethodsScreen(
     var availableCountries: Array<Country> by remember {
         mutableStateOf(arrayOf(Country.SE))
     }
+    var availableGateways: Array<GatewayEnum> by remember {
+        mutableStateOf(arrayOf(GatewayEnum.KRONOR))
+    }
     var availableCurrencies: Array<SupportedCurrencyEnum> by remember {
         mutableStateOf(arrayOf(SupportedCurrencyEnum.SEK))
     }
     var selectedPaymentMethod: PaymentMethod by remember { mutableStateOf(PaymentMethod.Swish()) }
+    var selectedGateway: GatewayEnum by remember { mutableStateOf(GatewayEnum.KRONOR) }
     var selectedCountry by remember { mutableStateOf(Country.SE) }
     var selectedCurrency by remember { mutableStateOf(SupportedCurrencyEnum.SEK) }
     var useFallbackState by remember { mutableStateOf(false) }
@@ -481,6 +584,9 @@ fun PaymentMethodsScreen(
             PaymentMethod.PayPal -> {
                 onNavigateToPayPal(viewModel.paymentSessionToken!!)
             }
+            PaymentMethod.BankTransfer -> {
+                onNavigateToBankTransfer(viewModel.paymentSessionToken!!)
+            }
             is PaymentMethod.Fallback -> {
                 onNavigateToFallback((viewModel.paymentMethodSelected.value as PaymentMethod.Fallback).paymentMethod, viewModel.paymentSessionToken!!)
             }
@@ -494,9 +600,9 @@ fun PaymentMethodsScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        scaffoldState = scaffoldState, modifier = modifier.fillMaxSize(), topBar = {
-            TopAppBar(title = { Text("Kronor Payments Demo") })
-        }, contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+        modifier = modifier.fillMaxSize(), topBar = {
+            TopAppBar(title = { Text("Kronor Payments Demo") }, )
+        }
     ) { paddingValues ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -533,38 +639,67 @@ fun PaymentMethodsScreen(
             }
 
             if (showErrorDialog) {
-                AlertDialog(onDismissRequest = { showErrorDialog = false }, title = {
-                    Text(text = "Session error")
-                }, text = {
-                    Text(text = errorMessage ?: "Something went wrong. Check logs")
-                }, buttons = {
-                    Row(
-                        modifier = Modifier.padding(all = 8.dp),
-                        horizontalArrangement = Arrangement.End
+                BasicAlertDialog(onDismissRequest = { showErrorDialog = false }) {
+                    Surface(
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .wrapContentHeight(),
+                        shape = MaterialTheme.shapes.large,
+                        tonalElevation = AlertDialogDefaults.TonalElevation,
                     ) {
-                        Button(modifier = Modifier.fillMaxWidth(),
-                            onClick = { showErrorDialog = false }) {
-                            Text("Ok")
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text =
+                                    "Session error"
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(text = errorMessage ?: "Something went wrong. Check logs")
+                            Row(
+                                modifier = Modifier.padding(all = 8.dp),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Button(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = { showErrorDialog = false }) {
+                                    Text("Ok")
+                                }
+                            }
                         }
                     }
-                })
+                }
             }
 
-            PaymentMethodsDropDown(selectedPaymentMethod) { pm ->
-                selectedPaymentMethod = pm
-                if (!nativeImplementationExists(selectedPaymentMethod)) {
-                    useFallbackState = true
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                PaymentMethodsDropDown(selectedPaymentMethod) { pm ->
+                    selectedPaymentMethod = pm
+                    if (!nativeImplementationExists(selectedPaymentMethod)) {
+                        useFallbackState = true
+                    }
+                    setDefaultConfiguration(pm, {
+                        selectedCountry = it
+                    }, {
+                        selectedCurrency = it
+                    }, {
+                        selectedGateway = it
+                    })
+                    setSupportedCountriesAndCurrencies(pm, {
+                        availableCountries = it
+                    }, {
+                        availableCurrencies = it
+                    }, setSupportedGateways = {
+                        availableGateways = it
+                    })
                 }
-                setDefaultConfiguration(pm, {
-                    selectedCountry = it
-                }, {
-                    selectedCurrency = it
-                })
-                setSupportedCountriesAndCurrencies(pm, {
-                    availableCountries = it
-                }, {
-                    availableCurrencies = it
-                })
+
+                GatewaysDropDown(availableGateways, selectedGateway) {gateway ->
+                    selectedGateway = gateway
+                }
             }
 
             Row(
@@ -598,7 +733,7 @@ fun PaymentMethodsScreen(
                             onClick = { useFallbackState = false })
                         Text(
                             text = "Use Native",
-                            style = MaterialTheme.typography.body1.merge(),
+                            style = MaterialTheme.typography.bodyMedium.merge(),
                             modifier = Modifier.padding(start = 16.dp)
                         )
                     }
@@ -620,7 +755,7 @@ fun PaymentMethodsScreen(
                             onClick = { useFallbackState = true })
                         Text(
                             text = "Use Fallback",
-                            style = MaterialTheme.typography.body1.merge(),
+                            style = MaterialTheme.typography.bodyMedium.merge(),
                             modifier = Modifier.padding(start = 16.dp)
                         )
                     }
@@ -650,7 +785,7 @@ fun PaymentMethodsScreen(
                 GlobalScope.launch {
                     withContext(Dispatchers.Main) {
                         val sessionResponse = viewModel.createNewPaymentSession(
-                            amount.text, selectedCountry, selectedCurrency
+                            amount.text, selectedCountry, selectedCurrency, selectedGateway
                         )
 
                         when (sessionResponse) {
@@ -674,6 +809,7 @@ fun PaymentMethodsScreen(
                                     PaymentMethod.MobilePay -> onNavigateToMobilePay(sessionResponse.token)
                                     PaymentMethod.Vipps -> onNavigateToVipps(sessionResponse.token)
                                     PaymentMethod.PayPal -> onNavigateToPayPal(sessionResponse.token)
+                                    PaymentMethod.BankTransfer -> onNavigateToBankTransfer(sessionResponse.token)
                                     is PaymentMethod.Fallback -> onNavigateToFallback(
                                         paymentMethod.paymentMethod,
                                         sessionResponse.token
@@ -691,7 +827,49 @@ fun PaymentMethodsScreen(
 }
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
+private fun GatewaysDropDown(
+    availableGateways: Array<GatewayEnum>,
+    selectedGateway: GatewayEnum, setSelectedGateway: (GatewayEnum) -> (Unit)
+) {
+    var gatewaysDropDownExpanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(expanded = gatewaysDropDownExpanded,
+        onExpandedChange = { gatewaysDropDownExpanded = it }) {
+        TextField(
+            readOnly = true,
+            value = selectedGateway.toString(),
+            onValueChange = { },
+            label = { Text("Gateways") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(
+                    expanded = gatewaysDropDownExpanded
+                )
+            },
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+        )
+
+        ExposedDropdownMenu(expanded = gatewaysDropDownExpanded,
+            onDismissRequest = { gatewaysDropDownExpanded = false }) {
+            availableGateways
+                .forEach {
+                DropdownMenuItem(
+                    onClick = {
+                        setSelectedGateway(it)
+                        gatewaysDropDownExpanded = false
+                    },
+                    text =
+                        { Text(it.toString())}
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun PaymentMethodsDropDown(
     selectedPaymentMethod: PaymentMethod, setSelectedPaymentMethod: (PaymentMethod) -> (Unit)
 ) {
@@ -709,7 +887,8 @@ private fun PaymentMethodsDropDown(
                     expanded = paymentMethodsDropDownExpanded
                 )
             },
-            colors = ExposedDropdownMenuDefaults.textFieldColors()
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(expanded = paymentMethodsDropDownExpanded,
@@ -720,22 +899,24 @@ private fun PaymentMethodsDropDown(
                 PaymentMethod.MobilePay,
                 PaymentMethod.Vipps,
                 PaymentMethod.PayPal,
+                PaymentMethod.BankTransfer,
                 PaymentMethod.Fallback("p24"),
-                PaymentMethod.Fallback("bankTransfer")
             ).forEach {
-                DropdownMenuItem(onClick = {
-                    setSelectedPaymentMethod(it)
-                    paymentMethodsDropDownExpanded = false
-                }) {
-                    Text(it.toPaymentGatewayMethod())
-                }
+                DropdownMenuItem(
+                    onClick = {
+                        setSelectedPaymentMethod(it)
+                        paymentMethodsDropDownExpanded = false
+                    },
+                    text =
+                        { Text(it.toPaymentGatewayMethod())}
+                )
             }
         }
     }
 }
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 private fun CurrenciesDropDown(
     availableCurrencies: Array<SupportedCurrencyEnum>,
     selectedCurrency: SupportedCurrencyEnum,
@@ -754,25 +935,27 @@ private fun CurrenciesDropDown(
                     expanded = currenciesDropDownExpanded
                 )
             },
-            colors = ExposedDropdownMenuDefaults.textFieldColors()
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(expanded = currenciesDropDownExpanded,
             onDismissRequest = { currenciesDropDownExpanded = false }) {
             availableCurrencies.forEach {
-                DropdownMenuItem(onClick = {
-                    setSelectedCurrency(it)
-                    currenciesDropDownExpanded = false
-                }) {
-                    Text(it.toString())
-                }
+                DropdownMenuItem(
+                    onClick = {
+                        setSelectedCurrency(it)
+                        currenciesDropDownExpanded = false
+                    },
+                    text = {Text(it.toString())}
+                )
             }
         }
     }
 }
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 private fun CountriesDropDown(
     availableCountries: Array<Country>,
     selectedCountry: Country,
@@ -792,18 +975,19 @@ private fun CountriesDropDown(
                     expanded = countriesDropDownExpanded
                 )
             },
-            colors = ExposedDropdownMenuDefaults.textFieldColors()
+            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(expanded = countriesDropDownExpanded,
             onDismissRequest = { countriesDropDownExpanded = false }) {
             availableCountries.forEach {
-                DropdownMenuItem(onClick = {
-                    setSelectedCountry(it)
-                    countriesDropDownExpanded = false
-                }) {
-                    Text(it.toString())
-                }
+                DropdownMenuItem(
+                    onClick = {
+                        setSelectedCountry(it)
+                        countriesDropDownExpanded = false
+                    },
+                    text = { Text(it.toString())})
             }
         }
     }
@@ -812,32 +996,50 @@ private fun CountriesDropDown(
 fun setSupportedCountriesAndCurrencies(
     paymentMethod: PaymentMethod,
     setSupportedCountries: (Array<Country>) -> (Unit),
-    setSupportedCurrencies: (Array<SupportedCurrencyEnum>) -> (Unit)
+    setSupportedCurrencies: (Array<SupportedCurrencyEnum>) -> (Unit),
+    setSupportedGateways: (Array<GatewayEnum>) -> (Unit)
 ) {
     return when (paymentMethod) {
         is PaymentMethod.Swish -> {
             setSupportedCountries(arrayOf(Country.SE))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR))
         }
 
         PaymentMethod.MobilePay -> {
             setSupportedCountries(arrayOf(Country.DK))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.DKK))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
         }
 
         PaymentMethod.Vipps -> {
             setSupportedCountries(arrayOf(Country.NO))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.NOK))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
+        }
+
+        PaymentMethod.BankTransfer -> {
+            setSupportedCountries(arrayOf(Country.SE, Country.DE, Country.FI, Country.LT, Country.EE, Country.NL))
+            setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK, SupportedCurrencyEnum.EUR))
+            setSupportedGateways(arrayOf(GatewayEnum.TRUSTLY))
+        }
+
+        PaymentMethod.CreditCard -> {
+            setSupportedCountries(arrayOf(Country.SE, Country.DE, Country.DK, Country.CH))
+            setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK, SupportedCurrencyEnum.DKK, SupportedCurrencyEnum.CHF, SupportedCurrencyEnum.EUR))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
         }
 
         PaymentMethod.Fallback("p24") -> {
             setSupportedCountries(arrayOf(Country.PL))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.PLN))
+            setSupportedGateways(GatewayEnum.entries.toTypedArray())
         }
 
         else -> {
             setSupportedCountries(enumValues())
             setSupportedCurrencies(enumValues())
+            setSupportedGateways(enumValues())
         }
     }
 }
@@ -849,6 +1051,7 @@ fun nativeImplementationExists(selectedPaymentMethod: PaymentMethod): Boolean {
         PaymentMethod.MobilePay -> true
         PaymentMethod.Vipps -> true
         PaymentMethod.PayPal -> true
+        PaymentMethod.BankTransfer -> true
         is PaymentMethod.Fallback -> false
     }
 }
@@ -856,22 +1059,38 @@ fun nativeImplementationExists(selectedPaymentMethod: PaymentMethod): Boolean {
 fun setDefaultConfiguration(
     paymentMethod: PaymentMethod,
     setSupportedCountry: (Country) -> Unit,
-    setSupportedCurrency: (SupportedCurrencyEnum) -> Unit
+    setSupportedCurrency: (SupportedCurrencyEnum) -> Unit,
+    setDefaultGateway: (GatewayEnum) -> Unit
 ) {
     return when (paymentMethod) {
         is PaymentMethod.Swish -> {
             setSupportedCountry(Country.SE)
             setSupportedCurrency(SupportedCurrencyEnum.SEK)
+            setDefaultGateway(GatewayEnum.KRONOR)
+        }
+
+        PaymentMethod.CreditCard -> {
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
+            setDefaultGateway(GatewayEnum.KRONOR)
         }
 
         PaymentMethod.MobilePay -> {
             setSupportedCountry(Country.DK)
             setSupportedCurrency(SupportedCurrencyEnum.DKK)
+            setDefaultGateway(GatewayEnum.KRONOR)
         }
 
         PaymentMethod.Vipps -> {
             setSupportedCountry(Country.NO)
             setSupportedCurrency(SupportedCurrencyEnum.NOK)
+            setDefaultGateway(GatewayEnum.KRONOR)
+        }
+
+        PaymentMethod.BankTransfer -> {
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
+            setDefaultGateway(GatewayEnum.TRUSTLY)
         }
 
         PaymentMethod.Fallback("p24") -> {
@@ -880,8 +1099,8 @@ fun setDefaultConfiguration(
         }
 
         PaymentMethod.Fallback("bankTransfer") -> {
-            setSupportedCountry(Country.FI)
-            setSupportedCurrency(SupportedCurrencyEnum.EUR)
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
         }
 
         else -> {}
@@ -889,17 +1108,19 @@ fun setDefaultConfiguration(
 }
 
 
-/*
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun DefaultPaymentMethodsPreview() {
-    PaymentMethodsScreen(
-        onNavigateToSwish = {},
-        onNavigateToCreditCard = {},
-        onNavigateToMobilePay = {},
-        onNavigateToVipps = {},
-        onNavigateToPayPal = {}
-    )
-}
-*/
+
+//@RequiresApi(Build.VERSION_CODES.O)
+//@Preview(showBackground = true)
+//@Composable
+//private fun DefaultPaymentMethodsPreview() {
+//    PaymentMethodsScreen(
+//        onNavigateToSwish = {},
+//        onNavigateToCreditCard = {},
+//        onNavigateToMobilePay = {},
+//        onNavigateToVipps = {},
+//        onNavigateToPayPal = {},
+//        viewModel = viewModel(),
+//        onNavigateToBankTransfer = {},
+//        onNavigateToFallback = { _, _ -> {}},
+//    )
+//}

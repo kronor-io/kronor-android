@@ -1,0 +1,17 @@
+<resources>
+  <string name="secure_connection">
+    Droša savienojuma izveide
+  </string>
+  <string name="try_again">
+    mēģināt vēlreiz?
+  </string>
+  <string name="payment_rejected">
+    Maksājums neizdevās
+  </string>
+  <string name="payment_completed">
+    Maksājums pabeigts
+  </string>
+  <string name="waiting_for_payment">
+    Notiek maksājuma apstrāde, lūdzu, uzgaidiet
+  </string>
+</resources>

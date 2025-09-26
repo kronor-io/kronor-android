@@ -1,0 +1,10 @@
+mutation BankTransferPayment($payment: BankTransferPaymentInput!, $deviceInfo: AddSessionDeviceInformationInput!) {
+    newBankTransferPayment(pay: $payment) {
+        paymentId
+        gateway
+    }
+
+    addSessionDeviceInformation(info: $deviceInfo) {
+        result
+    }
+}

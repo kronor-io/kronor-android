@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'maven-publish'
     id 'signing'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 publishing {
     publications {
@@ -49,11 +50,11 @@ publishing {
 
 android {
     namespace 'io.kronor.component.credit_card'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         minSdk 21
-        targetSdk 34
+        targetSdk 36
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

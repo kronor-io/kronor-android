@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="secure_connection">
+    Établissement d\'une connexion sécurisée
+  </string>
+  <string name="try_again">
+    Réessayer ?
+  </string>
+  <string name="payment_rejected">
+    Échec du paiement
+  </string>
+  <string name="payment_completed">
+    Paiement finalisé
+  </string>
+  <string name="waiting_for_payment">
+    Finalisation de votre paiement, veuillez patienter
+  </string>
+</resources>

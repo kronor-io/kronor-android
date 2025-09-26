@@ -1,0 +1,17 @@
+<resources>
+  <string name="secure_connection">
+    Leitar að öruggri tengingu
+  </string>
+  <string name="try_again">
+    Prófa aftur?
+  </string>
+  <string name="payment_rejected">
+    Greiðsla mistókst
+  </string>
+  <string name="payment_completed">
+    Greiðslu lokið
+  </string>
+  <string name="waiting_for_payment">
+    Klárar greiðslu, vinsamlegast bíðið
+  </string>
+</resources>

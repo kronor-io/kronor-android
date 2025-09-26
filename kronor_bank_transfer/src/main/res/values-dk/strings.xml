@@ -1,0 +1,17 @@
+<resources>
+  <string name="secure_connection">
+    Opretter sikker forbindelse
+  </string>
+  <string name="try_again">
+    prøv igen?
+  </string>
+  <string name="payment_rejected">
+    Betalingen mislykkedes
+  </string>
+  <string name="payment_completed">
+    Betalingen er gennemført
+  </string>
+  <string name="waiting_for_payment">
+    Gennemfører betaling, vent venligst
+  </string>
+</resources>
