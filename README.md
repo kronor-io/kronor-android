@@ -27,7 +27,6 @@ These are the payment methods that are currently provided and supported by this 
 ### Fallback
 
 - [P24](#p24)
-- [Bank Transfer](#bank-transfer)
 
 ## Additional Setup
 
@@ -430,7 +429,6 @@ Payment method to fallback mapping:
 | Payment Method  | Fallback  |
 |--- |--- |
 | P24   | p24   |
-| Bank Transfer   | bankTransfer   |
 
 #### Example
 
