@@ -1,13 +1,13 @@
 # Kronor Android
 
-[![api](https://maven-badges.herokuapp.com/maven-central/io.kronor/api/badge.svg?style=plastic&subject=api)](https://maven-badges.herokuapp.com/maven-central/io.kronor/api/)
-[![Swish](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/swish/badge.svg?style=plastic&subject=swish)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/swish/)
-[![credit_card](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/credit_card/badge.svg?style=plastic&subject=credit_card)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/credit_card/)
-[![mobilepay](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/mobilepay/badge.svg?style=plastic&subject=mobilepay)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/mobilepay/)
-[![vipps](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/vipps/badge.svg?style=plastic&subject=vipps)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/vipps/)
-[![paypal](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/paypal/badge.svg?style=plastic&subject=paypal)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/paypal/)
-[![webview_payment_gateway](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/webview_payment_gateway/badge.svg?style=plastic&subject=webview_payment_gateway)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/webview_payment_gateway/)
-[![fallback](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/fallback/badge.svg?style=plastic&subject=fallback)](https://maven-badges.herokuapp.com/maven-central/io.kronor.component/fallback/)
+[![api](https://maven-badges.sml.io/sonatype-central/io.kronor/api/badge.svg?style=plastic&subject=api)](https://maven-badges.sml.io/sonatype-central/io.kronor/api/)
+[![Swish](https://maven-badges.sml.io/sonatype-central/io.kronor.component/swish/badge.svg?style=plastic&subject=swish)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/swish/)
+[![credit_card](https://maven-badges.sml.io/sonatype-central/io.kronor.component/credit_card/badge.svg?style=plastic&subject=credit_card)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/credit_card/)
+[![mobilepay](https://maven-badges.sml.io/sonatype-central/io.kronor.component/mobilepay/badge.svg?style=plastic&subject=mobilepay)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/mobilepay/)
+[![vipps](https://maven-badges.sml.io/sonatype-central/io.kronor.component/vipps/badge.svg?style=plastic&subject=vipps)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/vipps/)
+[![paypal](https://maven-badges.sml.io/sonatype-central/io.kronor.component/paypal/badge.svg?style=plastic&subject=paypal)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/paypal/)
+[![webview_payment_gateway](https://maven-badges.sml.io/sonatype-central/io.kronor.component/webview_payment_gateway/badge.svg?style=plastic&subject=webview_payment_gateway)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/webview_payment_gateway/)
+[![fallback](https://maven-badges.sml.io/sonatype-central/io.kronor.component/fallback/badge.svg?style=plastic&subject=fallback)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/fallback/)
 
 Kronor Android provides payment components that you can use to create a custom checkout solution for your customers by using any of our provided payment methods.
 
@@ -22,6 +22,7 @@ These are the payment methods that are currently provided and supported by this 
 - [MobilePay](#mobilepay)
 - [Vipps](#vipps)
 - [PayPal](#paypal)
+- [BankTransfer](#bank-transfer)
 
 ### Fallback
 
@@ -50,8 +51,8 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3.4'
-    implementation 'io.kronor.component:swish:2.3.4'
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:swish:3.0.1'
 }
 ```
 
@@ -107,15 +108,77 @@ lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
 }
 ```
 
+### Bank Transfer
+
+Dependencies:
+
+```groovy
+dependencies {
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:bank_transfer:3.0.1'
+}
+```
+
+Imports:
+
+```kotlin
+import io.kronor.api.Environment
+import io.kronor.api.PaymentEvent
+import io.kronor.component.bank_transfer.BankTransferComponent
+import io.kronor.component.bank_transfer.BankTransferConfiguration
+import io.kronor.component.bank_transfer.bankTransferViewModel
+```
+
+Invoking the BankTransfer component:
+
+```kotlin
+val viewModelForBankTransfer : BankTransferViewModel = bankTransferViewModel(bankTransferConfiguration = BankTransferConfiguration(
+    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
+    merchantLogo = R.drawable.kronor_logo, // a logo to display to the user when the payment is in progress
+    environment = Environment.Staging, // environment to point to
+    appName = "your_app_name",
+    appVersion = "your_app_version",
+    redirectUrl = Uri.parse("your_app_uri")
+))
+
+BankTransferComponent(viewModelForBankTransfer)
+```
+
+Handling the payment events:
+
+```kotlin
+lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+    launch {
+        viewModelForBankTransfer.events.collect { event ->
+            when (event) {
+                PaymentEvent.PaymentFailure -> {
+                    // handle the event here, example:
+                    withContext(Dispatchers.Main) {
+                        navController.navigate("paymentMethods")
+                    }
+                }
+
+                is PaymentEvent.PaymentSuccess -> {
+                    // handle the success event here, example:
+                    withContext(Dispatchers.Main) {
+                        navController.navigate("paymentMethods")
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
 ### Credit Card
 
 Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3.4'
-    implementation 'io.kronor.component:credit_card:2.3.4'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3.4'
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:credit_card:3.0.1'
+    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
 }
 ```
 
@@ -176,9 +239,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3.4'
-    implementation 'io.kronor.component:mobilepay:2.3.4'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3.4'
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:mobilepay:3.0.1'
+    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
 }
 ```
 
@@ -239,9 +302,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3.4'
-    implementation 'io.kronor.component:vipps:2.3.4'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3.4'
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:vipps:3.0.1'
+    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
 }
 ```
 
@@ -302,9 +365,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3.4'
-    implementation 'io.kronor.component:paypal:2.3.4'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3.4'
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:paypal:3.0.1'
+    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
 }
 ```
 
@@ -377,9 +440,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:2.3.4'
-    implementation 'io.kronor.component:fallback:2.3.4'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3.4'
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:fallback:3.0.1'
+    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
 }
 ```
 
@@ -404,77 +467,6 @@ val viewModelForFallback = fallbackViewModel(fallbackConfiguration = PaymentConf
         redirectUrl = Uri.parse("your_app_uri"),
         locale = Locale("en_US")
     ), paymentMethod = "p24" // note the usage of "p24". refer to the mapping table for other fallback payment methods
-)
-
-FallbackComponent(viewModelForFallback)
-```
-
-Handling the payment events:
-
-```kotlin
-val lifecycle = LocalLifecycleOwner.current.lifecycle
-LaunchedEffect(Unit) {
-    launch {
-        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            launch {
-                viewModelForFallback.events.collect {
-                    when (it) {
-                        PaymentEvent.PaymentFailure -> {
-                            // handle the event here, example:
-                            withContext(Dispatchers.Main) {
-                                viewModel.resetPaymentState()
-                                navController.navigate("paymentMethods")
-                            }
-                        }
-
-                        is PaymentEvent.PaymentSuccess -> {
-                            // handle the success event here, example:
-                            withContext(Dispatchers.Main) {
-                                viewModel.resetPaymentState()
-                                navController.navigate("paymentMethods")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-### Bank Transfer
-
-Dependencies:
-
-```groovy
-dependencies {
-    implementation 'io.kronor:api:2.3.4'
-    implementation 'io.kronor.component:fallback:2.3.4'
-    implementation 'io.kronor.component:webview_payment_gateway:2.3.4'
-}
-```
-
-Imports:
-
-```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.component.fallback.FallbackComponent
-import io.kronor.component.fallback.fallbackViewModel
-```
-
-Invoking the Fallback component:
-
-```kotlin
-val viewModelForFallback = fallbackViewModel(fallbackConfiguration = PaymentConfiguration(
-        sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-        merchantLogo = R.drawable.kronor_logo, // a logo to display to the user when the payment is in progress or null
-        environment = Environment.Staging, // environment to point to
-        appName = "your_app_name",
-        appVersion = "your_app_version",
-        redirectUrl = Uri.parse("your_app_uri"),
-        locale = Locale("en_US")
-    ), paymentMethod = "bankTransfer" // note the usage of "bankTransfer". refer to the mapping table for other fallback payment methods
 )
 
 FallbackComponent(viewModelForFallback)
