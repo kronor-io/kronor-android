@@ -9,8 +9,8 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import com.apollographql.apollo3.api.Optional
-import com.apollographql.apollo3.exception.ApolloException
+import com.apollographql.apollo.api.Optional
+import com.apollographql.apollo.exception.ApolloException
 import io.kronor.api.ApiError
 import io.kronor.api.PaymentMethod
 import io.kronor.example.type.GatewayEnum
@@ -109,7 +109,9 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
             Log.e("NewPaymentSession", "Failed because: ${e.message}")
             return KronorApiResponse.Error(e.message)
         }
-
+        if (response.exception != null) {
+            return KronorApiResponse.Error(response.exception!!.toString())
+        }
         return response.data?.newPaymentSessionWithReferenceCheck?.let { it ->
             Log.d("NewPaymentSession", "Success ${it.token}")
             this.paymentSessionToken = it.token

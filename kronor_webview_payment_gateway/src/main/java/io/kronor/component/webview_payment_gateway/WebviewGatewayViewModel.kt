@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.apollographql.apollo.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.*
 import io.kronor.api.type.PaymentStatusEnum

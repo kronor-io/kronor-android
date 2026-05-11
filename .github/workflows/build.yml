@@ -32,3 +32,4 @@ jobs:
         run: ./gradlew clean build
         env:
           ORG_GRADLE_PROJECT_VERSION: ${{ env.time }}
+          KRONOR_MERCHANT_TOKEN: dummytoken
