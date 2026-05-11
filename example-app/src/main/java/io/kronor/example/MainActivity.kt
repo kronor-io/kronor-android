@@ -83,6 +83,9 @@ import io.kronor.component.credit_card.CreditCardComponent
 import io.kronor.component.credit_card.creditCardViewModel
 import io.kronor.component.fallback.FallbackComponent
 import io.kronor.component.fallback.fallbackViewModel
+import io.kronor.component.googlepay.GooglePayComponent
+import io.kronor.component.googlepay.GooglePayViewModel
+import io.kronor.component.googlepay.googlePayViewModel
 import io.kronor.component.mobilepay.MobilePayComponent
 import io.kronor.component.mobilepay.mobilePayViewModel
 import io.kronor.component.paypal.PayPalComponent
@@ -159,6 +162,8 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>, modifier:
                     navController.navigate("paypalScreen/$sessionToken")
                 }, onNavigateToBankTransfer = { sessionToken ->
                     navController.navigate("bankTransferScreen/$sessionToken")
+                }, onNavigateToGooglePay = { sessionToken ->
+                    navController.navigate("googlePayScreen/$sessionToken")
                 }, onNavigateToFallback = { pm, sessionToken ->
                     navController.navigate("fallbackScreen/$pm/$sessionToken")
                 })
@@ -467,6 +472,53 @@ fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>, modifier:
                 }
             }
             composable(
+                "googlePayScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
+                    type = NavType.StringType
+                })
+            ) {
+                it.arguments?.getString("sessionToken")?.let { sessionToken ->
+                    val ccvm = googlePayViewModel(
+                        googlePayConfiguration = PaymentConfiguration(
+                            sessionToken = sessionToken,
+                            merchantLogo = R.drawable.kronor_logo,
+                            environment = Environment.Staging,
+                            appName = "kronor-android-test",
+                            appVersion = "0.1.0",
+                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
+                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
+                        )
+                    )
+
+                    val lifecycle = LocalLifecycleOwner.current.lifecycle
+                    LaunchedEffect(Unit) {
+                        launch {
+                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                launch {
+                                    ccvm.events.collect {
+                                        when (it) {
+                                            PaymentEvent.PaymentFailure -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+
+                                            is PaymentEvent.PaymentSuccess -> {
+                                                withContext(Dispatchers.Main) {
+                                                    viewModel.resetPaymentState()
+                                                    navController.navigate("paymentMethods")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    GooglePayComponent(ccvm, modifier = modifier.statusBarsPadding())
+                }
+            }
+            composable(
                 "fallbackScreen/{pm}/{sessionToken}", arguments = listOf(navArgument("pm") {
                     type = NavType.StringType
                 }, navArgument("sessionToken") {
@@ -539,6 +591,7 @@ fun PaymentMethodsScreen(
     onNavigateToVipps: (String) -> Unit,
     onNavigateToPayPal: (String) -> Unit,
     onNavigateToBankTransfer: (String) -> Unit,
+    onNavigateToGooglePay: (String) -> Unit,
     onNavigateToFallback: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -586,6 +639,9 @@ fun PaymentMethodsScreen(
             }
             PaymentMethod.BankTransfer -> {
                 onNavigateToBankTransfer(viewModel.paymentSessionToken!!)
+            }
+            PaymentMethod.GooglePay -> {
+                onNavigateToGooglePay(viewModel.paymentSessionToken!!)
             }
             is PaymentMethod.Fallback -> {
                 onNavigateToFallback((viewModel.paymentMethodSelected.value as PaymentMethod.Fallback).paymentMethod, viewModel.paymentSessionToken!!)
@@ -813,6 +869,7 @@ fun PaymentMethodsScreen(
                                     PaymentMethod.Vipps -> onNavigateToVipps(sessionResponse.token)
                                     PaymentMethod.PayPal -> onNavigateToPayPal(sessionResponse.token)
                                     PaymentMethod.BankTransfer -> onNavigateToBankTransfer(sessionResponse.token)
+                                    PaymentMethod.GooglePay -> onNavigateToGooglePay(sessionResponse.token)
                                     is PaymentMethod.Fallback -> onNavigateToFallback(
                                         paymentMethod.paymentMethod,
                                         sessionResponse.token
@@ -903,8 +960,8 @@ private fun PaymentMethodsDropDown(
                 PaymentMethod.Vipps,
                 PaymentMethod.PayPal,
                 PaymentMethod.BankTransfer,
+                PaymentMethod.GooglePay,
                 PaymentMethod.Fallback("p24"),
-                PaymentMethod.Fallback("googlePay"),
             ).forEach {
                 DropdownMenuItem(
                     onClick = {
@@ -1034,6 +1091,12 @@ fun setSupportedCountriesAndCurrencies(
             setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
         }
 
+        PaymentMethod.GooglePay -> {
+            setSupportedCountries(arrayOf(Country.SE, Country.DE, Country.DK, Country.CH, Country.FO))
+            setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK, SupportedCurrencyEnum.DKK, SupportedCurrencyEnum.CHF, SupportedCurrencyEnum.EUR))
+            setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
+        }
+
         PaymentMethod.Fallback("p24") -> {
             setSupportedCountries(arrayOf(Country.PL))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.PLN))
@@ -1058,6 +1121,7 @@ fun nativeImplementationExists(selectedPaymentMethod: PaymentMethod): Boolean {
         PaymentMethod.Vipps -> true
         PaymentMethod.PayPal -> true
         PaymentMethod.BankTransfer -> true
+        PaymentMethod.GooglePay -> true
         is PaymentMethod.Fallback -> false
     }
 }
@@ -1099,17 +1163,18 @@ fun setDefaultConfiguration(
             setDefaultGateway(GatewayEnum.TRUSTLY)
         }
 
+        PaymentMethod.GooglePay -> {
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
+            setDefaultGateway(GatewayEnum.KRONOR)
+        }
+
         PaymentMethod.Fallback("p24") -> {
             setSupportedCountry(Country.PL)
             setSupportedCurrency(SupportedCurrencyEnum.PLN)
         }
 
         PaymentMethod.Fallback("bankTransfer") -> {
-            setSupportedCountry(Country.SE)
-            setSupportedCurrency(SupportedCurrencyEnum.SEK)
-        }
-
-        PaymentMethod.Fallback("googlePay") -> {
             setSupportedCountry(Country.SE)
             setSupportedCurrency(SupportedCurrencyEnum.SEK)
         }

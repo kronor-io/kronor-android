@@ -6,6 +6,7 @@
 [![mobilepay](https://maven-badges.sml.io/sonatype-central/io.kronor.component/mobilepay/badge.svg?style=plastic&subject=mobilepay)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/mobilepay/)
 [![vipps](https://maven-badges.sml.io/sonatype-central/io.kronor.component/vipps/badge.svg?style=plastic&subject=vipps)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/vipps/)
 [![paypal](https://maven-badges.sml.io/sonatype-central/io.kronor.component/paypal/badge.svg?style=plastic&subject=paypal)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/paypal/)
+[![googlepay](https://maven-badges.sml.io/sonatype-central/io.kronor.component/googlepay/badge.svg?style=plastic&subject=googlepay)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/googlepay/)
 [![webview_payment_gateway](https://maven-badges.sml.io/sonatype-central/io.kronor.component/webview_payment_gateway/badge.svg?style=plastic&subject=webview_payment_gateway)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/webview_payment_gateway/)
 [![fallback](https://maven-badges.sml.io/sonatype-central/io.kronor.component/fallback/badge.svg?style=plastic&subject=fallback)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/fallback/)
 
@@ -23,6 +24,7 @@ These are the payment methods that are currently provided and supported by this 
 - [Vipps](#vipps)
 - [PayPal](#paypal)
 - [BankTransfer](#bank-transfer)
+- [GooglePay](#google-pay)
 
 ### Fallback
 
@@ -60,15 +62,15 @@ Imports:
 ```kotlin
 import io.kronor.api.Environment
 import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentConfiguration
 import io.kronor.component.swish.SwishComponent
-import io.kronor.component.swish.SwishConfiguration
 import io.kronor.component.swish.swishViewModel
 ```
 
 Invoking the Swish component:
 
 ```kotlin
-val viewModelForSwish : SwishViewModel = swishViewModel(swishConfiguration = SwishConfiguration(
+val viewModelForSwish : SwishViewModel = swishViewModel(swishConfiguration = PaymentConfiguration(
     sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
     merchantLogo = null, // a logo to display to the user when the payment is in progress
     environment = Environment.Staging, // environment to point to
@@ -123,15 +125,15 @@ Imports:
 ```kotlin
 import io.kronor.api.Environment
 import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentConfiguration
 import io.kronor.component.bank_transfer.BankTransferComponent
-import io.kronor.component.bank_transfer.BankTransferConfiguration
 import io.kronor.component.bank_transfer.bankTransferViewModel
 ```
 
 Invoking the BankTransfer component:
 
 ```kotlin
-val viewModelForBankTransfer : BankTransferViewModel = bankTransferViewModel(bankTransferConfiguration = BankTransferConfiguration(
+val viewModelForBankTransfer : BankTransferViewModel = bankTransferViewModel(bankTransferConfiguration = PaymentConfiguration(
     sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
     merchantLogo = R.drawable.kronor_logo, // a logo to display to the user when the payment is in progress
     environment = Environment.Staging, // environment to point to
@@ -186,15 +188,15 @@ Imports:
 ```kotlin
 import io.kronor.api.Environment
 import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentConfiguration
 import io.kronor.component.credit_card.CreditCardComponent
-import io.kronor.component.credit_card.CreditCardConfiguration
 import io.kronor.component.credit_card.creditCardViewModel
 ```
 
 Invoking the CreditCard component:
 
 ```kotlin
-val viewModelForCreditCard : CreditCardViewModel = creditCardViewModel(creditCardConfiguration = CreditCardConfiguration(
+val viewModelForCreditCard : CreditCardViewModel = creditCardViewModel(creditCardConfiguration = PaymentConfiguration(
     sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
     merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress
     environment = Environment.Staging, // environment to point to
@@ -249,15 +251,15 @@ Imports:
 ```kotlin
 import io.kronor.api.Environment
 import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentConfiguration
 import io.kronor.component.mobilepay.MobilePayComponent
-import io.kronor.component.mobilepay.MobilePayConfiguration
 import io.kronor.component.mobilepay.mobilePayViewModel
 ```
 
 Invoking the MobilePay component:
 
 ```kotlin
-val viewModelForMobilePay : MobilePayViewModel = mobilePayViewModel(mobilePayConfiguration = MobilePayConfiguration(
+val viewModelForMobilePay : MobilePayViewModel = mobilePayViewModel(mobilePayConfiguration = PaymentConfiguration(
     sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
     merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress or null
     environment = Environment.Staging, // environment to point to
@@ -312,15 +314,15 @@ Imports:
 ```kotlin
 import io.kronor.api.Environment
 import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentConfiguration
 import io.kronor.component.vipps.VippsComponent
-import io.kronor.component.vipps.VippsConfiguration
 import io.kronor.component.vipps.vippsViewModel
 ```
 
 Invoking the Vipps component:
 
 ```kotlin
-val viewModelForVipps : VippsViewModel = vippsViewModel(vippsConfiguration = VippsConfiguration(
+val viewModelForVipps : VippsViewModel = vippsViewModel(vippsConfiguration = PaymentConfiguration(
     sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
     merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress or null
     environment = Environment.Staging, // environment to point to
@@ -375,15 +377,15 @@ Imports:
 ```kotlin
 import io.kronor.api.Environment
 import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentConfiguration
 import io.kronor.component.paypal.PayPalComponent
-import io.kronor.component.paypal.PayPalConfiguration
 import io.kronor.component.paypal.paypalViewModel
 ```
 
 Invoking the PayPal component:
 
 ```kotlin
-val viewModelForPayPal : PayPalViewModel = paypalViewModel(paypalConfiguration = paypalConfiguration(
+val viewModelForPayPal : PayPalViewModel = paypalViewModel(paypalConfiguration = PaymentConfiguration(
     sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
     merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress or null
     environment = Environment.Staging, // environment to point to
@@ -401,6 +403,69 @@ Handling the payment events:
 lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
     launch {
         viewModelForPayPal.events.collect { event ->
+            when (event) {
+                PaymentEvent.PaymentFailure -> {
+                    // handle the event here, example:
+                    withContext(Dispatchers.Main) {
+                        navController.navigate("paymentMethods")
+                    }
+                }
+
+                is PaymentEvent.PaymentSuccess -> {
+                    // handle the success event here, example:
+                    withContext(Dispatchers.Main) {
+                        navController.navigate("paymentMethods")
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+### Google Pay
+
+Dependencies:
+
+```groovy
+dependencies {
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:googlepay:3.0.1'
+}
+```
+
+Imports:
+
+```kotlin
+import io.kronor.api.Environment
+import io.kronor.api.PaymentEvent
+import io.kronor.api.PaymentConfiguration
+import io.kronor.component.google_pay.GooglePayComponent
+import io.kronor.component.google_pay.googlePayViewModel
+```
+
+Invoking the GooglePay component:
+
+```kotlin
+val viewModelForGooglePay : GooglePayViewModel = googlePayViewModel(googlePayConfiguration = PaymentConfiguration(
+    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
+    merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress
+    environment = Environment.Staging, // environment to point to
+    appName = "your_app_name",
+    appVersion = "your_app_version",
+    redirectUrl = Uri.parse("your_app_uri"),
+    locale = Locale.Builder().setRegion("US").setLanguage("en").build()
+))
+
+GooglePayComponent(viewModelForGooglePay)
+```
+
+Handling the payment events:
+
+```kotlin
+lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+    launch {
+        viewModelForGooglePay.events.collect { event ->
             when (event) {
                 PaymentEvent.PaymentFailure -> {
                     // handle the event here, example:

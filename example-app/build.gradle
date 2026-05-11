@@ -38,6 +38,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    publishing {
+        singleVariant("release") {}
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -104,6 +107,7 @@ dependencies {
     implementation project(path: ":kronor_paypal")
     implementation project(path: ':kronor_bank_transfer')
     implementation project(path: ":kronor_fallback")
+    implementation project(path: ":kronor_googlepay")
 
 }
 android.buildFeatures.buildConfig = true

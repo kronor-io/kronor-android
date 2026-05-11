@@ -12,6 +12,7 @@ import io.kronor.api.type.AddSessionDeviceInformationInput
 import io.kronor.api.type.BankTransferPaymentInput
 import io.kronor.api.type.CreditCardPaymentInput
 import io.kronor.api.type.GatewayEnum
+import io.kronor.api.type.GooglePayPaymentInput
 import io.kronor.api.type.MobilePayPaymentInput
 import io.kronor.api.type.MobilePayUserFlow
 import io.kronor.api.type.PayPalPaymentInput
@@ -361,6 +362,24 @@ private suspend fun Requests.makeNewPaymentRequestOnce(
             ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newBankTransferPayment.paymentId, gateway = it.newBankTransferPayment.gateway) }
         }
 
+        is PaymentMethod.GooglePay -> {
+            kronorApolloClient.mutation(
+                GooglePayPaymentMutation(
+                    payment = GooglePayPaymentInput(
+                        idempotencyKey = paymentRequestArgs.idempotencyKey,
+                        returnUrl = paymentRequestArgs.returnUrl,
+                        merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl),
+                    ), deviceInfo = AddSessionDeviceInformationInput(
+                        browserName = paymentRequestArgs.appName,
+                        browserVersion = paymentRequestArgs.appVersion,
+                        fingerprint = paymentRequestArgs.deviceFingerprint,
+                        osName = os,
+                        osVersion = androidVersion.toString(),
+                        userAgent = userAgent
+                    )
+                )
+            ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newGooglePayPayment.waitToken, gateway = it.newGooglePayPayment.gateway) }
+        }
         is PaymentMethod.Fallback -> {
             failure(Exception("Impossible!"))
         }
