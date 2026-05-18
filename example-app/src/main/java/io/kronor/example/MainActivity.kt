@@ -768,8 +768,11 @@ fun PaymentMethodsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                CountriesDropDown(availableCountries, selectedCountry) {
+                CountriesDropDown(availableCountries, selectedCountry) { it ->
                     selectedCountry = it
+                    setSupportedCurrencyGivenPaymentMethodAndCountry(selectedPaymentMethod, it) {
+                        selectedCurrency = it
+                    }
                 }
 
                 CurrenciesDropDown(availableCurrencies, selectedCurrency) {
@@ -1026,7 +1029,7 @@ fun setSupportedCountriesAndCurrencies(
         }
 
         PaymentMethod.CreditCard -> {
-            setSupportedCountries(arrayOf(Country.SE, Country.DE, Country.DK, Country.CH))
+            setSupportedCountries(arrayOf(Country.SE, Country.DE, Country.DK, Country.CH, Country.FO))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK, SupportedCurrencyEnum.DKK, SupportedCurrencyEnum.CHF, SupportedCurrencyEnum.EUR))
             setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
         }
@@ -1044,6 +1047,8 @@ fun setSupportedCountriesAndCurrencies(
         }
     }
 }
+
+
 
 fun nativeImplementationExists(selectedPaymentMethod: PaymentMethod): Boolean {
     return when (selectedPaymentMethod) {
@@ -1109,6 +1114,24 @@ fun setDefaultConfiguration(
             setSupportedCurrency(SupportedCurrencyEnum.SEK)
         }
 
+        else -> {}
+    }
+}
+
+fun setSupportedCurrencyGivenPaymentMethodAndCountry(
+    paymentMethod: PaymentMethod,
+    country: Country,
+    setSupportedCurrency: (SupportedCurrencyEnum) -> Unit
+) {
+    return when (paymentMethod) {
+        PaymentMethod.CreditCard -> {
+            when (country) {
+                Country.FO -> {
+                    setSupportedCurrency(SupportedCurrencyEnum.DKK)
+                }
+                else -> {}
+            }
+        }
         else -> {}
     }
 }
