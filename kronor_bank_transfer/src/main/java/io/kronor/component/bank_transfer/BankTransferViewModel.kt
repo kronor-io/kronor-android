@@ -19,7 +19,6 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.ApiError
 import io.kronor.api.KronorError
@@ -57,6 +56,7 @@ class BankTransferViewModel(
     internal val subscribe : Boolean by _subscribe
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null
+    private val paymentIdempotencyKey: String = UUID.randomUUID().toString()
     private val constructedRedirectUrl: Uri =
         BankTransferConfiguration.redirectUrl.buildUpon().appendQueryParameter("paymentMethod", "BankTransfer")
             .appendQueryParameter("sessionToken", BankTransferConfiguration.sessionToken).build()
@@ -129,7 +129,8 @@ class BankTransferViewModel(
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = BankTransferConfiguration.appName,
                         appVersion = BankTransferConfiguration.appVersion,
-                        paymentMethod = PaymentMethod.BankTransfer
+                        paymentMethod = PaymentMethod.BankTransfer,
+                        idempotencyKey = paymentIdempotencyKey
                     )
                 )
                 when {
@@ -269,11 +270,9 @@ class BankTransferViewModel(
                     }
                 }
             }
-        } catch (e: ApolloException) {
+        } catch (e: KronorError) {
             Log.d("BankTransferViewModel", "Payment Subscription error: $e")
-            _transition(
-                BankTransferStatechart.Companion.Event.Error(KronorError.NetworkError(e))
-            )
+            _transition(BankTransferStatechart.Companion.Event.Error(e))
         }
     }
 
