@@ -9,6 +9,9 @@ import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -55,6 +58,7 @@ fun WebviewGatewayComponent(
         viewModel::transition,
         viewModel.webviewGatewayState,
         viewModel.paymentGatewayUrl,
+        viewModel.isDelayed,
         modifier = modifier
     )
 }
@@ -64,13 +68,16 @@ private fun WebviewGatewayScreen(
     transition: (WebviewGatewayStatechart.Companion.Event) -> Unit,
     state: State<WebviewGatewayStatechart.Companion.State>,
     paymentGatewayUrl: Uri,
+    isDelayed: Boolean,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     Surface(
         modifier = modifier, color = MaterialTheme.colors.background
     ) {
-        when (state.value) {
+        Column {
+            Box(modifier = Modifier.weight(1f)) {
+                when (state.value) {
             WebviewGatewayStatechart.Companion.State.Initializing -> {
                 LaunchedEffect(Unit) {
                     transition(WebviewGatewayStatechart.Companion.Event.Initialize(context))
@@ -122,6 +129,35 @@ private fun WebviewGatewayScreen(
                     WebviewGatewayPaymentCompleted(modifier = Modifier.fillMaxSize())
                 }
             }
+                }
+            }
+            PaymentDelayedNotice(isDelayed)
+        }
+    }
+}
+
+@Composable
+private fun PaymentDelayedNotice(isDelayed: Boolean) {
+    AnimatedVisibility(visible = isDelayed, enter = fadeIn(), exit = fadeOut()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.payment_taking_longer),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onBackground.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
@@ -283,4 +319,3 @@ private fun WebviewGatewayPaymentRejected(modifier: Modifier = Modifier) {
         Text(stringResource(R.string.payment_rejected))
     }
 }
-

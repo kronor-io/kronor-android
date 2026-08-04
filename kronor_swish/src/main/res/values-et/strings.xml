@@ -30,4 +30,5 @@
   <string name="cancel_payment">
     Tühista makse?
   </string>
+    <string name="payment_taking_longer">Makse võtab tavapärasest kauem aega. Palun oodake — töötleme seda endiselt</string>
 </resources>

@@ -24,4 +24,5 @@
   <string name="cancel_payment">
     Annuler le paiement ?
   </string>
+    <string name="payment_taking_longer">Le paiement prend plus de temps que prévu. Merci de patienter — il est toujours en cours</string>
 </resources>

@@ -8,6 +8,9 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Log
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -99,7 +103,8 @@ fun SwishComponent(
         selectedMethod = viewModel.selectedMethod,
         updateSelectedMethod = viewModel::updateSelectedMethod,
         paymentRequest = viewModel.paymentRequest,
-        merchantLogo = viewModel.merchantLogo()
+        merchantLogo = viewModel.merchantLogo(),
+        isDelayed = viewModel.isDelayed
     )
 }
 
@@ -111,12 +116,13 @@ private fun SwishScreen(
     selectedMethod: State<SelectedMethod?>,
     updateSelectedMethod: (SelectedMethod) -> Unit,
     paymentRequest: PaymentStatusSubscription.PaymentRequest?,
-    @DrawableRes merchantLogo: Int? = null
+    @DrawableRes merchantLogo: Int? = null,
+    isDelayed: Boolean = false
 ) {
 
     val context = LocalContext.current
 
-    SwishWrapper(merchantLogo) {
+    SwishWrapper(merchantLogo, isDelayed) {
         when (state.value) {
             SwishStatechart.Companion.State.PromptingMethod -> {
                 SwishPromptScreen(
@@ -205,7 +211,11 @@ private fun SwishScreen(
 }
 
 @Composable
-private fun SwishWrapper(@DrawableRes merchantLogo: Int? = null, content: @Composable () -> Unit) {
+private fun SwishWrapper(
+    @DrawableRes merchantLogo: Int? = null,
+    isDelayed: Boolean = false,
+    content: @Composable () -> Unit
+) {
     // A surface container using the 'background' color from the theme
     Surface(
         modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background,
@@ -232,6 +242,33 @@ private fun SwishWrapper(@DrawableRes merchantLogo: Int? = null, content: @Compo
             }
             Spacer(modifier = Modifier.height(100.dp))
             content.invoke()
+            PaymentDelayedNotice(isDelayed)
+        }
+    }
+}
+
+@Composable
+private fun PaymentDelayedNotice(isDelayed: Boolean) {
+    AnimatedVisibility(visible = isDelayed, enter = fadeIn(), exit = fadeOut()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.width(16.dp).height(16.dp),
+                strokeWidth = 2.dp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.payment_taking_longer),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onBackground.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
@@ -591,4 +628,3 @@ private fun PreviewSwishPaymentErrored() {
             onPaymentRetry = { }) {}
     }
 }
-

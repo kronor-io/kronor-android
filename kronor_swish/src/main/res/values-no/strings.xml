@@ -24,4 +24,5 @@
   <string name="cancel_payment">
     Avbryt betaling?
   </string>
+    <string name="payment_taking_longer">Betalingen tar lengre tid enn vanlig. Vent litt — vi behandler den fortsatt</string>
 </resources>

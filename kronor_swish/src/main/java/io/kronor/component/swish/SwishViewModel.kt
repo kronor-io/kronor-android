@@ -69,6 +69,8 @@ class SwishViewModel(
     private var waitToken: String? by mutableStateOf(null)
     private var _selectedMethod: MutableState<SelectedMethod?> = mutableStateOf(null)
     internal val selectedMethod: State<SelectedMethod?> = _selectedMethod
+    internal var isDelayed: Boolean by mutableStateOf(false)
+        private set
 
     private val _events = MutableSharedFlow<PaymentEvent>()
     val events: Flow<PaymentEvent> = _events
@@ -136,8 +138,10 @@ class SwishViewModel(
                         appVersion = swishConfiguration.appVersion,
                         paymentMethod = PaymentMethod.Swish(),
                         idempotencyKey = paymentIdempotencyKey
-                    )
+                    ),
+                    onRetry = { isDelayed = true }
                 )
+                isDelayed = false
                 when {
                     waitToken.isFailure -> {
                         Log.d(
@@ -170,7 +174,9 @@ class SwishViewModel(
                         appVersion = swishConfiguration.appVersion,
                         idempotencyKey = paymentIdempotencyKey
                     ),
+                    onRetry = { isDelayed = true }
                 )
+                isDelayed = false
                 when {
                     waitToken.isFailure -> {
                         Log.d(
@@ -215,6 +221,7 @@ class SwishViewModel(
             is SwishStatechart.Companion.SideEffect.ResetState -> {
                 this._subscribe.value = false;
                 this.waitToken = null;
+                this.isDelayed = false
             }
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
@@ -237,7 +244,10 @@ class SwishViewModel(
         // associated with that waitToken and in a status that is not initializing
 
         try {
-            requests.getPaymentRequests().collect { paymentRequestList ->
+            requests.getPaymentRequests(
+                onRetry = { isDelayed = true },
+                onRecovered = { isDelayed = false }
+            ).collect { paymentRequestList ->
                 // If we have a waitToken set in our view model, get the payment request
                 // associated with that waitToken and in a status that is not initializing
                 Log.d("SwishViewModel", "Inside Collect")
@@ -302,6 +312,7 @@ class SwishViewModel(
                 }
             }
         } catch (e: KronorError) {
+            isDelayed = false
             Log.d("SwishViewModel", "Payment Subscription error: $e")
             _transition(SwishStatechart.Companion.Event.Error(e))
         }

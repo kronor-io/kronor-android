@@ -18,4 +18,5 @@
     <string name="pay_now">Betala nu</string>
     <string name="enter_swish_number">Ange ditt Swish-telefonnummer</string>
     <string name="initializing">Initierar…</string>
+    <string name="payment_taking_longer">Betalningen tar längre tid än vanligt. Vänta lite — vi behandlar den fortfarande</string>
 </resources>

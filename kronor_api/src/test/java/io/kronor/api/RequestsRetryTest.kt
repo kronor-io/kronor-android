@@ -7,6 +7,8 @@ import io.kronor.api.type.AddSessionDeviceInformationInput
 import io.kronor.api.type.CreditCardPaymentInput
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -43,13 +45,18 @@ class RequestsRetryTest {
         server.enqueue(successResponse())
 
         val idempotencyKey = "logical-payment-attempt"
-        val result = retryTransientErrors(listOf(0L, 0L, 0L)) {
+        var retryNotifications = 0
+        val result = retryTransientErrors(
+            delaysMillis = listOf(0L, 0L, 0L),
+            onRetry = { retryNotifications += 1 }
+        ) {
             client.mutation(creditCardMutation(idempotencyKey)).executeMapKronorError()
         }
 
         assertTrue(result.isSuccess)
         assertEquals("wait-token", result.getOrThrow().newCreditCardPayment.waitToken)
         assertEquals(3, server.requestCount)
+        assertEquals(2, retryNotifications)
         repeat(3) {
             val requestBody = server.takeRequest().body.readUtf8()
             assertTrue(requestBody.contains("\"idempotencyKey\":\"$idempotencyKey\""))
@@ -73,16 +80,44 @@ class RequestsRetryTest {
     @Test
     fun subscriptionTransportFailureResubscribesUntilItRecovers() = runBlocking {
         var subscriptions = 0
+        var retryNotifications = 0
+        var recoveryNotifications = 0
         val status = flow {
             subscriptions += 1
             if (subscriptions < 3) {
                 throw ApolloNetworkException("socket closed")
             }
             emit("paid")
-        }.retryTransientErrors(listOf(0L, 0L, 0L)).first()
+        }.retryTransientErrors(
+            delaysMillis = listOf(0L, 0L, 0L),
+            onRetry = { retryNotifications += 1 },
+            onRecovered = { recoveryNotifications += 1 }
+        ).first()
 
         assertEquals("paid", status)
         assertEquals(3, subscriptions)
+        assertEquals(2, retryNotifications)
+        assertEquals(1, recoveryNotifications)
+    }
+
+    @Test
+    fun successfulSubscriptionUpdateResetsTheConsecutiveFailureBudget() = runBlocking {
+        var subscriptions = 0
+        val statuses = flow {
+            subscriptions += 1
+            when (subscriptions) {
+                1 -> throw ApolloNetworkException("socket closed")
+                2 -> {
+                    emit("processing")
+                    throw ApolloNetworkException("socket closed again")
+                }
+                3 -> throw ApolloNetworkException("socket closed once more")
+                else -> emit("paid")
+            }
+        }.retryTransientErrors(listOf(0L, 0L)).take(2).toList()
+
+        assertEquals(listOf("processing", "paid"), statuses)
+        assertEquals(4, subscriptions)
     }
 
     @Test

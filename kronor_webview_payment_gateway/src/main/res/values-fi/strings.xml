@@ -14,4 +14,5 @@
   <string name="waiting_for_payment">
     Vahvistetaaan maksutapahtumaasi, odota
   </string>
+    <string name="payment_taking_longer">Maksu kestää tavallista kauemmin. Odota hetki — käsittelemme sitä edelleen</string>
 </resources>

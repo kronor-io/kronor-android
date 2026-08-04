@@ -14,4 +14,5 @@
   <string name="waiting_for_payment">
     Dokonujemy płatności, proszę czekać
   </string>
+    <string name="payment_taking_longer">Płatność trwa dłużej niż zwykle. Prosimy czekać — wciąż ją przetwarzamy</string>
 </resources>

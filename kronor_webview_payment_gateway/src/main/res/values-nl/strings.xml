@@ -14,4 +14,5 @@
   <string name="waiting_for_payment">
     De betaling wordt afgerond, een ogenblik geduld alsjeblieft.
   </string>
+    <string name="payment_taking_longer">De betaling duurt langer dan normaal. Even geduld — we verwerken deze nog</string>
 </resources>

@@ -18,4 +18,5 @@
     <string name="pay_now">Pay Now</string>
     <string name="enter_swish_number">Enter your Swish phone number</string>
     <string name="initializing">Initializing…</string>
+    <string name="payment_taking_longer">The payment is taking longer than usual. Hang tight — we\'re still processing it</string>
 </resources>
