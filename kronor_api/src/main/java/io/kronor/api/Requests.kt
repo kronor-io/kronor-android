@@ -18,12 +18,15 @@ import io.kronor.api.type.PayPalPaymentInput
 import io.kronor.api.type.PaymentCancelInput
 import io.kronor.api.type.SwishPaymentInput
 import io.kronor.api.type.VippsPaymentInput
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import okhttp3.OkHttpClient
 import java.lang.Exception
-import java.util.*
+import java.util.UUID
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
@@ -31,30 +34,34 @@ enum class Environment {
     Staging, Production
 }
 
-class Requests(token: String, env: Environment) {
+private const val TemporaryFailure = "TEMPORARY_FAILURE"
+// Five attempts over a 15-second backoff window before the error reaches the UI.
+internal val DefaultRetryDelaysMillis = listOf(1_000L, 2_000L, 4_000L, 8_000L)
 
-    private val okHttpClient =
-        OkHttpClient.Builder().build()
+class Requests internal constructor(
+    val kronorApolloClient: ApolloClient,
+    private val retryDelaysMillis: List<Long>
+) {
 
-    val kronorApolloClient = ApolloClient.Builder().httpServerUrl(
-        when (env) {
-            Environment.Staging -> "https://staging.kronor.io/v1/graphql"
-            Environment.Production -> "https://kronor.io/v1/graphql"
-        }
-    ).webSocketServerUrl(
-        when (env) {
-            Environment.Staging -> "wss://staging.kronor.io/v1/graphql"
-            Environment.Production -> "wss://kronor.io/v1/graphql"
-        }
+    constructor(token: String, env: Environment) : this(
+        kronorApolloClient = buildApolloClient(token, env),
+        retryDelaysMillis = DefaultRetryDelaysMillis
     )
-        .addHttpHeader("Authorization", "Bearer $token")
-        .wsProtocol(SubscriptionWsProtocol.Factory(connectionPayload = { mapOf("headers" to (mapOf("Authorization" to "Bearer $token"))) }))
-        .okHttpClient(okHttpClient).build()
 
     fun getPaymentRequests(): Flow<List<PaymentStatusSubscription.PaymentRequest>> {
         return kronorApolloClient.subscription(
             PaymentStatusSubscription()
-        ).toFlow().map { response -> response.data?.paymentRequests }.filterNotNull()
+        ).toFlow().map { response ->
+            response.data?.paymentRequests ?: throw KronorError.GraphQlError(
+                ApiError(response.errors ?: emptyList(), response.extensions)
+            )
+        }.filterNotNull().retryTransientErrors(retryDelaysMillis).catch { error ->
+            when (error) {
+                is KronorError -> throw error
+                is ApolloException -> throw KronorError.NetworkError(error)
+                else -> throw error
+            }
+        }
     }
 
     suspend fun cancelPayment(): Result<String?> {
@@ -63,6 +70,33 @@ class Requests(token: String, env: Environment) {
                 pay = PaymentCancelInput(idempotencyKey = UUID.randomUUID().toString())
             )
         ).executeMapKronorError().map { it.cancelPayment.waitToken }
+    }
+
+    companion object {
+        private fun buildApolloClient(token: String, env: Environment): ApolloClient {
+            val httpServerUrl = when (env) {
+                Environment.Staging -> "https://staging.kronor.io/v1/graphql"
+                Environment.Production -> "https://kronor.io/v1/graphql"
+            }
+            val webSocketServerUrl = when (env) {
+                Environment.Staging -> "wss://staging.kronor.io/v1/graphql"
+                Environment.Production -> "wss://kronor.io/v1/graphql"
+            }
+
+            return ApolloClient.Builder()
+                .httpServerUrl(httpServerUrl)
+                .webSocketServerUrl(webSocketServerUrl)
+                .addHttpHeader("Authorization", "Bearer $token")
+                .wsProtocol(
+                    SubscriptionWsProtocol.Factory(
+                        connectionPayload = {
+                            mapOf("headers" to mapOf("Authorization" to "Bearer $token"))
+                        }
+                    )
+                )
+                .okHttpClient(OkHttpClient.Builder().build())
+                .build()
+        }
     }
 
 }
@@ -79,15 +113,54 @@ sealed class KronorError : Throwable() {
     data class FlowError(val e: String) : KronorError()
 }
 
+internal fun Throwable.isRetryableKronorError(): Boolean = when (this) {
+    is KronorError.NetworkError, is ApolloException -> true
+    is KronorError.GraphQlError -> e.errors.any { error ->
+        error.extensions?.get("type") == TemporaryFailure
+    }
+    else -> false
+}
+
+internal suspend fun <T> retryTransientErrors(
+    delaysMillis: List<Long> = DefaultRetryDelaysMillis,
+    block: suspend () -> Result<T>
+): Result<T> {
+    var result = block()
+    for (delayMillis in delaysMillis) {
+        if (result.exceptionOrNull()?.isRetryableKronorError() != true) {
+            return result
+        }
+        delay(delayMillis)
+        result = block()
+    }
+    return result
+}
+
+internal fun <T> Flow<T>.retryTransientErrors(delaysMillis: List<Long>): Flow<T> =
+    retryWhen { cause, attempt ->
+        val retry = cause.isRetryableKronorError() && attempt < delaysMillis.size
+        if (retry) {
+            delay(delaysMillis[attempt.toInt()])
+        }
+        retry
+    }
+
 suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D> {
     return try {
         val response = this.execute()
-        response.data?.let {
+        val errors = response.errors.orEmpty()
+        if (errors.isNotEmpty()) {
+            failure(
+                KronorError.GraphQlError(
+                    ApiError(errors, response.extensions)
+                )
+            )
+        } else response.data?.let {
             success(it)
         } ?: failure(
             KronorError.GraphQlError(
                 ApiError(
-                    response.errors ?: emptyList(), response.extensions
+                    emptyList(), response.extensions
                 )
             )
         )
@@ -102,8 +175,26 @@ data class PaymentRequestArgs(
     val deviceFingerprint: String,
     val appName: String,
     val appVersion: String,
-    val paymentMethod: PaymentMethod
-)
+    val paymentMethod: PaymentMethod,
+    val idempotencyKey: String
+) {
+    constructor(
+        returnUrl: String,
+        merchantReturnUrl: String,
+        deviceFingerprint: String,
+        appName: String,
+        appVersion: String,
+        paymentMethod: PaymentMethod
+    ) : this(
+        returnUrl = returnUrl,
+        merchantReturnUrl = merchantReturnUrl,
+        deviceFingerprint = deviceFingerprint,
+        appName = appName,
+        appVersion = appVersion,
+        paymentMethod = paymentMethod,
+        idempotencyKey = UUID.randomUUID().toString()
+    )
+}
 
 data class PaymentRequestResult(
     val paymentId: String,
@@ -119,12 +210,22 @@ suspend fun Requests.makeNewPaymentRequest(
     )
     val os = "android"
     val userAgent = "kronor_android_sdk/${BuildConfig.VERSION}"
-    return when (paymentRequestArgs.paymentMethod) {
+    return retryTransientErrors {
+        makeNewPaymentRequestOnce(paymentRequestArgs, androidVersion, os, userAgent)
+    }
+}
+
+private suspend fun Requests.makeNewPaymentRequestOnce(
+    paymentRequestArgs: PaymentRequestArgs,
+    androidVersion: Double,
+    os: String,
+    userAgent: String
+): Result<PaymentRequestResult> = when (paymentRequestArgs.paymentMethod) {
         is PaymentMethod.CreditCard -> {
             kronorApolloClient.mutation(
                 CreditCardPaymentMutation(
                     payment = CreditCardPaymentInput(
-                        idempotencyKey = UUID.randomUUID().toString(),
+                        idempotencyKey = paymentRequestArgs.idempotencyKey,
                         returnUrl = paymentRequestArgs.merchantReturnUrl,
                         merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                     ), deviceInfo = AddSessionDeviceInformationInput(
@@ -143,7 +244,7 @@ suspend fun Requests.makeNewPaymentRequest(
             kronorApolloClient.mutation(
                 MobilePayPaymentMutation(
                     payment = MobilePayPaymentInput(
-                        idempotencyKey = UUID.randomUUID().toString(),
+                        idempotencyKey = paymentRequestArgs.idempotencyKey,
                         returnUrl = paymentRequestArgs.merchantReturnUrl,
                         merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl),
                         userFlow = Optional.present(MobilePayUserFlow.NativeRedirect)
@@ -163,7 +264,7 @@ suspend fun Requests.makeNewPaymentRequest(
             kronorApolloClient.mutation(
                 VippsPaymentMutation(
                     payment = VippsPaymentInput(
-                        idempotencyKey = UUID.randomUUID().toString(),
+                        idempotencyKey = paymentRequestArgs.idempotencyKey,
                         returnUrl = paymentRequestArgs.merchantReturnUrl,
                         merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                     ), deviceInfo = AddSessionDeviceInformationInput(
@@ -183,7 +284,7 @@ suspend fun Requests.makeNewPaymentRequest(
                 payment = SwishPaymentInput(
                     customerSwishNumber = Optional.presentIfNotNull(paymentRequestArgs.paymentMethod.customerSwishNumber),
                     flow = if (paymentRequestArgs.paymentMethod.customerSwishNumber == null) "mcom" else "ecom",
-                    idempotencyKey = UUID.randomUUID().toString(),
+                    idempotencyKey = paymentRequestArgs.idempotencyKey,
                     returnUrl = paymentRequestArgs.merchantReturnUrl,
                     merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                 ), deviceInfo = AddSessionDeviceInformationInput(
@@ -201,7 +302,7 @@ suspend fun Requests.makeNewPaymentRequest(
             kronorApolloClient.mutation(
                 PayPalPaymentMutation(
                     payment = PayPalPaymentInput(
-                        idempotencyKey = UUID.randomUUID().toString(),
+                        idempotencyKey = paymentRequestArgs.idempotencyKey,
                         returnUrl = paymentRequestArgs.returnUrl,
                         merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl)
                     ), deviceInfo = AddSessionDeviceInformationInput(
@@ -220,7 +321,7 @@ suspend fun Requests.makeNewPaymentRequest(
             kronorApolloClient.mutation(
                 BankTransferPaymentMutation(
                     payment = BankTransferPaymentInput(
-                        idempotencyKey = UUID.randomUUID().toString(),
+                        idempotencyKey = paymentRequestArgs.idempotencyKey,
                         returnUrl = paymentRequestArgs.returnUrl,
                         merchantReturnUrl = Optional.present(paymentRequestArgs.merchantReturnUrl),
                         flow = Optional.present("mcom")
@@ -240,4 +341,3 @@ suspend fun Requests.makeNewPaymentRequest(
             failure(Exception("Impossible!"))
         }
     }
-}

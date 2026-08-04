@@ -18,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.ApiError
 import io.kronor.api.KronorError
@@ -54,6 +53,7 @@ class SwishViewModel(
     internal val subscribe : Boolean by _subscribe
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null
+    private val paymentIdempotencyKey: String = UUID.randomUUID().toString()
     private val constructedRedirectUrl: Uri =
         swishConfiguration.redirectUrl.buildUpon().appendQueryParameter("paymentMethod", "swish")
             .appendQueryParameter("sessionToken", swishConfiguration.sessionToken).build()
@@ -134,7 +134,8 @@ class SwishViewModel(
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
                         appVersion = swishConfiguration.appVersion,
-                        paymentMethod = PaymentMethod.Swish()
+                        paymentMethod = PaymentMethod.Swish(),
+                        idempotencyKey = paymentIdempotencyKey
                     )
                 )
                 when {
@@ -166,7 +167,8 @@ class SwishViewModel(
                         merchantReturnUrl = constructedRedirectUrl.toString(),
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = swishConfiguration.appName,
-                        appVersion = swishConfiguration.appVersion
+                        appVersion = swishConfiguration.appVersion,
+                        idempotencyKey = paymentIdempotencyKey
                     ),
                 )
                 when {
@@ -299,11 +301,9 @@ class SwishViewModel(
                     }
                 }
             }
-        } catch (e: ApolloException) {
+        } catch (e: KronorError) {
             Log.d("SwishViewModel", "Payment Subscription error: $e")
-            _transition(
-                SwishStatechart.Companion.Event.Error(KronorError.NetworkError(e))
-            )
+            _transition(SwishStatechart.Companion.Event.Error(e))
         }
     }
 

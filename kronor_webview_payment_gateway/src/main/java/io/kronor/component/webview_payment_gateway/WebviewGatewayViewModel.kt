@@ -18,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.apollographql.apollo3.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.*
 import io.kronor.api.type.PaymentStatusEnum
@@ -54,6 +53,7 @@ class WebviewGatewayViewModel(
     internal val subscribe : Boolean by _subscribe
     private var intentReceived: Boolean = false
     private var deviceFingerprint: String? = null
+    private val paymentIdempotencyKey: String = UUID.randomUUID().toString()
     private val constructedRedirectUrl  : Uri =
         webviewGatewayConfiguration.redirectUrl
             .buildUpon()
@@ -150,7 +150,8 @@ class WebviewGatewayViewModel(
                         deviceFingerprint = deviceFingerprint ?: "fingerprint not found",
                         appName = webviewGatewayConfiguration.appName,
                         appVersion = webviewGatewayConfiguration.appVersion,
-                        paymentMethod = paymentMethod
+                        paymentMethod = paymentMethod,
+                        idempotencyKey = paymentIdempotencyKey
                     )
                 )
                 when {
@@ -299,11 +300,9 @@ class WebviewGatewayViewModel(
                     }
                 }
             }
-        } catch (e: ApolloException) {
+        } catch (e: KronorError) {
             Log.d("WebviewGatewayViewModel", "Payment Subscription error: $e")
-            _transition(
-                WebviewGatewayStatechart.Companion.Event.Error(KronorError.NetworkError(e))
-            )
+            _transition(WebviewGatewayStatechart.Companion.Event.Error(e))
         }
     }
 
