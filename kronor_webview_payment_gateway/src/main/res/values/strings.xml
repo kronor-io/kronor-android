@@ -23,4 +23,5 @@
   <string name="waiting_for_payment">
     Checking the payment status
   </string>
+    <string name="payment_taking_longer">The payment is taking longer than usual. Hang tight — we\'re still processing it</string>
 </resources>

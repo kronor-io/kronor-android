@@ -70,6 +70,8 @@ class BankTransferViewModel(
     internal val bankTransferState: State<BankTransferStatechart.Companion.State> = _BankTransferState
     var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
+    internal var isDelayed: Boolean by mutableStateOf(false)
+        private set
 
     private val _events = MutableSharedFlow<PaymentEvent>()
     val events: Flow<PaymentEvent> = _events
@@ -131,8 +133,10 @@ class BankTransferViewModel(
                         appVersion = BankTransferConfiguration.appVersion,
                         paymentMethod = PaymentMethod.BankTransfer,
                         idempotencyKey = paymentIdempotencyKey
-                    )
+                    ),
+                    onRetry = { isDelayed = true }
                 )
+                isDelayed = false
                 when {
                     waitToken.isFailure -> {
                         Log.d(
@@ -177,6 +181,7 @@ class BankTransferViewModel(
             is BankTransferStatechart.Companion.SideEffect.ResetState -> {
                 this._subscribe.value = false;
                 this.waitToken = null;
+                this.isDelayed = false
             }
 
             is BankTransferStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
@@ -199,7 +204,10 @@ class BankTransferViewModel(
         // associated with that waitToken and in a status that is not initializing
 
         try {
-            requests.getPaymentRequests().collect { paymentRequestList ->
+            requests.getPaymentRequests(
+                onRetry = { isDelayed = true },
+                onRecovered = { isDelayed = false }
+            ).collect { paymentRequestList ->
                 // If we have a waitToken set in our view model, get the payment request
                 // associated with that waitToken and in a status that is not initializing
                 Log.d("BankTransferViewModel", "Inside Collect")
@@ -271,6 +279,7 @@ class BankTransferViewModel(
                 }
             }
         } catch (e: KronorError) {
+            isDelayed = false
             Log.d("BankTransferViewModel", "Payment Subscription error: $e")
             _transition(BankTransferStatechart.Companion.Event.Error(e))
         }

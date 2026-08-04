@@ -36,4 +36,5 @@
   <string name="cancel_payment">
     Anulować płatność?
   </string>
+    <string name="payment_taking_longer">Płatność trwa dłużej niż zwykle. Prosimy czekać — wciąż ją przetwarzamy</string>
 </resources>

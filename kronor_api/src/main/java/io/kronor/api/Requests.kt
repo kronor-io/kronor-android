@@ -22,8 +22,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.retryWhen
 import okhttp3.OkHttpClient
 import java.lang.Exception
 import java.util.UUID
@@ -35,8 +35,8 @@ enum class Environment {
 }
 
 private const val TemporaryFailure = "TEMPORARY_FAILURE"
-// Five attempts over a 15-second backoff window before the error reaches the UI.
-internal val DefaultRetryDelaysMillis = listOf(1_000L, 2_000L, 4_000L, 8_000L)
+// Six attempts over a 15.5-second backoff window before the error reaches the UI.
+internal val DefaultRetryDelaysMillis = listOf(500L, 1_000L, 2_000L, 4_000L, 8_000L)
 
 class Requests internal constructor(
     val kronorApolloClient: ApolloClient,
@@ -48,14 +48,21 @@ class Requests internal constructor(
         retryDelaysMillis = DefaultRetryDelaysMillis
     )
 
-    fun getPaymentRequests(): Flow<List<PaymentStatusSubscription.PaymentRequest>> {
+    fun getPaymentRequests(
+        onRetry: () -> Unit = {},
+        onRecovered: () -> Unit = {}
+    ): Flow<List<PaymentStatusSubscription.PaymentRequest>> {
         return kronorApolloClient.subscription(
             PaymentStatusSubscription()
         ).toFlow().map { response ->
             response.data?.paymentRequests ?: throw KronorError.GraphQlError(
                 ApiError(response.errors ?: emptyList(), response.extensions)
             )
-        }.filterNotNull().retryTransientErrors(retryDelaysMillis).catch { error ->
+        }.filterNotNull().retryTransientErrors(
+            delaysMillis = retryDelaysMillis,
+            onRetry = onRetry,
+            onRecovered = onRecovered
+        ).catch { error ->
             when (error) {
                 is KronorError -> throw error
                 is ApolloException -> throw KronorError.NetworkError(error)
@@ -123,6 +130,7 @@ internal fun Throwable.isRetryableKronorError(): Boolean = when (this) {
 
 internal suspend fun <T> retryTransientErrors(
     delaysMillis: List<Long> = DefaultRetryDelaysMillis,
+    onRetry: () -> Unit = {},
     block: suspend () -> Result<T>
 ): Result<T> {
     var result = block()
@@ -130,20 +138,37 @@ internal suspend fun <T> retryTransientErrors(
         if (result.exceptionOrNull()?.isRetryableKronorError() != true) {
             return result
         }
+        onRetry()
         delay(delayMillis)
         result = block()
     }
     return result
 }
 
-internal fun <T> Flow<T>.retryTransientErrors(delaysMillis: List<Long>): Flow<T> =
-    retryWhen { cause, attempt ->
-        val retry = cause.isRetryableKronorError() && attempt < delaysMillis.size
-        if (retry) {
-            delay(delaysMillis[attempt.toInt()])
+internal fun <T> Flow<T>.retryTransientErrors(
+    delaysMillis: List<Long>,
+    onRetry: () -> Unit = {},
+    onRecovered: () -> Unit = {}
+): Flow<T> = flow {
+    var consecutiveFailures = 0
+    while (true) {
+        try {
+            this@retryTransientErrors.collect { value ->
+                consecutiveFailures = 0
+                onRecovered()
+                emit(value)
+            }
+            return@flow
+        } catch (cause: Throwable) {
+            if (!cause.isRetryableKronorError() || consecutiveFailures >= delaysMillis.size) {
+                throw cause
+            }
+            onRetry()
+            delay(delaysMillis[consecutiveFailures])
+            consecutiveFailures += 1
         }
-        retry
     }
+}
 
 suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D> {
     return try {
@@ -203,14 +228,15 @@ data class PaymentRequestResult(
 
 
 suspend fun Requests.makeNewPaymentRequest(
-    paymentRequestArgs: PaymentRequestArgs
+    paymentRequestArgs: PaymentRequestArgs,
+    onRetry: () -> Unit = {}
 ): Result<PaymentRequestResult> {
     val androidVersion = java.lang.Double.parseDouble(
         java.lang.String(Build.VERSION.RELEASE).replaceAll("(\\d+[.]\\d+)(.*)", "$1")
     )
     val os = "android"
     val userAgent = "kronor_android_sdk/${BuildConfig.VERSION}"
-    return retryTransientErrors {
+    return retryTransientErrors(onRetry = onRetry) {
         makeNewPaymentRequestOnce(paymentRequestArgs, androidVersion, os, userAgent)
     }
 }

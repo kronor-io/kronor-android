@@ -14,4 +14,5 @@
   <string name="waiting_for_payment">
     Notiek maksājuma apstrāde, lūdzu, uzgaidiet
   </string>
+    <string name="payment_taking_longer">Maksājums aizņem ilgāku laiku nekā parasti. Lūdzu, uzgaidiet — mēs to joprojām apstrādājam</string>
 </resources>

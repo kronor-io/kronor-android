@@ -24,4 +24,5 @@
   <string name="cancel_payment">
     Atšaukti mokėjimą?
   </string>
+    <string name="payment_taking_longer">Mokėjimas užtrunka ilgiau nei įprastai. Palaukite — mes vis dar jį apdorojame</string>
 </resources>

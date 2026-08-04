@@ -72,6 +72,8 @@ class WebviewGatewayViewModel(
     internal val webviewGatewayState: State<WebviewGatewayStatechart.Companion.State> = _webviewGatewayState
     private var paymentRequest: PaymentStatusSubscription.PaymentRequest? by mutableStateOf(null)
     private var waitToken: String? by mutableStateOf(null)
+    internal var isDelayed: Boolean by mutableStateOf(false)
+        private set
     val paymentGatewayUrl: Uri = constructPaymentGatewayUrl(
         environment = webviewGatewayConfiguration.environment,
         sessionToken = webviewGatewayConfiguration.sessionToken,
@@ -152,8 +154,10 @@ class WebviewGatewayViewModel(
                         appVersion = webviewGatewayConfiguration.appVersion,
                         paymentMethod = paymentMethod,
                         idempotencyKey = paymentIdempotencyKey
-                    )
+                    ),
+                    onRetry = { isDelayed = true }
                 )
+                isDelayed = false
                 when {
                     waitToken.isFailure -> {
                         Log.d(
@@ -194,6 +198,7 @@ class WebviewGatewayViewModel(
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.ResetState -> {
+                isDelayed = false
                 Log.d("WebviewGatewayViewModel", "Reset payment flow")
                 val waitToken = requests.cancelPayment()
                 when {
@@ -244,7 +249,10 @@ class WebviewGatewayViewModel(
         // associated with that waitToken and in a status that is not initializing
 
         try {
-            requests.getPaymentRequests().collect { paymentRequestList ->
+            requests.getPaymentRequests(
+                onRetry = { isDelayed = true },
+                onRecovered = { isDelayed = false }
+            ).collect { paymentRequestList ->
                 // If we have a waitToken set in our view model, get the payment request
                 // associated with that waitToken and in a status that is not initializing
                 Log.d("WebviewGatewayViewModel", "Inside Collect")
@@ -301,6 +309,7 @@ class WebviewGatewayViewModel(
                 }
             }
         } catch (e: KronorError) {
+            isDelayed = false
             Log.d("WebviewGatewayViewModel", "Payment Subscription error: $e")
             _transition(WebviewGatewayStatechart.Companion.Event.Error(e))
         }

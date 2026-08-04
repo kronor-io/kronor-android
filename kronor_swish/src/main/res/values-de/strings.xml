@@ -24,4 +24,5 @@
   <string name="cancel_payment">
     Zahlung stornieren?
   </string>
+    <string name="payment_taking_longer">Die Zahlung dauert länger als üblich. Bitte warten — wir verarbeiten sie noch</string>
 </resources>

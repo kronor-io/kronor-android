@@ -4,11 +4,20 @@ import android.annotation.SuppressLint
 import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
@@ -62,7 +71,8 @@ fun BankTransferComponent(
 
     BankTransferScreen(
         transition = viewModel::transition,
-        state = viewModel.bankTransferState
+        state = viewModel.bankTransferState,
+        isDelayed = viewModel.isDelayed
     )
 }
 
@@ -71,13 +81,16 @@ fun BankTransferComponent(
 private fun BankTransferScreen(
     transition: (BankTransferStatechart.Companion.Event) -> Unit,
     state: State<BankTransferStatechart.Companion.State>,
+    isDelayed: Boolean,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     Surface(
         modifier = modifier, color = MaterialTheme.colors.background
     ) {
-        when (state.value) {
+        Column {
+            Box(modifier = Modifier.weight(1f)) {
+                when (state.value) {
             BankTransferStatechart.Companion.State.Initializing -> {
                 LaunchedEffect(Unit) {
                     transition(BankTransferStatechart.Companion.Event.Initialize(context))
@@ -135,6 +148,32 @@ private fun BankTransferScreen(
                     BankTransferPaymentCompleted(modifier = Modifier.fillMaxSize())
                 }
             }
+                }
+            }
+            PaymentDelayedNotice(isDelayed)
+        }
+    }
+}
+
+@Composable
+private fun PaymentDelayedNotice(isDelayed: Boolean) {
+    AnimatedVisibility(visible = isDelayed, enter = fadeIn(), exit = fadeOut()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.payment_taking_longer),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onBackground.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

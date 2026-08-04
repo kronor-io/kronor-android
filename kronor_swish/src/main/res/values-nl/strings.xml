@@ -24,4 +24,5 @@
   <string name="cancel_payment">
     Betaling annuleren?
   </string>
+    <string name="payment_taking_longer">De betaling duurt langer dan normaal. Even geduld — we verwerken deze nog</string>
 </resources>

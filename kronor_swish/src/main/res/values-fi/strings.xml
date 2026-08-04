@@ -24,4 +24,5 @@
   <string name="cancel_payment">
     Keskeytä maksu?
   </string>
+    <string name="payment_taking_longer">Maksu kestää tavallista kauemmin. Odota hetki — käsittelemme sitä edelleen</string>
 </resources>
