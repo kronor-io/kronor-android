@@ -901,6 +901,7 @@ private fun PaymentMethodsDropDown(
                 PaymentMethod.PayPal,
                 PaymentMethod.BankTransfer,
                 PaymentMethod.Fallback("p24"),
+                PaymentMethod.Fallback("googlePay"),
             ).forEach {
                 DropdownMenuItem(
                     onClick = {
@@ -1099,6 +1100,11 @@ fun setDefaultConfiguration(
         }
 
         PaymentMethod.Fallback("bankTransfer") -> {
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
+        }
+
+        PaymentMethod.Fallback("googlePay") -> {
             setSupportedCountry(Country.SE)
             setSupportedCurrency(SupportedCurrencyEnum.SEK)
         }
