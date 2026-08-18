@@ -10,6 +10,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.animation.AnimatedVisibility
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
@@ -187,6 +189,12 @@ private fun PaymentGatewayView(
         val context = LocalContext.current
         AndroidView(factory = {
             WebView(it).apply {
+
+                if (WebViewFeature.isFeatureSupported(
+                        WebViewFeature.PAYMENT_REQUEST)) {
+                    WebSettingsCompat.setPaymentRequestEnabled(settings, true);
+                }
+
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
