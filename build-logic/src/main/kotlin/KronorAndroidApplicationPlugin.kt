@@ -8,11 +8,11 @@ class KronorAndroidApplicationPlugin : Plugin<Project> {
         pluginManager.apply("com.android.application")
 
         extensions.configure(ApplicationExtension::class.java) {
-            compileSdk = 36
+            compileSdk = 37
 
             defaultConfig {
-                minSdk = 21
-                targetSdk = 36
+                minSdk = 24
+                targetSdk = 37
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
             }
 
