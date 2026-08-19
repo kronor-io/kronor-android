@@ -1,5 +1,6 @@
 package io.kronor.component.swish
 
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -37,9 +38,11 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -72,40 +75,128 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.KronorError
 import io.kronor.api.PaymentConfiguration
+import io.kronor.api.PaymentEvent
 import io.kronor.api.PaymentStatusSubscription
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
+@Deprecated("Pass PaymentConfiguration directly to SwishComponent")
 fun swishViewModel(swishConfiguration: PaymentConfiguration): SwishViewModel {
     return viewModel(factory = SwishViewModelFactory(swishConfiguration))
 }
 
 @Composable
 fun SwishComponent(
-    viewModel: SwishViewModel,
+    configuration: PaymentConfiguration,
+    onResult: (PaymentEvent) -> Unit,
+    modifier: Modifier = Modifier,
+    redirectIntent: Intent? = null,
+    onRedirectHandled: (Intent) -> Unit = {},
 ) {
+    SwishRoute(
+        configuration = configuration,
+        onResult = onResult,
+        modifier = modifier,
+        redirectIntent = redirectIntent,
+        onRedirectHandled = onRedirectHandled,
+    )
+}
 
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
+@Composable
+private fun SwishRoute(
+    configuration: PaymentConfiguration,
+    onResult: (PaymentEvent) -> Unit,
+    redirectIntent: Intent?,
+    onRedirectHandled: (Intent) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: SwishViewModel = viewModel(factory = SwishViewModelFactory(configuration)),
+) {
+    val result by viewModel.result.collectAsState()
+    val currentOnResult by rememberUpdatedState(onResult)
+    val currentOnRedirectHandled by rememberUpdatedState(onRedirectHandled)
 
-    LaunchedEffect(viewModel.subscribe) {
-        if (viewModel.subscribe) {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                withContext(Dispatchers.IO) {
-                    viewModel.subscription()
-                }
-            }
+    LaunchedEffect(result) {
+        result?.let {
+            viewModel.consumeResult(it)
+            currentOnResult(it)
+        }
+    }
+    LaunchedEffect(redirectIntent) {
+        redirectIntent?.let { intent ->
+            viewModel.handleIntent(intent)
+            currentOnRedirectHandled(intent)
         }
     }
 
-    SwishScreen(
+    SwishContent(
+        subscribe = viewModel.subscribe,
+        subscription = viewModel::subscription,
         transition = viewModel::transition,
         state = viewModel.swishState,
         selectedMethod = viewModel.selectedMethod,
         updateSelectedMethod = viewModel::updateSelectedMethod,
         paymentRequest = viewModel.paymentRequest,
         merchantLogo = viewModel.merchantLogo(),
-        isDelayed = viewModel.isDelayed
+        isDelayed = viewModel.isDelayed,
+        modifier = modifier,
+    )
+}
+
+@Deprecated("Pass PaymentConfiguration and onResult to SwishComponent")
+@SuppressLint("ComposeModifierMissing", "ComposeViewModelForwarding")
+@Composable
+fun SwishComponent(
+    viewModel: SwishViewModel,
+) {
+    SwishContent(
+        subscribe = viewModel.subscribe,
+        subscription = viewModel::subscription,
+        transition = viewModel::transition,
+        state = viewModel.swishState,
+        selectedMethod = viewModel.selectedMethod,
+        updateSelectedMethod = viewModel::updateSelectedMethod,
+        paymentRequest = viewModel.paymentRequest,
+        merchantLogo = viewModel.merchantLogo(),
+        isDelayed = viewModel.isDelayed,
+        modifier = Modifier,
+    )
+}
+
+@Composable
+private fun SwishContent(
+    subscribe: Boolean,
+    subscription: suspend () -> Unit,
+    transition: (SwishStatechart.Companion.Event) -> Unit,
+    state: State<SwishStatechart.Companion.State>,
+    selectedMethod: State<SelectedMethod?>,
+    updateSelectedMethod: (SelectedMethod) -> Unit,
+    paymentRequest: PaymentStatusSubscription.PaymentRequest?,
+    @DrawableRes merchantLogo: Int?,
+    isDelayed: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+
+    LaunchedEffect(subscribe) {
+        if (subscribe) {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                withContext(Dispatchers.IO) {
+                    subscription()
+                }
+            }
+        }
+    }
+
+    SwishScreen(
+        transition = transition,
+        state = state,
+        selectedMethod = selectedMethod,
+        updateSelectedMethod = updateSelectedMethod,
+        paymentRequest = paymentRequest,
+        merchantLogo = merchantLogo,
+        isDelayed = isDelayed,
+        modifier = modifier,
     )
 }
 
@@ -117,13 +208,18 @@ private fun SwishScreen(
     selectedMethod: State<SelectedMethod?>,
     updateSelectedMethod: (SelectedMethod) -> Unit,
     paymentRequest: PaymentStatusSubscription.PaymentRequest?,
+    modifier: Modifier = Modifier,
     @DrawableRes merchantLogo: Int? = null,
-    isDelayed: Boolean = false
+    isDelayed: Boolean = false,
 ) {
 
     val context = LocalContext.current
 
-    SwishWrapper(merchantLogo, isDelayed) {
+    SwishWrapper(
+        modifier = modifier,
+        merchantLogo = merchantLogo,
+        isDelayed = isDelayed,
+    ) {
         when (state.value) {
             SwishStatechart.Companion.State.PromptingMethod -> {
                 SwishPromptScreen(
@@ -213,13 +309,14 @@ private fun SwishScreen(
 
 @Composable
 private fun SwishWrapper(
+    modifier: Modifier = Modifier,
     @DrawableRes merchantLogo: Int? = null,
     isDelayed: Boolean = false,
     content: @Composable () -> Unit
 ) {
     // A surface container using the 'background' color from the theme
     Surface(
-        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background,
+        modifier = modifier.fillMaxSize(), color = MaterialTheme.colors.background,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

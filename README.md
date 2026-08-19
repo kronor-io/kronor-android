@@ -7,572 +7,191 @@
 [![vipps](https://maven-badges.sml.io/sonatype-central/io.kronor.component/vipps/badge.svg?style=plastic&subject=vipps)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/vipps/)
 [![paypal](https://maven-badges.sml.io/sonatype-central/io.kronor.component/paypal/badge.svg?style=plastic&subject=paypal)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/paypal/)
 [![googlepay](https://maven-badges.sml.io/sonatype-central/io.kronor.component/googlepay/badge.svg?style=plastic&subject=googlepay)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/googlepay/)
-[![webview_payment_gateway](https://maven-badges.sml.io/sonatype-central/io.kronor.component/webview_payment_gateway/badge.svg?style=plastic&subject=webview_payment_gateway)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/webview_payment_gateway/)
 [![fallback](https://maven-badges.sml.io/sonatype-central/io.kronor.component/fallback/badge.svg?style=plastic&subject=fallback)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/fallback/)
 
-Kronor Android provides payment components that you can use to create a custom checkout solution for your customers by using any of our provided payment methods.
+Kronor Android provides Jetpack Compose payment components for Swish, credit cards, MobilePay,
+Vipps, PayPal, bank transfer, Google Pay, and payment-gateway fallback methods.
 
-## Payment methods
+## Setup
 
-These are the payment methods that are currently provided and supported by this sdk
+Enable Compose in the consuming Android application and add the API plus the required payment
+component. Replace `VERSION` with the Kronor Android version used by the application.
 
-### Native
-
-- [Swish](#swish)
-- [CreditCard](#credit-card)
-- [MobilePay](#mobilepay)
-- [Vipps](#vipps)
-- [PayPal](#paypal)
-- [BankTransfer](#bank-transfer)
-- [GooglePay](#google-pay)
-
-### Fallback
-
-- [P24](#p24)
-
-## Additional Setup
-
-In your project's `build.gradle` file ensure you have `compose` enabled:
-
-```groovy
-android {
-    buildFeatures {
-        viewBinding true
-        compose true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.2'
-    }
-}
-```
-
-### Swish
-
-Dependencies:
-
-```groovy
+```kotlin
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:swish:3.0.1'
+    implementation("io.kronor:api:VERSION")
+    implementation("io.kronor.component:credit_card:VERSION")
 }
 ```
 
-Imports:
+Available component artifacts are:
+
+| Payment method | Artifact |
+| --- | --- |
+| Swish | `io.kronor.component:swish` |
+| Credit card | `io.kronor.component:credit_card` |
+| MobilePay | `io.kronor.component:mobilepay` |
+| Vipps | `io.kronor.component:vipps` |
+| PayPal | `io.kronor.component:paypal` |
+| Bank transfer | `io.kronor.component:bank_transfer` |
+| Google Pay | `io.kronor.component:googlepay` |
+| Fallback | `io.kronor.component:fallback` |
+
+## Payment Component
+
+Create a `PaymentConfiguration` from the payment-session token returned by the Kronor API:
 
 ```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.api.PaymentConfiguration
-import io.kronor.component.swish.SwishComponent
-import io.kronor.component.swish.swishViewModel
-```
-
-Invoking the Swish component:
-
-```kotlin
-val viewModelForSwish : SwishViewModel = swishViewModel(swishConfiguration = PaymentConfiguration(
-    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-    merchantLogo = null, // a logo to display to the user when the payment is in progress
-    environment = Environment.Staging, // environment to point to
+val configuration = PaymentConfiguration(
+    sessionToken = sessionToken,
+    merchantLogo = R.drawable.merchant_logo,
+    environment = Environment.Staging,
     appName = "your_app_name",
     appVersion = "your_app_version",
-    locale = Locale("en_US"),
-    redirectUrl = Uri.parse("your_app_uri")
-))
-
-SwishComponent(swishConfiguration)
+    locale = Locale.Builder().setRegion("US").setLanguage("en").build(),
+    redirectUrl = "your-app://payment-redirect".toUri(),
+)
 ```
 
-Handling the payment events:
+Pass the configuration directly to the component. The component owns its ViewModel and reports one
+terminal `PaymentEvent` through a synchronous callback. Hand the event to an application-owned
+ViewModel for confirmation, persistence, analytics, and navigation state:
 
 ```kotlin
-lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-    launch {
-        viewModelForSwish.events.collect { event ->
+class CheckoutViewModel(
+    private val orderRepository: OrderRepository,
+) : ViewModel() {
+    fun onPaymentEvent(event: PaymentEvent) {
+        viewModelScope.launch {
             when (event) {
-                PaymentEvent.PaymentFailure -> {
-                    // handle the success event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
+                is PaymentEvent.PaymentSuccess -> {
+                    orderRepository.confirmPayment(event.paymentId)
+                    // Update application state to show the receipt.
                 }
 
-                is PaymentEvent.PaymentSuccess -> {
-                    // handle the success event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
+                PaymentEvent.PaymentFailure -> {
+                    // Update application state to return to payment methods.
                 }
             }
         }
     }
 }
-```
 
-### Bank Transfer
-
-Dependencies:
-
-```groovy
-dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:bank_transfer:3.0.1'
-}
-```
-
-Imports:
-
-```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.api.PaymentConfiguration
-import io.kronor.component.bank_transfer.BankTransferComponent
-import io.kronor.component.bank_transfer.bankTransferViewModel
-```
-
-Invoking the BankTransfer component:
-
-```kotlin
-val viewModelForBankTransfer : BankTransferViewModel = bankTransferViewModel(bankTransferConfiguration = PaymentConfiguration(
-    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-    merchantLogo = R.drawable.kronor_logo, // a logo to display to the user when the payment is in progress
-    environment = Environment.Staging, // environment to point to
-    appName = "your_app_name",
-    appVersion = "your_app_version",
-    redirectUrl = Uri.parse("your_app_uri")
-))
-
-BankTransferComponent(viewModelForBankTransfer)
-```
-
-Handling the payment events:
-
-```kotlin
-lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-    launch {
-        viewModelForBankTransfer.events.collect { event ->
-            when (event) {
-                PaymentEvent.PaymentFailure -> {
-                    // handle the event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-
-                is PaymentEvent.PaymentSuccess -> {
-                    // handle the success event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-            }
+CreditCardComponent(
+    configuration = configuration,
+    redirectIntent = redirectIntent,
+    onRedirectHandled = { handledIntent ->
+        if (redirectIntent === handledIntent) {
+            redirectIntent = null
         }
-    }
-}
+    },
+    onResult = checkoutViewModel::onPaymentEvent,
+)
 ```
 
-### Credit Card
+The callback is a notification boundary; the SDK does not await or manage application work. A caller
+can also launch a coroutine from the callback, but a ViewModel scope is preferred for work that must
+survive recomposition or continue after the payment screen leaves composition.
 
-Dependencies:
+The component ViewModel uses the nearest `ViewModelStoreOwner`. With Navigation 3, install
+`rememberViewModelStoreNavEntryDecorator()` on `NavDisplay` to scope it to the payment entry.
 
-```groovy
-dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:credit_card:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
-}
-```
+## Payment Methods
 
-Imports:
+All native components use the same result and redirect contract:
 
 ```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.api.PaymentConfiguration
-import io.kronor.component.credit_card.CreditCardComponent
-import io.kronor.component.credit_card.creditCardViewModel
-```
-
-Invoking the CreditCard component:
-
-```kotlin
-val viewModelForCreditCard : CreditCardViewModel = creditCardViewModel(creditCardConfiguration = PaymentConfiguration(
-    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-    merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress
-    environment = Environment.Staging, // environment to point to
-    appName = "your_app_name",
-    appVersion = "your_app_version",
-    redirectUrl = Uri.parse("your_app_uri")
-))
-
-CreditCardComponent(viewModelForCreditCard)
-```
-
-Handling the payment events:
-
-```kotlin
-lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-    launch {
-        viewModelForCreditCard.events.collect { event ->
-            when (event) {
-                PaymentEvent.PaymentFailure -> {
-                    // handle the event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-
-                is PaymentEvent.PaymentSuccess -> {
-                    // handle the success event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-### MobilePay
-
-Dependencies:
-
-```groovy
-dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:mobilepay:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
-}
-```
-
-Imports:
-
-```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.api.PaymentConfiguration
-import io.kronor.component.mobilepay.MobilePayComponent
-import io.kronor.component.mobilepay.mobilePayViewModel
-```
-
-Invoking the MobilePay component:
-
-```kotlin
-val viewModelForMobilePay : MobilePayViewModel = mobilePayViewModel(mobilePayConfiguration = PaymentConfiguration(
-    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-    merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress or null
-    environment = Environment.Staging, // environment to point to
-    appName = "your_app_name",
-    appVersion = "your_app_version",
-    redirectUrl = Uri.parse("your_app_uri")
-))
-
-MobilePayComponent(viewModelForMobilePay)
-```
-
-Handling the payment events:
-
-```kotlin
-lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-    launch {
-        viewModelForMobilePay.events.collect { event ->
-            when (event) {
-                PaymentEvent.PaymentFailure -> {
-                    // handle the event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-
-                is PaymentEvent.PaymentSuccess -> {
-                    // handle the success event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-### Vipps
-
-Dependencies:
-
-```groovy
-dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:vipps:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
-}
-```
-
-Imports:
-
-```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.api.PaymentConfiguration
-import io.kronor.component.vipps.VippsComponent
-import io.kronor.component.vipps.vippsViewModel
-```
-
-Invoking the Vipps component:
-
-```kotlin
-val viewModelForVipps : VippsViewModel = vippsViewModel(vippsConfiguration = PaymentConfiguration(
-    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-    merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress or null
-    environment = Environment.Staging, // environment to point to
-    appName = "your_app_name",
-    appVersion = "your_app_version",
-    redirectUrl = Uri.parse("your_app_uri")
-))
-
-VippsComponent(viewModelForVipps)
-```
-
-Handling the payment events:
-
-```kotlin
-lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-    launch {
-        viewModelForVipps.events.collect { event ->
-            when (event) {
-                PaymentEvent.PaymentFailure -> {
-                    // handle the event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-
-                is PaymentEvent.PaymentSuccess -> {
-                    // handle the success event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-### PayPal
-
-Dependencies:
-
-```groovy
-dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:paypal:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
-}
-```
-
-Imports:
-
-```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.api.PaymentConfiguration
-import io.kronor.component.paypal.PayPalComponent
-import io.kronor.component.paypal.paypalViewModel
-```
-
-Invoking the PayPal component:
-
-```kotlin
-val viewModelForPayPal : PayPalViewModel = paypalViewModel(paypalConfiguration = PaymentConfiguration(
-    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-    merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress or null
-    environment = Environment.Staging, // environment to point to
-    appName = "your_app_name",
-    appVersion = "your_app_version",
-    redirectUrl = Uri.parse("your_app_uri")
-))
-
-PayPalComponent(viewModelForPayPal)
-```
-
-Handling the payment events:
-
-```kotlin
-lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-    launch {
-        viewModelForPayPal.events.collect { event ->
-            when (event) {
-                PaymentEvent.PaymentFailure -> {
-                    // handle the event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-
-                is PaymentEvent.PaymentSuccess -> {
-                    // handle the success event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-### Google Pay
-
-Dependencies:
-
-```groovy
-dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:googlepay:3.0.1'
-}
-```
-
-Imports:
-
-```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.api.PaymentConfiguration
-import io.kronor.component.google_pay.GooglePayComponent
-import io.kronor.component.google_pay.googlePayViewModel
-```
-
-Invoking the GooglePay component:
-
-```kotlin
-val viewModelForGooglePay : GooglePayViewModel = googlePayViewModel(googlePayConfiguration = PaymentConfiguration(
-    sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-    merchantLogo = R.id.kronor_logo, // a logo to display to the user when the payment is in progress
-    environment = Environment.Staging, // environment to point to
-    appName = "your_app_name",
-    appVersion = "your_app_version",
-    redirectUrl = Uri.parse("your_app_uri"),
-    locale = Locale.Builder().setRegion("US").setLanguage("en").build()
-))
-
-GooglePayComponent(viewModelForGooglePay)
-```
-
-Handling the payment events:
-
-```kotlin
-lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-    launch {
-        viewModelForGooglePay.events.collect { event ->
-            when (event) {
-                PaymentEvent.PaymentFailure -> {
-                    // handle the event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-
-                is PaymentEvent.PaymentSuccess -> {
-                    // handle the success event here, example:
-                    withContext(Dispatchers.Main) {
-                        navController.navigate("paymentMethods")
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-### Fallback Component
-
-All payment methods are also supported in the fallback component, in case there is no native implementation.  
-Payment method to fallback mapping:
-
-| Payment Method  | Fallback  |
-|--- |--- |
-| P24   | p24   |
-
-#### Example
-
-##### P24
-
-Dependencies:
-
-```groovy
-dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:fallback:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
-}
-```
-
-Imports:
-
-```kotlin
-import io.kronor.api.Environment
-import io.kronor.api.PaymentEvent
-import io.kronor.component.fallback.FallbackComponent
-import io.kronor.component.fallback.fallbackViewModel
-```
-
-Invoking the Fallback component:
-
-```kotlin
-val viewModelForFallback = fallbackViewModel(fallbackConfiguration = PaymentConfiguration(
-        sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
-        merchantLogo = R.drawable.kronor_logo, // a logo to display to the user when the payment is in progress or null
-        environment = Environment.Staging, // environment to point to
-        appName = "your_app_name",
-        appVersion = "your_app_version",
-        redirectUrl = Uri.parse("your_app_uri"),
-        locale = Locale("en_US")
-    ), paymentMethod = "p24" // note the usage of "p24". refer to the mapping table for other fallback payment methods
+SwishComponent(
+    configuration = configuration,
+    redirectIntent = redirectIntent,
+    onRedirectHandled = onRedirectHandled,
+    onResult = onResult,
 )
 
-FallbackComponent(viewModelForFallback)
+CreditCardComponent(
+    configuration = configuration,
+    redirectIntent = redirectIntent,
+    onRedirectHandled = onRedirectHandled,
+    onResult = onResult,
+)
+
+MobilePayComponent(
+    configuration = configuration,
+    redirectIntent = redirectIntent,
+    onRedirectHandled = onRedirectHandled,
+    onResult = onResult,
+)
+
+VippsComponent(
+    configuration = configuration,
+    redirectIntent = redirectIntent,
+    onRedirectHandled = onRedirectHandled,
+    onResult = onResult,
+)
+
+PayPalComponent(
+    configuration = configuration,
+    redirectIntent = redirectIntent,
+    onRedirectHandled = onRedirectHandled,
+    onResult = onResult,
+)
+
+BankTransferComponent(
+    configuration = configuration,
+    redirectIntent = redirectIntent,
+    onRedirectHandled = onRedirectHandled,
+    onResult = onResult,
+)
+
+GooglePayComponent(
+    configuration = configuration,
+    redirectIntent = redirectIntent,
+    onRedirectHandled = onRedirectHandled,
+    onResult = onResult,
+)
 ```
 
-Handling the payment events:
+The fallback component additionally requires the payment-gateway method name:
 
 ```kotlin
-val lifecycle = LocalLifecycleOwner.current.lifecycle
-LaunchedEffect(Unit) {
-    launch {
-        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            launch {
-                viewModelForFallback.events.collect {
-                    when (it) {
-                        PaymentEvent.PaymentFailure -> {
-                            // handle the event here, example:
-                            withContext(Dispatchers.Main) {
-                                viewModel.resetPaymentState()
-                                navController.navigate("paymentMethods")
-                            }
-                        }
+FallbackComponent(
+    configuration = configuration,
+    paymentMethod = "p24",
+    redirectIntent = redirectIntent,
+    onRedirectHandled = onRedirectHandled,
+    onResult = onResult,
+)
+```
 
-                        is PaymentEvent.PaymentSuccess -> {
-                            // handle the success event here, example:
-                            withContext(Dispatchers.Main) {
-                                viewModel.resetPaymentState()
-                                navController.navigate("paymentMethods")
-                            }
-                        }
-                    }
+## Redirects
+
+Forward redirect intents received by the activity to the active payment component through its
+`redirectIntent` parameter. Keep the intent in observable state so an intent received by
+`onNewIntent` causes recomposition:
+
+```kotlin
+private var redirectIntent by mutableStateOf<Intent?>(null)
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    redirectIntent = intent.takeIf { it.data != null }
+    setContent {
+        PaymentRoute(
+            redirectIntent = redirectIntent,
+            onRedirectHandled = { handledIntent ->
+                if (redirectIntent === handledIntent) {
+                    redirectIntent = null
                 }
-            }
-        }
+            },
+        )
     }
+}
+
+override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    redirectIntent = intent.takeIf { it.data != null }
 }
 ```
 
-## Handling redirects
-
-For payment methods that redirect to other apps or the browser, you need to handle a redirect to the
-app. Pass the intent on redirect to `viewModelFor{Swish,CreditCard,MobilePay,Vipps,PayPal,Fallback}.handleIntent(intent)`.
-The redirect uri passed to the view model, will have a paymentMethod and sessionToken added as
-query parameters.
-
-You can also refer to the `MainActivity` in [example-app](example-app) for reference.
+See the [`example-app`](example-app) for a complete Navigation 3 integration.

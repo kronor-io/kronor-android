@@ -26,6 +26,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.security.MessageDigest
@@ -92,7 +95,14 @@ class WebviewGatewayViewModel(
     )
 
     private val _events = MutableSharedFlow<PaymentEvent>()
+    @Deprecated("Use result")
     val events: Flow<PaymentEvent> = _events
+    private val _result = MutableStateFlow<PaymentEvent?>(null)
+    val result: StateFlow<PaymentEvent?> = _result.asStateFlow()
+
+    internal fun consumeResult(result: PaymentEvent) {
+        _result.compareAndSet(result, null)
+    }
 
     internal fun transition(event: WebviewGatewayStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -220,11 +230,14 @@ class WebviewGatewayViewModel(
 
             is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
                 Log.d("WebviewGatewayViewModel", "Emitting success")
-                _events.emit(PaymentEvent.PaymentSuccess(sideEffect.paymentId))
+                val event = PaymentEvent.PaymentSuccess(sideEffect.paymentId)
+                _result.value = event
+                _events.emit(event)
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 Log.d("WebviewGatewayViewModel", "Emitting failure")
+                _result.value = PaymentEvent.PaymentFailure
                 _events.emit(PaymentEvent.PaymentFailure)
             }
 
@@ -233,6 +246,7 @@ class WebviewGatewayViewModel(
             }
 
             is WebviewGatewayStatechart.Companion.SideEffect.CancelAndNotifyFailure -> {
+                _result.value = PaymentEvent.PaymentFailure
                 _events.emit(PaymentEvent.PaymentFailure)
             }
 

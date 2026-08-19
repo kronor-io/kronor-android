@@ -35,6 +35,9 @@ import io.kronor.api.type.PaymentStatusEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.security.MessageDigest
@@ -75,7 +78,14 @@ class BankTransferViewModel(
         private set
 
     private val _events = MutableSharedFlow<PaymentEvent>()
+    @Deprecated("Use result")
     val events: Flow<PaymentEvent> = _events
+    private val _result = MutableStateFlow<PaymentEvent?>(null)
+    val result: StateFlow<PaymentEvent?> = _result.asStateFlow()
+
+    internal fun consumeResult(result: PaymentEvent) {
+        _result.compareAndSet(result, null)
+    }
 
     internal fun transition(event: BankTransferStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -187,11 +197,14 @@ class BankTransferViewModel(
 
             is BankTransferStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
                 Log.d("BankTransferViewModel", "Emitting success")
-                _events.emit(PaymentEvent.PaymentSuccess(sideEffect.paymentId))
+                val event = PaymentEvent.PaymentSuccess(sideEffect.paymentId)
+                _result.value = event
+                _events.emit(event)
             }
 
             is BankTransferStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 Log.d("BankTransferViewModel", "Emitting failure")
+                _result.value = PaymentEvent.PaymentFailure
                 _events.emit(PaymentEvent.PaymentFailure)
             }
 

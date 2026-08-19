@@ -74,7 +74,14 @@ class SwishViewModel(
         private set
 
     private val _events = MutableSharedFlow<PaymentEvent>()
+    @Deprecated("Use result")
     val events: Flow<PaymentEvent> = _events
+    private val _result = MutableStateFlow<PaymentEvent?>(null)
+    val result: StateFlow<PaymentEvent?> = _result.asStateFlow()
+
+    internal fun consumeResult(result: PaymentEvent) {
+        _result.compareAndSet(result, null)
+    }
 
     internal fun transition(event: SwishStatechart.Companion.Event) {
         viewModelScope.launch {
@@ -227,11 +234,14 @@ class SwishViewModel(
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentSuccess -> {
                 Log.d("SwishViewModel", "Emitting success")
-                _events.emit(PaymentEvent.PaymentSuccess(sideEffect.paymentId))
+                val event = PaymentEvent.PaymentSuccess(sideEffect.paymentId)
+                _result.value = event
+                _events.emit(event)
             }
 
             is SwishStatechart.Companion.SideEffect.NotifyPaymentFailure -> {
                 Log.d("SwishViewModel", "Emitting failure")
+                _result.value = PaymentEvent.PaymentFailure
                 _events.emit(PaymentEvent.PaymentFailure)
             }
 

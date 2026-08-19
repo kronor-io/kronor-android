@@ -1,6 +1,8 @@
 package io.kronor.component.bank_transfer
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
 import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
@@ -26,6 +28,9 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,36 +48,113 @@ import com.trustlyAndroidLibrary.TrustlyCheckoutSuccessHandler
 import com.trustlyAndroidLibrary.TrustlyWebView
 import io.kronor.api.KronorError
 import io.kronor.api.PaymentConfiguration
+import io.kronor.api.PaymentEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 
 @Composable
+@Deprecated("Pass PaymentConfiguration directly to BankTransferComponent")
 fun bankTransferViewModel(bankTransferConfiguration: PaymentConfiguration): BankTransferViewModel {
     return viewModel(factory = BankTransferViewModelFactory(bankTransferConfiguration))
 }
 
 @Composable
 fun BankTransferComponent(
+    configuration: PaymentConfiguration,
+    onResult: (PaymentEvent) -> Unit,
+    modifier: Modifier = Modifier,
+    redirectIntent: Intent? = null,
+    onRedirectHandled: (Intent) -> Unit = {},
+) {
+    BankTransferRoute(
+        configuration = configuration,
+        onResult = onResult,
+        modifier = modifier,
+        redirectIntent = redirectIntent,
+        onRedirectHandled = onRedirectHandled,
+    )
+}
+
+@Composable
+private fun BankTransferRoute(
+    configuration: PaymentConfiguration,
+    onResult: (PaymentEvent) -> Unit,
+    redirectIntent: Intent?,
+    onRedirectHandled: (Intent) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: BankTransferViewModel = viewModel(factory = BankTransferViewModelFactory(configuration)),
+) {
+    val result by viewModel.result.collectAsState()
+    val currentOnResult by rememberUpdatedState(onResult)
+    val currentOnRedirectHandled by rememberUpdatedState(onRedirectHandled)
+
+    LaunchedEffect(result) {
+        result?.let {
+            viewModel.consumeResult(it)
+            currentOnResult(it)
+        }
+    }
+    LaunchedEffect(redirectIntent) {
+        redirectIntent?.let { intent ->
+            viewModel.handleIntent(intent)
+            currentOnRedirectHandled(intent)
+        }
+    }
+
+    BankTransferContent(
+        subscribe = viewModel.subscribe,
+        subscription = viewModel::subscription,
+        transition = viewModel::transition,
+        state = viewModel.bankTransferState,
+        isDelayed = viewModel.isDelayed,
+        modifier = modifier,
+    )
+}
+
+@Deprecated("Pass PaymentConfiguration and onResult to BankTransferComponent")
+@SuppressLint("ComposeModifierMissing", "ComposeViewModelForwarding")
+@Composable
+fun BankTransferComponent(
     viewModel: BankTransferViewModel,
+) {
+    BankTransferContent(
+        subscribe = viewModel.subscribe,
+        subscription = viewModel::subscription,
+        transition = viewModel::transition,
+        state = viewModel.bankTransferState,
+        isDelayed = viewModel.isDelayed,
+        modifier = Modifier,
+    )
+}
+
+@Composable
+private fun BankTransferContent(
+    subscribe: Boolean,
+    subscription: suspend (Context) -> Unit,
+    transition: (BankTransferStatechart.Companion.Event) -> Unit,
+    state: State<BankTransferStatechart.Companion.State>,
+    isDelayed: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val context = LocalContext.current
 
-    LaunchedEffect(viewModel.subscribe) {
-        if (viewModel.subscribe) {
+    LaunchedEffect(subscribe) {
+        if (subscribe) {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 withContext(Dispatchers.IO) {
-                    viewModel.subscription(context)
+                    subscription(context)
                 }
             }
         }
     }
 
     BankTransferScreen(
-        transition = viewModel::transition,
-        state = viewModel.bankTransferState,
-        isDelayed = viewModel.isDelayed
+        transition = transition,
+        state = state,
+        isDelayed = isDelayed,
+        modifier = modifier,
     )
 }
 
