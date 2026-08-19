@@ -81,6 +81,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    publishing {
+        singleVariant("release") {}
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -96,6 +99,7 @@ apollo {
         mapScalarToKotlinString("bigint")
         mapScalarToKotlinString("uuid")
         mapScalar("timestamptz", "java.util.Date", "com.apollographql.adapter.core.DateAdapter")
+        schemaFile.set(file("src/main/graphql/schema.graphqls"))
     }
 }
 

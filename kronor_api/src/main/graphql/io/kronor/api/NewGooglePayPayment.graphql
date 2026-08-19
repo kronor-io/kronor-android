@@ -1,0 +1,10 @@
+mutation GooglePayPayment($payment: GooglePayPaymentInput!, $deviceInfo: AddSessionDeviceInformationInput!) {
+    newGooglePayPayment(pay: $payment) {
+        waitToken
+        gateway
+    }
+
+    addSessionDeviceInformation(info: $deviceInfo) {
+        result
+    }
+}

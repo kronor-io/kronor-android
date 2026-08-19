@@ -137,6 +137,11 @@ enum AcquirerEnabledSelectColumn {
 
 enum AcquirerEnum {
   """
+  American Express acquires its own scheme; we have no direct AMEX authorization integration (AMEX cards are processed via Shift4)
+  """
+  AMEX
+
+  """
   Clearhaus acquirer
   """
   CLEARHAUS
@@ -212,6 +217,33 @@ type AddAcquirerResult {
   ID of acquirer added
   """
   acquirerId: bigint!
+}
+
+"""
+Arguments for delivering externally processed transactions.
+"""
+input AddExternalTransactionsInput {
+  """
+  The externally processed transactions to deliver.
+  At most 1000 transactions per call.
+  """
+  transactions: [ExternalTransactionInput!]!
+}
+
+"""
+The result of delivering externally processed transactions.
+"""
+type AddExternalTransactionsResult {
+  """
+  The number of transactions that were skipped because a transaction
+  with the same provider and orderReference was already delivered.
+  """
+  duplicateCount: Int!
+
+  """
+  The number of transactions that were stored.
+  """
+  insertedCount: Int!
 }
 
 """
@@ -353,6 +385,158 @@ input AddressInput {
 }
 
 """
+Details for an Apple Pay transaction
+"""
+type ApplePayDetails {
+  acquirer: String
+
+  authorizationId: String
+
+  cardExpiryDate: date
+
+  cardNumber: String
+
+  cardType: String
+
+  initiative: String
+
+  sessionResponse: String
+}
+
+"""
+order by aggregate values of table "runtime.transaction_apple_pay_details"
+"""
+input ApplePayDetailsAggregateOrderBy {
+  count: OrderBy
+
+  max: ApplePayDetailsMaxOrderBy
+
+  min: ApplePayDetailsMinOrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "runtime.transaction_apple_pay_details". All fields are combined with a logical 'AND'.
+"""
+input ApplePayDetailsBoolExp {
+  _and: [ApplePayDetailsBoolExp!]
+
+  _not: ApplePayDetailsBoolExp
+
+  _or: [ApplePayDetailsBoolExp!]
+
+  acquirer: StringComparisonExp
+
+  authorizationId: StringComparisonExp
+
+  cardExpiryDate: DateComparisonExp
+
+  cardNumber: StringComparisonExp
+
+  cardType: StringComparisonExp
+
+  initiative: StringComparisonExp
+
+  sessionResponse: StringComparisonExp
+}
+
+"""
+order by max() on columns of table "runtime.transaction_apple_pay_details"
+"""
+input ApplePayDetailsMaxOrderBy {
+  acquirer: OrderBy
+
+  authorizationId: OrderBy
+
+  cardExpiryDate: OrderBy
+
+  cardNumber: OrderBy
+
+  cardType: OrderBy
+
+  initiative: OrderBy
+
+  sessionResponse: OrderBy
+}
+
+"""
+order by min() on columns of table "runtime.transaction_apple_pay_details"
+"""
+input ApplePayDetailsMinOrderBy {
+  acquirer: OrderBy
+
+  authorizationId: OrderBy
+
+  cardExpiryDate: OrderBy
+
+  cardNumber: OrderBy
+
+  cardType: OrderBy
+
+  initiative: OrderBy
+
+  sessionResponse: OrderBy
+}
+
+"""
+Ordering options when selecting data from "runtime.transaction_apple_pay_details".
+"""
+input ApplePayDetailsOrderBy {
+  acquirer: OrderBy
+
+  authorizationId: OrderBy
+
+  cardExpiryDate: OrderBy
+
+  cardNumber: OrderBy
+
+  cardType: OrderBy
+
+  initiative: OrderBy
+
+  sessionResponse: OrderBy
+}
+
+"""
+select columns of table "runtime.transaction_apple_pay_details"
+"""
+enum ApplePayDetailsSelectColumn {
+  """
+  column name
+  """
+  acquirer
+
+  """
+  column name
+  """
+  authorizationId
+
+  """
+  column name
+  """
+  cardExpiryDate
+
+  """
+  column name
+  """
+  cardNumber
+
+  """
+  column name
+  """
+  cardType
+
+  """
+  column name
+  """
+  initiative
+
+  """
+  column name
+  """
+  sessionResponse
+}
+
+"""
 Arguments for authorizing future instalments for a purchase
 """
 input AuthorizeInstalmentsInput {
@@ -402,6 +586,125 @@ type AuthorizeInstalmentsResult {
   and where to redirect the user next for them to authorize the payments for the instalments.
   """
   waitToken: String!
+}
+
+"""
+Describes the schema for Avarda details
+"""
+type AvardaDetails {
+  """
+  Authorization id returned by Avarda
+  """
+  authorizationId: uuid
+
+  """
+  Latest authorization status reported by Avarda
+  """
+  authorizationStatus: String
+
+  """
+  Avarda credit product type (direct-invoice, loan, part-payment, invoice)
+  """
+  creditProduct: String
+}
+
+"""
+order by aggregate values of table "runtime.transaction_avarda_details"
+"""
+input AvardaDetailsAggregateOrderBy {
+  count: OrderBy
+
+  max: AvardaDetailsMaxOrderBy
+
+  min: AvardaDetailsMinOrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "runtime.transaction_avarda_details". All fields are combined with a logical 'AND'.
+"""
+input AvardaDetailsBoolExp {
+  _and: [AvardaDetailsBoolExp!]
+
+  _not: AvardaDetailsBoolExp
+
+  _or: [AvardaDetailsBoolExp!]
+
+  authorizationId: UuidComparisonExp
+
+  authorizationStatus: StringComparisonExp
+
+  creditProduct: StringComparisonExp
+}
+
+"""
+order by max() on columns of table "runtime.transaction_avarda_details"
+"""
+input AvardaDetailsMaxOrderBy {
+  """
+  Authorization id returned by Avarda
+  """
+  authorizationId: OrderBy
+
+  """
+  Latest authorization status reported by Avarda
+  """
+  authorizationStatus: OrderBy
+
+  """
+  Avarda credit product type (direct-invoice, loan, part-payment, invoice)
+  """
+  creditProduct: OrderBy
+}
+
+"""
+order by min() on columns of table "runtime.transaction_avarda_details"
+"""
+input AvardaDetailsMinOrderBy {
+  """
+  Authorization id returned by Avarda
+  """
+  authorizationId: OrderBy
+
+  """
+  Latest authorization status reported by Avarda
+  """
+  authorizationStatus: OrderBy
+
+  """
+  Avarda credit product type (direct-invoice, loan, part-payment, invoice)
+  """
+  creditProduct: OrderBy
+}
+
+"""
+Ordering options when selecting data from "runtime.transaction_avarda_details".
+"""
+input AvardaDetailsOrderBy {
+  authorizationId: OrderBy
+
+  authorizationStatus: OrderBy
+
+  creditProduct: OrderBy
+}
+
+"""
+select columns of table "runtime.transaction_avarda_details"
+"""
+enum AvardaDetailsSelectColumn {
+  """
+  column name
+  """
+  authorizationId
+
+  """
+  column name
+  """
+  authorizationStatus
+
+  """
+  column name
+  """
+  creditProduct
 }
 
 """
@@ -552,6 +855,381 @@ input BankIdAuthStreamCursorValueInput {
   scaSessionId: uuid
 
   status: BankidAuthStatusEnum
+}
+
+"""
+A Trustly payout (SelectAccount followed by AccountPayout)
+"""
+type BankPayout {
+  accountLastDigits: String
+
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: bigint!
+
+  bank: String
+
+  createdAt: timestamptz!
+
+  currency: String!
+
+  errorMessage: String
+
+  id: bigint!
+
+  materializedStatus: String!
+
+  merchantReference: String
+
+  """
+  When the customer's bank account selection link stops being honoured. If no account has been selected by then the payout expires and the refund fails.
+  """
+  payoutLinkExpiresAt: timestamptz
+
+  """
+  The Trustly-hosted page where the customer picks their bank account.
+  """
+  selectAccountUrl: String
+
+  """
+  Our unique MessageID for the SelectAccount call, echoed back in the `account` notification.
+  """
+  waitToken: uuid!
+}
+
+"""
+order by aggregate values of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutAggregateOrderBy {
+  avg: BankPayoutAvgOrderBy
+
+  count: OrderBy
+
+  max: BankPayoutMaxOrderBy
+
+  min: BankPayoutMinOrderBy
+
+  stddev: BankPayoutStddevOrderBy
+
+  stddevPop: BankPayoutStddevPopOrderBy
+
+  stddevSamp: BankPayoutStddevSampOrderBy
+
+  sum: BankPayoutSumOrderBy
+
+  varPop: BankPayoutVarPopOrderBy
+
+  varSamp: BankPayoutVarSampOrderBy
+
+  variance: BankPayoutVarianceOrderBy
+}
+
+"""
+order by avg() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutAvgOrderBy {
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  id: OrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "payment_gateway.trustly_payout". All fields are combined with a logical 'AND'.
+"""
+input BankPayoutBoolExp {
+  _and: [BankPayoutBoolExp!]
+
+  _not: BankPayoutBoolExp
+
+  _or: [BankPayoutBoolExp!]
+
+  accountLastDigits: StringComparisonExp
+
+  amount: BigintComparisonExp
+
+  bank: StringComparisonExp
+
+  createdAt: TimestamptzComparisonExp
+
+  currency: StringComparisonExp
+
+  errorMessage: StringComparisonExp
+
+  id: BigintComparisonExp
+
+  materializedStatus: StringComparisonExp
+
+  merchantReference: StringComparisonExp
+
+  payoutLinkExpiresAt: TimestamptzComparisonExp
+
+  selectAccountUrl: StringComparisonExp
+
+  waitToken: UuidComparisonExp
+}
+
+"""
+order by max() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutMaxOrderBy {
+  accountLastDigits: OrderBy
+
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  bank: OrderBy
+
+  createdAt: OrderBy
+
+  currency: OrderBy
+
+  errorMessage: OrderBy
+
+  id: OrderBy
+
+  materializedStatus: OrderBy
+
+  merchantReference: OrderBy
+
+  """
+  When the customer's bank account selection link stops being honoured. If no account has been selected by then the payout expires and the refund fails.
+  """
+  payoutLinkExpiresAt: OrderBy
+
+  """
+  The Trustly-hosted page where the customer picks their bank account.
+  """
+  selectAccountUrl: OrderBy
+
+  """
+  Our unique MessageID for the SelectAccount call, echoed back in the `account` notification.
+  """
+  waitToken: OrderBy
+}
+
+"""
+order by min() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutMinOrderBy {
+  accountLastDigits: OrderBy
+
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  bank: OrderBy
+
+  createdAt: OrderBy
+
+  currency: OrderBy
+
+  errorMessage: OrderBy
+
+  id: OrderBy
+
+  materializedStatus: OrderBy
+
+  merchantReference: OrderBy
+
+  """
+  When the customer's bank account selection link stops being honoured. If no account has been selected by then the payout expires and the refund fails.
+  """
+  payoutLinkExpiresAt: OrderBy
+
+  """
+  The Trustly-hosted page where the customer picks their bank account.
+  """
+  selectAccountUrl: OrderBy
+
+  """
+  Our unique MessageID for the SelectAccount call, echoed back in the `account` notification.
+  """
+  waitToken: OrderBy
+}
+
+"""
+Ordering options when selecting data from "payment_gateway.trustly_payout".
+"""
+input BankPayoutOrderBy {
+  accountLastDigits: OrderBy
+
+  amount: OrderBy
+
+  bank: OrderBy
+
+  createdAt: OrderBy
+
+  currency: OrderBy
+
+  errorMessage: OrderBy
+
+  id: OrderBy
+
+  materializedStatus: OrderBy
+
+  merchantReference: OrderBy
+
+  payoutLinkExpiresAt: OrderBy
+
+  selectAccountUrl: OrderBy
+
+  waitToken: OrderBy
+}
+
+"""
+select columns of table "payment_gateway.trustly_payout"
+"""
+enum BankPayoutSelectColumn {
+  """
+  column name
+  """
+  accountLastDigits
+
+  """
+  column name
+  """
+  amount
+
+  """
+  column name
+  """
+  bank
+
+  """
+  column name
+  """
+  createdAt
+
+  """
+  column name
+  """
+  currency
+
+  """
+  column name
+  """
+  errorMessage
+
+  """
+  column name
+  """
+  id
+
+  """
+  column name
+  """
+  materializedStatus
+
+  """
+  column name
+  """
+  merchantReference
+
+  """
+  column name
+  """
+  payoutLinkExpiresAt
+
+  """
+  column name
+  """
+  selectAccountUrl
+
+  """
+  column name
+  """
+  waitToken
+}
+
+"""
+order by stddev() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutStddevOrderBy {
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  id: OrderBy
+}
+
+"""
+order by stddevPop() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutStddevPopOrderBy {
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  id: OrderBy
+}
+
+"""
+order by stddevSamp() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutStddevSampOrderBy {
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  id: OrderBy
+}
+
+"""
+order by sum() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutSumOrderBy {
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  id: OrderBy
+}
+
+"""
+order by varPop() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutVarPopOrderBy {
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  id: OrderBy
+}
+
+"""
+order by varSamp() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutVarSampOrderBy {
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  id: OrderBy
+}
+
+"""
+order by variance() on columns of table "payment_gateway.trustly_payout"
+"""
+input BankPayoutVarianceOrderBy {
+  """
+  Amount in minor units. Converted to major units when talking to Trustly.
+  """
+  amount: OrderBy
+
+  id: OrderBy
 }
 
 """
@@ -1088,11 +1766,6 @@ Arguments to for a blockToken mutation
 """
 input BlockTokenInput {
   """
-  The merchant requesting for the reports.
-  """
-  merchantId: bigint!
-
-  """
   The id of the token to block, can be found inside the token as "tid".
   Must be a valid UUID string.
   """
@@ -1132,6 +1805,45 @@ input BooleanComparisonExp {
   _neq: Boolean
 
   _nin: [Boolean!]
+}
+
+"""
+Arguments for cancelling a bank payout that is still waiting for the
+customer to select an account.
+"""
+input CancelBankPayoutInput {
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """
+  Identifier of the payout to cancel, as exposed by the bankPayouts
+  query and the refund's bankPayout field.
+  """
+  payoutId: bigint!
+}
+
+"""
+The result of cancelling a bank payout.
+"""
+type CancelBankPayoutResult {
+  """
+  The cancelled payout.
+  """
+  payoutId: bigint!
 }
 
 """
@@ -4271,10 +4983,24 @@ type CustomerCard {
   """
   customerReference: String!
 
+  expiryMonth: Int!
+
+  expiryYear: Int!
+
   """
   Id of a particular card
   """
   id: uuid!
+
+  """
+  Customer has selected this card as their default card. Only one default card per customer even if that card has expired
+  """
+  isDefault: Boolean!
+
+  """
+  The last time this card was used to successfully authorize a payment
+  """
+  lastUsedAt: timestamptz!
 
   """
   The masked card number of the card that was saved.
@@ -4285,6 +5011,11 @@ type CustomerCard {
   The id of the merchant to whom this customer and card belongs to
   """
   merchantId: bigint!
+
+  """
+  An optional nickname the customer wants to remember the card by
+  """
+  nickname: String
 }
 
 """
@@ -4327,6 +5058,10 @@ type CustomerCardAggregateFields {
 aggregate avg on columns
 """
 type CustomerCardAvgFields {
+  expiryMonth: Float
+
+  expiryYear: Float
+
   """
   The id of the merchant to whom this customer and card belongs to
   """
@@ -4349,11 +5084,21 @@ input CustomerCardBoolExp {
 
   customerReference: StringComparisonExp
 
+  expiryMonth: IntComparisonExp
+
+  expiryYear: IntComparisonExp
+
   id: UuidComparisonExp
+
+  isDefault: BooleanComparisonExp
+
+  lastUsedAt: TimestamptzComparisonExp
 
   maskedCard: StringComparisonExp
 
   merchantId: BigintComparisonExp
+
+  nickname: StringComparisonExp
 }
 
 """
@@ -4367,10 +5112,19 @@ type CustomerCardMaxFields {
   """
   customerReference: String
 
+  expiryMonth: Int
+
+  expiryYear: Int
+
   """
   Id of a particular card
   """
   id: uuid
+
+  """
+  The last time this card was used to successfully authorize a payment
+  """
+  lastUsedAt: timestamptz
 
   """
   The masked card number of the card that was saved.
@@ -4381,6 +5135,11 @@ type CustomerCardMaxFields {
   The id of the merchant to whom this customer and card belongs to
   """
   merchantId: bigint
+
+  """
+  An optional nickname the customer wants to remember the card by
+  """
+  nickname: String
 }
 
 """
@@ -4394,10 +5153,19 @@ type CustomerCardMinFields {
   """
   customerReference: String
 
+  expiryMonth: Int
+
+  expiryYear: Int
+
   """
   Id of a particular card
   """
   id: uuid
+
+  """
+  The last time this card was used to successfully authorize a payment
+  """
+  lastUsedAt: timestamptz
 
   """
   The masked card number of the card that was saved.
@@ -4408,6 +5176,11 @@ type CustomerCardMinFields {
   The id of the merchant to whom this customer and card belongs to
   """
   merchantId: bigint
+
+  """
+  An optional nickname the customer wants to remember the card by
+  """
+  nickname: String
 }
 
 """
@@ -4420,11 +5193,21 @@ input CustomerCardOrderBy {
 
   customerReference: OrderBy
 
+  expiryMonth: OrderBy
+
+  expiryYear: OrderBy
+
   id: OrderBy
+
+  isDefault: OrderBy
+
+  lastUsedAt: OrderBy
 
   maskedCard: OrderBy
 
   merchantId: OrderBy
+
+  nickname: OrderBy
 }
 
 """
@@ -4449,7 +5232,27 @@ enum CustomerCardSelectColumn {
   """
   column name
   """
+  expiryMonth
+
+  """
+  column name
+  """
+  expiryYear
+
+  """
+  column name
+  """
   id
+
+  """
+  column name
+  """
+  isDefault
+
+  """
+  column name
+  """
+  lastUsedAt
 
   """
   column name
@@ -4460,12 +5263,21 @@ enum CustomerCardSelectColumn {
   column name
   """
   merchantId
+
+  """
+  column name
+  """
+  nickname
 }
 
 """
 aggregate stddev on columns
 """
 type CustomerCardStddevFields {
+  expiryMonth: Float
+
+  expiryYear: Float
+
   """
   The id of the merchant to whom this customer and card belongs to
   """
@@ -4476,6 +5288,10 @@ type CustomerCardStddevFields {
 aggregate stddevPop on columns
 """
 type CustomerCardStddevPopFields {
+  expiryMonth: Float
+
+  expiryYear: Float
+
   """
   The id of the merchant to whom this customer and card belongs to
   """
@@ -4486,6 +5302,10 @@ type CustomerCardStddevPopFields {
 aggregate stddevSamp on columns
 """
 type CustomerCardStddevSampFields {
+  expiryMonth: Float
+
+  expiryYear: Float
+
   """
   The id of the merchant to whom this customer and card belongs to
   """
@@ -4496,6 +5316,10 @@ type CustomerCardStddevSampFields {
 aggregate sum on columns
 """
 type CustomerCardSumFields {
+  expiryMonth: Int
+
+  expiryYear: Int
+
   """
   The id of the merchant to whom this customer and card belongs to
   """
@@ -4506,6 +5330,10 @@ type CustomerCardSumFields {
 aggregate varPop on columns
 """
 type CustomerCardVarPopFields {
+  expiryMonth: Float
+
+  expiryYear: Float
+
   """
   The id of the merchant to whom this customer and card belongs to
   """
@@ -4516,6 +5344,10 @@ type CustomerCardVarPopFields {
 aggregate varSamp on columns
 """
 type CustomerCardVarSampFields {
+  expiryMonth: Float
+
+  expiryYear: Float
+
   """
   The id of the merchant to whom this customer and card belongs to
   """
@@ -4526,6 +5358,10 @@ type CustomerCardVarSampFields {
 aggregate variance on columns
 """
 type CustomerCardVarianceFields {
+  expiryMonth: Float
+
+  expiryYear: Float
+
   """
   The id of the merchant to whom this customer and card belongs to
   """
@@ -4721,6 +5557,11 @@ type CustomerPaymentData {
   paymentRequests("distinct select on columns" distinctOn: [PaymentRequestSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [PaymentRequestOrderBy!], "filter the rows returned" where: PaymentRequestBoolExp): [PaymentRequest!]!
 
   reference: String!
+
+  """
+  An object relationship
+  """
+  shippingAddressDetail: CustomerShippingAddress
 }
 
 """
@@ -4748,6 +5589,8 @@ input CustomerPaymentDataBoolExp {
   paymentRequests: PaymentRequestBoolExp
 
   reference: StringComparisonExp
+
+  shippingAddressDetail: CustomerShippingAddressBoolExp
 }
 
 """
@@ -4769,6 +5612,8 @@ input CustomerPaymentDataOrderBy {
   paymentRequestsAggregate: PaymentRequestAggregateOrderBy
 
   reference: OrderBy
+
+  shippingAddressDetail: CustomerShippingAddressOrderBy
 }
 
 """
@@ -5055,6 +5900,218 @@ enum CustomerSelectColumn {
   column name
   """
   locale
+}
+
+"""
+Arguments for creating a new customer session.
+"""
+input CustomerSessionInput {
+  """
+  The country where any save card requests will take place.
+  Defaults to the merchant's default country.
+  Example: `SE`, `DK`, `NO`, `IS`, `FI`
+  """
+  country: Country
+
+  """
+  When `currency` is not set, it defaults to the merchant's default currency.
+
+  When customer requests to save card, the zero amount auth takes place in this currency
+  """
+  currency: SupportedCurrencyEnum
+
+  """
+  Unique reference for your customer, this should be the same reference that is sent in PaymentSessionAdditionalData.customerReference.
+
+  Max length: 64.
+  """
+  customerReference: String!
+
+  """
+  Session expiry timestamp in ISO8601 format.
+  E.g. '1970-01-01T00:00:00Z'
+  Max is 24 hrs from creation of session.
+  """
+  expiresAt: String!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """
+  Language the session should use.
+  Only languages in two-letter `ISO-639-1` format are recognized.
+  Example: `SV`, `DA`, `NO`, `IS`, `EN`.
+  """
+  language: Language!
+
+  """
+  Merchant's internal reference that may help the merchant in identifying this customer session.
+
+  Max length: 64.
+  """
+  merchantReference: String!
+
+  """
+  The preferred tokenization service to use to save customer cards in this session.
+  Only "KRONOR" is supported at the moment and as such defaults to it.
+  """
+  tokenProvider: TokenProviderEnum
+}
+
+"""
+The result of starting a new customer session.
+"""
+type CustomerSessionResult {
+  """
+  Once a customer session is initialized, you can pass this token to the saved cards sdk
+  """
+  token: String!
+}
+
+"""
+Addresses for a customer which may be their residence or a place they have shipped to.
+"""
+type CustomerShippingAddress {
+  """
+  Address of the customer.
+  """
+  addressLine1: String!
+
+  """
+  Line 2 of the address
+  """
+  addressLine2: String
+
+  """
+  Care of
+  """
+  careOf: String
+
+  city: String!
+
+  country: country!
+
+  createdAt: timestamptz!
+
+  email: citext!
+
+  firstName: String!
+
+  lastName: String!
+
+  phoneNumber: packed_phone_number!
+
+  postalCode: String!
+
+  """
+  State or region.
+  """
+  region: String
+
+  """
+  Street name of the address. Not to be combined with address_line.
+  """
+  streetName: String
+
+  """
+  Street number. Not to be combined with address_line.
+  """
+  streetNumber: String
+
+  """
+  Mr., Ms, Mrs., Miss. ...
+  """
+  title: String
+}
+
+"""
+Boolean expression to filter rows from the table "dna.customer_shipping_address". All fields are combined with a logical 'AND'.
+"""
+input CustomerShippingAddressBoolExp {
+  _and: [CustomerShippingAddressBoolExp!]
+
+  _not: CustomerShippingAddressBoolExp
+
+  _or: [CustomerShippingAddressBoolExp!]
+
+  addressLine1: StringComparisonExp
+
+  addressLine2: StringComparisonExp
+
+  careOf: StringComparisonExp
+
+  city: StringComparisonExp
+
+  country: CountryComparisonExp
+
+  createdAt: TimestamptzComparisonExp
+
+  email: CitextComparisonExp
+
+  firstName: StringComparisonExp
+
+  lastName: StringComparisonExp
+
+  phoneNumber: PackedPhoneNumberComparisonExp
+
+  postalCode: StringComparisonExp
+
+  region: StringComparisonExp
+
+  streetName: StringComparisonExp
+
+  streetNumber: StringComparisonExp
+
+  title: StringComparisonExp
+}
+
+"""
+Ordering options when selecting data from "dna.customer_shipping_address".
+"""
+input CustomerShippingAddressOrderBy {
+  addressLine1: OrderBy
+
+  addressLine2: OrderBy
+
+  careOf: OrderBy
+
+  city: OrderBy
+
+  country: OrderBy
+
+  createdAt: OrderBy
+
+  email: OrderBy
+
+  firstName: OrderBy
+
+  lastName: OrderBy
+
+  phoneNumber: OrderBy
+
+  postalCode: OrderBy
+
+  region: OrderBy
+
+  streetName: OrderBy
+
+  streetNumber: OrderBy
+
+  title: OrderBy
 }
 
 """
@@ -5926,6 +6983,131 @@ input EditUserSingleInput {
 }
 
 """
+A transaction processed outside Kronor, delivered so shopper insights can take externally processed purchases into account.
+"""
+input ExternalTransactionInput {
+  """
+  The transaction amount in minor units.
+  So 100,56 kr would be 10056.
+  """
+  amount: Int!
+
+  """
+  The payment provider's identifier for the card,
+  e.g. Adyen's additionalData.alias.
+
+  Max length: 100.
+  """
+  cardAlias: String
+
+  """
+  The card's Payment Account Reference (PAR) for card
+  transactions, e.g. Adyen's additionalData.paymentAccountReference.
+
+  Max length: 100.
+  """
+  cardPaymentAccountReference: String
+
+  """
+  The country (market) the order was placed in.
+  Example: `SE`, `DK`, `NO`, `FI`.
+
+  Required context for the national identification number:
+  nordic formats overlap, so the same digit string can identify
+  different people in different countries.
+  """
+  country: Country!
+
+  """
+  The currency of the transaction amount.
+  """
+  currency: SupportedCurrencyEnum!
+
+  """
+  Your own identifier for the customer,
+  e.g. the value you send as Adyen's shopperReference.
+
+  Max length: 100.
+  """
+  customerReference: String
+
+  """
+  The customer's date of birth as an ISO8601 date, e.g. '1990-05-24'.
+  """
+  dateOfBirth: String
+
+  """
+  The customer's email address.
+
+  At least one of email, phoneNumber, nationalIdentificationNumber,
+  cardPaymentAccountReference, cardAlias, and customerReference
+  must be provided.
+
+  Max length: 100.
+  """
+  email: String
+
+  """
+  The customer's national identification number
+  (personnummer / fodselsnummer / CPR / henkilotunnus),
+  as provided by the payment provider.
+  Interpreted together with `country`.
+
+  Max length: 100.
+  """
+  nationalIdentificationNumber: String
+
+  """
+  Your own reference for the order, e.g. an order id.
+  Deliveries are idempotent per (provider, orderReference):
+  sending the same transaction again is reported as a duplicate
+  and does not create a new record.
+
+  Max length: 100.
+  """
+  orderReference: String!
+
+  """
+  The customer's phone number, preferably in E.164 format
+  (e.g. '+46701234567').
+
+  Max length: 100.
+  """
+  phoneNumber: String
+
+  """
+  The external payment provider that processed the transaction.
+  """
+  provider: ExternalTransactionProvider!
+
+  """
+  When the transaction was processed at the provider,
+  as an ISO8601 timestamp. E.g. '2026-07-01T12:30:00Z'.
+  """
+  transactionAt: String!
+}
+
+"""
+Payment providers whose externally processed transactions merchants can deliver to Kronor.
+"""
+enum ExternalTransactionProvider {
+  """
+  The transaction was processed directly with Adyen.
+  """
+  ADYEN
+
+  """
+  The transaction was processed directly with Avarda.
+  """
+  AVARDA
+
+  """
+  The transaction was processed directly with Klarna.
+  """
+  KLARNA
+}
+
+"""
 Describes the schema for the finshark payment transaction details to be used by hasura
 """
 type FinsharkDetails {
@@ -6671,6 +7853,158 @@ type GetReepayCheckoutEventsResult {
   Token to wait on the reepayCheckoutEvents query
   """
   waitToken: String!
+}
+
+"""
+Details for a google pay transaction
+"""
+type GooglePayDetails {
+  acquirer: String
+
+  authorizationId: String
+
+  cardExpiryDate: date
+
+  cardNumber: String
+
+  cardType: String
+
+  googleAuthMethod: String
+
+  googleCardFundingSource: String
+}
+
+"""
+order by aggregate values of table "runtime.transaction_google_pay_details"
+"""
+input GooglePayDetailsAggregateOrderBy {
+  count: OrderBy
+
+  max: GooglePayDetailsMaxOrderBy
+
+  min: GooglePayDetailsMinOrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "runtime.transaction_google_pay_details". All fields are combined with a logical 'AND'.
+"""
+input GooglePayDetailsBoolExp {
+  _and: [GooglePayDetailsBoolExp!]
+
+  _not: GooglePayDetailsBoolExp
+
+  _or: [GooglePayDetailsBoolExp!]
+
+  acquirer: StringComparisonExp
+
+  authorizationId: StringComparisonExp
+
+  cardExpiryDate: DateComparisonExp
+
+  cardNumber: StringComparisonExp
+
+  cardType: StringComparisonExp
+
+  googleAuthMethod: StringComparisonExp
+
+  googleCardFundingSource: StringComparisonExp
+}
+
+"""
+order by max() on columns of table "runtime.transaction_google_pay_details"
+"""
+input GooglePayDetailsMaxOrderBy {
+  acquirer: OrderBy
+
+  authorizationId: OrderBy
+
+  cardExpiryDate: OrderBy
+
+  cardNumber: OrderBy
+
+  cardType: OrderBy
+
+  googleAuthMethod: OrderBy
+
+  googleCardFundingSource: OrderBy
+}
+
+"""
+order by min() on columns of table "runtime.transaction_google_pay_details"
+"""
+input GooglePayDetailsMinOrderBy {
+  acquirer: OrderBy
+
+  authorizationId: OrderBy
+
+  cardExpiryDate: OrderBy
+
+  cardNumber: OrderBy
+
+  cardType: OrderBy
+
+  googleAuthMethod: OrderBy
+
+  googleCardFundingSource: OrderBy
+}
+
+"""
+Ordering options when selecting data from "runtime.transaction_google_pay_details".
+"""
+input GooglePayDetailsOrderBy {
+  acquirer: OrderBy
+
+  authorizationId: OrderBy
+
+  cardExpiryDate: OrderBy
+
+  cardNumber: OrderBy
+
+  cardType: OrderBy
+
+  googleAuthMethod: OrderBy
+
+  googleCardFundingSource: OrderBy
+}
+
+"""
+select columns of table "runtime.transaction_google_pay_details"
+"""
+enum GooglePayDetailsSelectColumn {
+  """
+  column name
+  """
+  acquirer
+
+  """
+  column name
+  """
+  authorizationId
+
+  """
+  column name
+  """
+  cardExpiryDate
+
+  """
+  column name
+  """
+  cardNumber
+
+  """
+  column name
+  """
+  cardType
+
+  """
+  column name
+  """
+  googleAuthMethod
+
+  """
+  column name
+  """
+  googleCardFundingSource
 }
 
 """
@@ -9255,6 +10589,84 @@ type InvoiceVarianceFields {
 }
 
 """
+Request a CSR that can be uploaded in the apple developer portal to obtain a Merchant Identifier Certificate
+"""
+input IssueApplePayMerchantIdentifierCsrInput {
+  """
+  The configuration to use for this CSR, this should be the result of calling the mutation setupApplePayMerchantManaged.
+
+  Max length: 64.
+  """
+  applePayMerchantManagedConfigId: bigint!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+}
+
+"""
+The result of issuing a csr to obtain a merchant identifier certificate.
+"""
+type IssueApplePayMerchantIdentifierCsrResult {
+  """
+  This id can be used to subscribe on the applePayMerchantIdentifierCertificateConfigs query to obtain a link to download or view the CSR issued by Kronor, to upload the certificate and to revoke it.
+  """
+  applePayMerchantIdentifierCsrId: bigint!
+}
+
+"""
+Request a CSR that can be uploaded in the apple developer portal to obtain an ApplePay Processing Certificate
+"""
+input IssueApplePayPaymentProcessingCsrInput {
+  """
+  The configuration to use for this CSR, this should be the result of calling the mutation setupApplePayMerchantManaged.
+
+  Max length: 64.
+  """
+  applePayMerchantManagedConfigId: bigint!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+}
+
+"""
+The result of issuing a csr to obtain a apple pay processing certificate.
+"""
+type IssueApplePayPaymentProcessingCsrResult {
+  """
+  This id can be used to subscribe on the applePayPaymentProcessingCertificateConfig query to obtain a link to download or view the CSR issued by Kronor, to upload the certificate and to revoke it.
+  """
+  applePayPaymentProcessingCsrId: bigint!
+}
+
+"""
 A list of discounts to apply on items that has been captured and are in an invoice.
 """
 input ItemDiscountInput {
@@ -9481,6 +10893,8 @@ enum MerchantMetricEnum {
 
   REFUNDS
 
+  SUCCESSFUL_APPLE_PAY_PAYMENTS
+
   SUCCESSFUL_BANK_TRANSFER_PAYMENTS
 
   SUCCESSFUL_BUY_NOW_PAY_LATER_PAYMENTS
@@ -9490,6 +10904,8 @@ enum MerchantMetricEnum {
   SUCCESSFUL_DIRECT_DEBIT_PAYMENTS
 
   SUCCESSFUL_FX_FORWARD_TRADES
+
+  SUCCESSFUL_GOOGLE_PAY_PAYMENTS
 
   SUCCESSFUL_MOBILEPAY_PAYMENTS
 
@@ -11071,9 +12487,24 @@ type Payment {
   status("distinct select on columns" distinctOn: [CurrentPaymentStatusSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [CurrentPaymentStatusOrderBy!], "filter the rows returned" where: CurrentPaymentStatusBoolExp): [CurrentPaymentStatus!]
 
   """
+  A computed field, executes function "payment_gateway.get_transaction_apple_pay_details"
+  """
+  transactionApplePayDetails("distinct select on columns" distinctOn: [ApplePayDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [ApplePayDetailsOrderBy!], "filter the rows returned" where: ApplePayDetailsBoolExp): [ApplePayDetails!]
+
+  """
+  A computed field, executes function "payment_gateway.get_transaction_avarda_details"
+  """
+  transactionAvardaDetails("distinct select on columns" distinctOn: [AvardaDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [AvardaDetailsOrderBy!], "filter the rows returned" where: AvardaDetailsBoolExp): [AvardaDetails!]
+
+  """
   A computed field, executes function "payment_gateway.get_transaction_credit_card_details"
   """
   transactionCreditCardDetails("distinct select on columns" distinctOn: [CreditCardDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [CreditCardDetailsOrderBy!], "filter the rows returned" where: CreditCardDetailsBoolExp): [CreditCardDetails!]
+
+  """
+  A computed field, executes function "payment_gateway.get_transaction_google_pay_details"
+  """
+  transactionGooglePayDetails("distinct select on columns" distinctOn: [GooglePayDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [GooglePayDetailsOrderBy!], "filter the rows returned" where: GooglePayDetailsBoolExp): [GooglePayDetails!]
 
   """
   This id uniquely identifies the transaction in kronor among other types of transactions
@@ -11224,7 +12655,13 @@ input PaymentBoolExp {
 
   status: CurrentPaymentStatusBoolExp
 
+  transactionApplePayDetails: ApplePayDetailsBoolExp
+
+  transactionAvardaDetails: AvardaDetailsBoolExp
+
   transactionCreditCardDetails: CreditCardDetailsBoolExp
+
+  transactionGooglePayDetails: GooglePayDetailsBoolExp
 
   transactionId: StringComparisonExp
 
@@ -11852,6 +13289,14 @@ input PaymentCaptureAllInput {
   idempotencyKey: String!
 
   """
+  Items being captured. Mandatory for gateways that record the
+  capture line-by-line (e.g. Avarda BNPL) — the capture job fails
+  without them. Ignored on gateways that do not need itemised
+  captures.
+  """
+  items: [PurchaseOrderLineInput!]
+
+  """
   A message to be displayed on the portal associated with this capture.
   Message will appear in the customer's account statement.
 
@@ -12002,6 +13447,14 @@ input PaymentCaptureInput {
   Max length: 64.
   """
   idempotencyKey: String!
+
+  """
+  Items being captured. Mandatory for gateways that record the
+  capture line-by-line (e.g. Avarda BNPL) — the capture job fails
+  without them. Ignored on gateways that do not need itemised
+  captures.
+  """
+  items: [PurchaseOrderLineInput!]
 
   """
   A message to be displayed on the portal associated with this capture.
@@ -12773,6 +14226,11 @@ type PaymentMaxFields {
 
 enum PaymentMethodEnum {
   """
+  Pay with Apple pay
+  """
+  APPLE_PAY
+
+  """
   Pay directly with your bank account
   """
   BANK_TRANSFER
@@ -12801,6 +14259,11 @@ enum PaymentMethodEnum {
   Open Banking recurring debit via Finshark
   """
   FINSHARK_RECURRING_DEBIT
+
+  """
+  Pay with Google pay
+  """
+  GOOGLE_PAY
 
   """
   Pay with MobilePay Online
@@ -13060,7 +14523,13 @@ input PaymentOrderBy {
 
   statusAggregate: CurrentPaymentStatusAggregateOrderBy
 
+  transactionApplePayDetailsAggregate: ApplePayDetailsAggregateOrderBy
+
+  transactionAvardaDetailsAggregate: AvardaDetailsAggregateOrderBy
+
   transactionCreditCardDetailsAggregate: CreditCardDetailsAggregateOrderBy
+
+  transactionGooglePayDetailsAggregate: GooglePayDetailsAggregateOrderBy
 
   transactionId: OrderBy
 
@@ -13079,6 +14548,68 @@ input PaymentOrderBy {
   transactionTrustlyDetailsAggregate: TrustlyDetailsAggregateOrderBy
 
   transactionVippsDetailsAggregate: VippsDetailsAggregateOrderBy
+}
+
+"""
+Arguments for recording a payment redirect
+"""
+input PaymentRedirectInput {
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """
+  The payment request id whose flow should record a redirect.
+  """
+  paymentRequestId: String!
+
+  """
+  Whether the customer is being redirected to an app/deeplink or to a web page.
+  """
+  redirectTarget: PaymentRedirectTarget!
+
+  """
+  The URL the customer is being redirected to.
+  """
+  redirectUrl: String!
+}
+
+"""
+The result of recording a payment redirect.
+"""
+type PaymentRedirectResult {
+  """
+  This token can be used to fetch status of payment.
+  """
+  waitToken: String!
+}
+
+"""
+How the customer was redirected to continue the payment flow
+"""
+enum PaymentRedirectTarget {
+  """
+  The payer was redirected into an app or deeplink
+  """
+  APP
+
+  """
+  The payer was redirected to a web page
+  """
+  WEB
 }
 
 enum PaymentRefundStatusEnum {
@@ -13190,6 +14721,16 @@ type PaymentRequest {
   statusHistory("distinct select on columns" distinctOn: [CurrentPaymentStatusSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [CurrentPaymentStatusOrderBy!], "filter the rows returned" where: CurrentPaymentStatusBoolExp): [CurrentPaymentStatus!]
 
   """
+  A computed field, executes function "runtime.get_transaction_apple_pay_details"
+  """
+  transactionApplePayDetails("distinct select on columns" distinctOn: [ApplePayDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [ApplePayDetailsOrderBy!], "filter the rows returned" where: ApplePayDetailsBoolExp): [ApplePayDetails!]
+
+  """
+  A computed field, executes function "runtime.get_transaction_avarda_details"
+  """
+  transactionAvardaDetails("distinct select on columns" distinctOn: [AvardaDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [AvardaDetailsOrderBy!], "filter the rows returned" where: AvardaDetailsBoolExp): [AvardaDetails!]
+
+  """
   A computed field, executes function "runtime.get_transaction_bank_transfer_details"
   """
   transactionBankTransferDetails("distinct select on columns" distinctOn: [BankTransferDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [BankTransferDetailsOrderBy!], "filter the rows returned" where: BankTransferDetailsBoolExp): [BankTransferDetails!]
@@ -13203,6 +14744,11 @@ type PaymentRequest {
   A computed field, executes function "runtime.get_transaction_finshark_details"
   """
   transactionFinsharkDetails("distinct select on columns" distinctOn: [FinsharkDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [FinsharkDetailsOrderBy!], "filter the rows returned" where: FinsharkDetailsBoolExp): [FinsharkDetails!]
+
+  """
+  A computed field, executes function "runtime.get_transaction_google_pay_details"
+  """
+  transactionGooglePayDetails("distinct select on columns" distinctOn: [GooglePayDetailsSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [GooglePayDetailsOrderBy!], "filter the rows returned" where: GooglePayDetailsBoolExp): [GooglePayDetails!]
 
   """
   This id uniquely identifies the transaction in kronor among other types of transactions
@@ -13312,7 +14858,7 @@ type PaymentRequestAttempt {
   """
   The card type of the card used for the transaction: `unknown`, `visa`, `mc`, `dankort`, `visa_dk`, `ffk`, `visa_elec`, `maestro`, `laser`, `amex`, `diners`, `discover` or `jcb`
   """
-  cardType: String
+  cardType: CreditCardSchemeEnum
 
   """
   When the attempt was created
@@ -13458,7 +15004,7 @@ input PaymentRequestAttemptBoolExp {
 
   cardCountry: StringComparisonExp
 
-  cardType: StringComparisonExp
+  cardType: CreditCardSchemeEnumComparisonExp
 
   createdAt: TimestamptzComparisonExp
 
@@ -13528,11 +15074,6 @@ input PaymentRequestAttemptMaxOrderBy {
   The country of the card used for the transaction
   """
   cardCountry: OrderBy
-
-  """
-  The card type of the card used for the transaction: `unknown`, `visa`, `mc`, `dankort`, `visa_dk`, `ffk`, `visa_elec`, `maestro`, `laser`, `amex`, `diners`, `discover` or `jcb`
-  """
-  cardType: OrderBy
 
   """
   When the attempt was created
@@ -13647,11 +15188,6 @@ input PaymentRequestAttemptMinOrderBy {
   The country of the card used for the transaction
   """
   cardCountry: OrderBy
-
-  """
-  The card type of the card used for the transaction: `unknown`, `visa`, `mc`, `dankort`, `visa_dk`, `ffk`, `visa_elec`, `maestro`, `laser`, `amex`, `diners`, `discover` or `jcb`
-  """
-  cardType: OrderBy
 
   """
   When the attempt was created
@@ -13993,7 +15529,7 @@ input PaymentRequestAttemptStreamCursorValueInput {
   """
   The card type of the card used for the transaction: `unknown`, `visa`, `mc`, `dankort`, `visa_dk`, `ffk`, `visa_elec`, `maestro`, `laser`, `amex`, `diners`, `discover` or `jcb`
   """
-  cardType: String
+  cardType: CreditCardSchemeEnum
 
   """
   When the attempt was created
@@ -14180,11 +15716,17 @@ input PaymentRequestBoolExp {
 
   statusHistory: CurrentPaymentStatusBoolExp
 
+  transactionApplePayDetails: ApplePayDetailsBoolExp
+
+  transactionAvardaDetails: AvardaDetailsBoolExp
+
   transactionBankTransferDetails: BankTransferDetailsBoolExp
 
   transactionCreditCardDetails: CreditCardDetailsBoolExp
 
   transactionFinsharkDetails: FinsharkDetailsBoolExp
+
+  transactionGooglePayDetails: GooglePayDetailsBoolExp
 
   transactionId: StringComparisonExp
 
@@ -14487,6 +16029,11 @@ Payment method
 """
 enum PaymentRequestMethod {
   """
+  Pay with Apple pay
+  """
+  APPLE_PAY
+
+  """
   Pay directly with your bank account
   """
   BANK_TRANSFER
@@ -14515,6 +16062,11 @@ enum PaymentRequestMethod {
   Open Banking recurring debit via Finshark
   """
   FINSHARK_RECURRING_DEBIT
+
+  """
+  Pay with Google pay
+  """
+  GOOGLE_PAY
 
   """
   Pay with MobilePay Online
@@ -14624,11 +16176,17 @@ input PaymentRequestOrderBy {
 
   statusHistoryAggregate: CurrentPaymentStatusAggregateOrderBy
 
+  transactionApplePayDetailsAggregate: ApplePayDetailsAggregateOrderBy
+
+  transactionAvardaDetailsAggregate: AvardaDetailsAggregateOrderBy
+
   transactionBankTransferDetailsAggregate: BankTransferDetailsAggregateOrderBy
 
   transactionCreditCardDetailsAggregate: CreditCardDetailsAggregateOrderBy
 
   transactionFinsharkDetailsAggregate: FinsharkDetailsAggregateOrderBy
+
+  transactionGooglePayDetailsAggregate: GooglePayDetailsAggregateOrderBy
 
   transactionId: OrderBy
 
@@ -14792,6 +16350,16 @@ enum PaymentRequestStatus {
   Payment is undergoing check.
   """
   PRE_FLIGHT_CHECK
+
+  """
+  Payment flow has redirected the payer to an app or deeplink.
+  """
+  PROCESSING_REDIRECTED_APP
+
+  """
+  Payment flow has redirected the payer to a website.
+  """
+  PROCESSING_REDIRECTED_WEB
 
   """
   Payment reservation is released. (Only applicable for payments that support reservation)
@@ -15317,6 +16885,16 @@ enum PaymentStatusEnum {
   Payment is undergoing check.
   """
   PRE_FLIGHT_CHECK
+
+  """
+  Payment flow has redirected the payer to an app or deeplink.
+  """
+  PROCESSING_REDIRECTED_APP
+
+  """
+  Payment flow has redirected the payer to a website.
+  """
+  PROCESSING_REDIRECTED_WEB
 
   """
   Payment reservation is released. (Only applicable for payments that support reservation)
@@ -20825,6 +22403,11 @@ type Refund {
   """
   arn: String
 
+  """
+  The bank payout executing this refund, when the refund was created with refundMethod BANK_PAYOUT. Carries the account selection URL and the payout's progress.
+  """
+  bankPayout("distinct select on columns" distinctOn: [BankPayoutSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [BankPayoutOrderBy!], "filter the rows returned" where: BankPayoutBoolExp): [BankPayout!]
+
   bookingDate: date
 
   createdAt: timestamptz!
@@ -20847,6 +22430,8 @@ type Refund {
   message: String!
 
   paymentId: bigint!
+
+  refundMethod: RefundMethodEnum
 
   settlementDescriptor: String
 
@@ -21001,6 +22586,8 @@ input RefundBoolExp {
 
   arn: StringComparisonExp
 
+  bankPayout: BankPayoutBoolExp
+
   bookingDate: DateComparisonExp
 
   createdAt: TimestamptzComparisonExp
@@ -21020,6 +22607,8 @@ input RefundBoolExp {
   message: StringComparisonExp
 
   paymentId: BigintComparisonExp
+
+  refundMethod: RefundMethodEnumComparisonExp
 
   settlementDescriptor: StringComparisonExp
 
@@ -21124,6 +22713,29 @@ input RefundMaxOrderBy {
   waitToken: OrderBy
 }
 
+enum RefundMethodEnum {
+  """
+  Pay the refund out to a bank account the customer selects on a
+  secure hosted page.
+  """
+  BANK_PAYOUT
+}
+
+"""
+Boolean expression to compare columns of type "RefundMethodEnum". All fields are combined with logical 'AND'.
+"""
+input RefundMethodEnumComparisonExp {
+  _eq: RefundMethodEnum
+
+  _in: [RefundMethodEnum!]
+
+  _isNull: Boolean
+
+  _neq: RefundMethodEnum
+
+  _nin: [RefundMethodEnum!]
+}
+
 """
 aggregate min on columns
 """
@@ -21216,6 +22828,8 @@ Ordering options when selecting data from "payment_gateway.refund".
 input RefundOrderBy {
   arn: OrderBy
 
+  bankPayoutAggregate: BankPayoutAggregateOrderBy
+
   bookingDate: OrderBy
 
   createdAt: OrderBy
@@ -21235,6 +22849,8 @@ input RefundOrderBy {
   message: OrderBy
 
   paymentId: OrderBy
+
+  refundMethod: OrderBy
 
   settlementDescriptor: OrderBy
 
@@ -21300,6 +22916,14 @@ input RefundPaymentInput {
   idempotencyKey: String!
 
   """
+  Items being returned. Mandatory for gateways that record the
+  return line-by-line (e.g. Avarda BNPL) — the refund job fails
+  without them. Ignored on gateways that do not need itemised
+  refunds.
+  """
+  items: [PurchaseOrderLineInput!]
+
+  """
   Optional, merchantReference has to be unique across all (non failed) refunds. An error will be returned if there's a collision.
 
   Max length: 100.
@@ -21334,6 +22958,26 @@ input RefundPaymentInput {
   Transaction ID of the payment to refund.
   """
   paymentTransactionId: String
+
+  """
+  How to execute the refund. When omitted the refund goes back via the
+  original payment method. BANK_PAYOUT pays out to a bank account the
+  customer selects on a secure hosted page; the URL becomes available on
+  the refund once ready. Mutually exclusive with bankAccountInfo.
+  """
+  refundMethod: RefundPaymentMethod
+}
+
+"""
+How a refund is executed. When omitted the refund goes back via the
+original payment method.
+"""
+enum RefundPaymentMethod {
+  """
+  Pay the refund out to a bank account the customer selects on a
+  secure hosted page.
+  """
+  BANK_PAYOUT
 }
 
 """
@@ -21408,6 +23052,11 @@ enum RefundSelectColumn {
   """
   column name
   """
+  refundMethod
+
+  """
+  column name
+  """
   settlementDescriptor
 
   """
@@ -21437,11 +23086,15 @@ enum RefundSelectColumn {
 }
 
 enum RefundStatusEnum {
+  AWAITING_ACCOUNT_SELECTION
+
   ERROR
 
   INITIALIZING
 
   PAID
+
+  REFUND_AMBIGUOUS
 
   WAITING_FOR_REFUND
 }
@@ -23138,6 +24791,46 @@ input ReturnVarianceOrderBy {
 }
 
 """
+Arguments for saving a credit card
+"""
+input SaveCardInput {
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """
+  Kronor's internal reference that can be used in uniquely identifying
+  the session this payment belongs to. There can be multiple successful
+  attempts in a single session.
+  """
+  sessionId: String!
+}
+
+"""
+The result of initiating a saveCard request.
+"""
+type SaveCardResult {
+  """
+  Once a save card attempt is initialized, we will start the 3ds and auth
+  flow.
+  """
+  authToken: String
+}
+
+"""
 Sets clearhaus api key and related account information to use them as acquirer for credit card payments.
 """
 input SetClearhausAcquirerInfoInput {
@@ -23351,6 +25044,102 @@ enum SettlementReportLinkSelectColumn {
 }
 
 """
+Configure apple pay with a merchant managed apple pay developer account
+"""
+input SetupApplePayMerchantManagedInput {
+  """
+  The X.520 attribute CN (Common Name) that will be set in the csr
+
+  Max length: 100.
+  """
+  commonName: String!
+
+  """
+  The X.520 attribute C (Country) that will be set in the csr
+
+  Max length: 100.
+  """
+  countryName: String!
+
+  """
+  The X.520 attribute E (Email Address) that will be set in the csr
+
+  Max length: 100.
+  """
+  emailAddress: String!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """
+  The X.520 attribute L (Locality Name) that will be set in the csr
+
+  Max length: 100.
+  """
+  localityName: String!
+
+  """
+  Merchant's domain that is registerd and verified by Apple. The frontend requests to Apple Pay can only come from this domain.
+  """
+  merchantDomain: String!
+
+  """
+  Apple Pay merchant identifier, the merchant can obtain it from their Apple developer account. It's usually a reverse domain like merchant.XXXX.XXX.com
+  """
+  merchantIdentifier: String!
+
+  """
+  The X.520 attribute O (Organization Name) that will be set in the csr
+
+  Max length: 100.
+  """
+  organizationName: String!
+
+  """
+  The X.520 attribute OU (Organizational Unit Name) that will be set in the csr
+
+  Max length: 100.
+  """
+  organizationalUnitName: String!
+
+  """
+  The list of schemes to enable with apple pay
+  """
+  schemes: [CreditCardSchemeEnum!]!
+
+  """
+  The X.520 attribute ST (State or Province Name) that will be set in the csr
+
+  Max length: 100.
+  """
+  stateOrProvinceName: String!
+}
+
+"""
+The result of setting up an apple pay config
+"""
+type SetupApplePayMerchantManagedResult {
+  """
+  Once an apple pay setup has been configured, you can use this id to request new csr to later upload certificates
+  """
+  applePayMerchantIdentifierId: bigint!
+}
+
+"""
 Shift4 Acquirer related settings
 """
 type Shift4AcquirerSetting {
@@ -23491,6 +25280,8 @@ type ShopperCluster {
 
   createdAt: timestamptz!
 
+  description: String
+
   """
   Emails belonging to any sub-cluster that resolves to this cluster via union-find.
   """
@@ -23499,9 +25290,11 @@ type ShopperCluster {
   id: bigint!
 
   """
-  An array relationship
+  Members (payments) belonging to any sub-cluster that resolves to this cluster via union-find.
   """
-  members("distinct select on columns" distinctOn: [ShopperClusterMemberResolvedSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [ShopperClusterMemberResolvedOrderBy!], "filter the rows returned" where: ShopperClusterMemberResolvedBoolExp): [ShopperClusterMemberResolved!]!
+  members("distinct select on columns" distinctOn: [ShopperClusterMemberSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [ShopperClusterMemberOrderBy!], "filter the rows returned" where: ShopperClusterMemberBoolExp): [ShopperClusterMember!]
+
+  notes: String
 
   parent: bigint
 
@@ -23938,11 +25731,15 @@ input ShopperClusterBoolExp {
 
   createdAt: TimestamptzComparisonExp
 
+  description: StringComparisonExp
+
   emails: ShopperClusterEmailBoolExp
 
   id: BigintComparisonExp
 
-  members: ShopperClusterMemberResolvedBoolExp
+  members: ShopperClusterMemberBoolExp
+
+  notes: StringComparisonExp
 
   parent: BigintComparisonExp
 
@@ -23967,9 +25764,6 @@ type ShopperClusterCardFingerprint {
 
   lastSeenAt: timestamptz!
 
-  """
-  Masked PAN pulled from the first matching payment_request_attempt.
-  """
   maskedPan: String
 
   """
@@ -24046,6 +25840,8 @@ input ShopperClusterCardFingerprintMaxOrderBy {
   firstSeenAt: OrderBy
 
   lastSeenAt: OrderBy
+
+  maskedPan: OrderBy
 }
 
 """
@@ -24059,6 +25855,8 @@ input ShopperClusterCardFingerprintMinOrderBy {
   firstSeenAt: OrderBy
 
   lastSeenAt: OrderBy
+
+  maskedPan: OrderBy
 }
 
 """
@@ -24274,6 +26072,11 @@ enum ShopperClusterCardFingerprintSelectColumn {
   column name
   """
   lastSeenAt
+
+  """
+  column name
+  """
+  maskedPan
 }
 
 """
@@ -24710,6 +26513,42 @@ type ShopperClusterMember {
 }
 
 """
+order by aggregate values of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberAggregateOrderBy {
+  avg: ShopperClusterMemberAvgOrderBy
+
+  count: OrderBy
+
+  max: ShopperClusterMemberMaxOrderBy
+
+  min: ShopperClusterMemberMinOrderBy
+
+  stddev: ShopperClusterMemberStddevOrderBy
+
+  stddevPop: ShopperClusterMemberStddevPopOrderBy
+
+  stddevSamp: ShopperClusterMemberStddevSampOrderBy
+
+  sum: ShopperClusterMemberSumOrderBy
+
+  varPop: ShopperClusterMemberVarPopOrderBy
+
+  varSamp: ShopperClusterMemberVarSampOrderBy
+
+  variance: ShopperClusterMemberVarianceOrderBy
+}
+
+"""
+order by avg() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberAvgOrderBy {
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+}
+
+"""
 Boolean expression to filter rows from the table "dna.shopper_cluster_member". All fields are combined with a logical 'AND'.
 """
 input ShopperClusterMemberBoolExp {
@@ -24733,6 +26572,32 @@ input ShopperClusterMemberBoolExp {
 }
 
 """
+order by max() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberMaxOrderBy {
+  addedAt: OrderBy
+
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+
+  paymentId: OrderBy
+}
+
+"""
+order by min() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberMinOrderBy {
+  addedAt: OrderBy
+
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+
+  paymentId: OrderBy
+}
+
+"""
 Ordering options when selecting data from "dna.shopper_cluster_member".
 """
 input ShopperClusterMemberOrderBy {
@@ -24747,219 +26612,6 @@ input ShopperClusterMemberOrderBy {
   payment: PaymentRequestOrderBy
 
   paymentId: OrderBy
-}
-
-"""
-Resolved view of shopper cluster members with cluster_id pointing to the union-find root
-"""
-type ShopperClusterMemberResolved {
-  addedAt: timestamptz
-
-  """
-  An object relationship
-  """
-  cluster: ShopperCluster
-
-  clusterId: bigint
-
-  organizationId: bigint
-
-  """
-  An object relationship
-  """
-  payment: PaymentRequest
-
-  paymentId: uuid
-}
-
-"""
-order by aggregate values of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedAggregateOrderBy {
-  avg: ShopperClusterMemberResolvedAvgOrderBy
-
-  count: OrderBy
-
-  max: ShopperClusterMemberResolvedMaxOrderBy
-
-  min: ShopperClusterMemberResolvedMinOrderBy
-
-  stddev: ShopperClusterMemberResolvedStddevOrderBy
-
-  stddevPop: ShopperClusterMemberResolvedStddevPopOrderBy
-
-  stddevSamp: ShopperClusterMemberResolvedStddevSampOrderBy
-
-  sum: ShopperClusterMemberResolvedSumOrderBy
-
-  varPop: ShopperClusterMemberResolvedVarPopOrderBy
-
-  varSamp: ShopperClusterMemberResolvedVarSampOrderBy
-
-  variance: ShopperClusterMemberResolvedVarianceOrderBy
-}
-
-"""
-order by avg() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedAvgOrderBy {
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-}
-
-"""
-Boolean expression to filter rows from the table "dna.shopper_cluster_member_resolved". All fields are combined with a logical 'AND'.
-"""
-input ShopperClusterMemberResolvedBoolExp {
-  _and: [ShopperClusterMemberResolvedBoolExp!]
-
-  _not: ShopperClusterMemberResolvedBoolExp
-
-  _or: [ShopperClusterMemberResolvedBoolExp!]
-
-  addedAt: TimestamptzComparisonExp
-
-  cluster: ShopperClusterBoolExp
-
-  clusterId: BigintComparisonExp
-
-  organizationId: BigintComparisonExp
-
-  payment: PaymentRequestBoolExp
-
-  paymentId: UuidComparisonExp
-}
-
-"""
-order by max() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedMaxOrderBy {
-  addedAt: OrderBy
-
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-
-  paymentId: OrderBy
-}
-
-"""
-order by min() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedMinOrderBy {
-  addedAt: OrderBy
-
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-
-  paymentId: OrderBy
-}
-
-"""
-Ordering options when selecting data from "dna.shopper_cluster_member_resolved".
-"""
-input ShopperClusterMemberResolvedOrderBy {
-  addedAt: OrderBy
-
-  cluster: ShopperClusterOrderBy
-
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-
-  payment: PaymentRequestOrderBy
-
-  paymentId: OrderBy
-}
-
-"""
-select columns of table "dna.shopper_cluster_member_resolved"
-"""
-enum ShopperClusterMemberResolvedSelectColumn {
-  """
-  column name
-  """
-  addedAt
-
-  """
-  column name
-  """
-  clusterId
-
-  """
-  column name
-  """
-  organizationId
-
-  """
-  column name
-  """
-  paymentId
-}
-
-"""
-order by stddev() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedStddevOrderBy {
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-}
-
-"""
-order by stddevPop() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedStddevPopOrderBy {
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-}
-
-"""
-order by stddevSamp() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedStddevSampOrderBy {
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-}
-
-"""
-order by sum() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedSumOrderBy {
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-}
-
-"""
-order by varPop() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedVarPopOrderBy {
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-}
-
-"""
-order by varSamp() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedVarSampOrderBy {
-  clusterId: OrderBy
-
-  organizationId: OrderBy
-}
-
-"""
-order by variance() on columns of table "dna.shopper_cluster_member_resolved"
-"""
-input ShopperClusterMemberResolvedVarianceOrderBy {
-  clusterId: OrderBy
-
-  organizationId: OrderBy
 }
 
 """
@@ -24985,6 +26637,33 @@ enum ShopperClusterMemberSelectColumn {
   column name
   """
   paymentId
+}
+
+"""
+order by stddev() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberStddevOrderBy {
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+}
+
+"""
+order by stddevPop() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberStddevPopOrderBy {
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+}
+
+"""
+order by stddevSamp() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberStddevSampOrderBy {
+  clusterId: OrderBy
+
+  organizationId: OrderBy
 }
 
 """
@@ -25016,6 +26695,42 @@ input ShopperClusterMemberStreamCursorValueInput {
 }
 
 """
+order by sum() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberSumOrderBy {
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+}
+
+"""
+order by varPop() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberVarPopOrderBy {
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+}
+
+"""
+order by varSamp() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberVarSampOrderBy {
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+}
+
+"""
+order by variance() on columns of table "dna.shopper_cluster_member"
+"""
+input ShopperClusterMemberVarianceOrderBy {
+  clusterId: OrderBy
+
+  organizationId: OrderBy
+}
+
+"""
 Ordering options when selecting data from "dna.shopper_cluster".
 """
 input ShopperClusterOrderBy {
@@ -25025,11 +26740,15 @@ input ShopperClusterOrderBy {
 
   createdAt: OrderBy
 
+  description: OrderBy
+
   emailsAggregate: ShopperClusterEmailAggregateOrderBy
 
   id: OrderBy
 
-  membersAggregate: ShopperClusterMemberResolvedAggregateOrderBy
+  membersAggregate: ShopperClusterMemberAggregateOrderBy
+
+  notes: OrderBy
 
   parent: OrderBy
 
@@ -25768,7 +27487,17 @@ enum ShopperClusterSelectColumn {
   """
   column name
   """
+  description
+
+  """
+  column name
+  """
   id
+
+  """
+  column name
+  """
+  notes
 
   """
   column name
@@ -25802,7 +27531,11 @@ Initial value of the column from where the streaming should start
 input ShopperClusterStreamCursorValueInput {
   createdAt: timestamptz
 
+  description: String
+
   id: bigint
+
+  notes: String
 
   parent: bigint
 
@@ -27739,6 +29472,36 @@ type TogglePaymentMethodAvailabilityResult {
 }
 
 """
+Token providers we support
+"""
+enum TokenProviderEnum {
+  """
+  Device tokens returned by Apple Pay
+  """
+  APPLEPAY
+
+  """
+  The token is the actual pan in this scenario where customer just enters his card details.
+  """
+  CUSTOMER
+
+  """
+  Device tokens returned by Google Pay
+  """
+  GOOGLEPAY
+
+  """
+  Kronor token service
+  """
+  KRONOR
+
+  """
+  Network tokenization service provided by Mastercard.
+  """
+  MASTERCARD
+}
+
+"""
 In tenant.tokens we have roles of type text[], but hasura does not likes arrays, so we turn it into a json array here
 """
 type Tokens {
@@ -28135,6 +29898,11 @@ enum TransactionReleaseStatusEnum {
   The release is in progress
   """
   IN_PROGRESS
+
+  """
+  The release request may or may not have reached the provider; the outcome is unknown and a human must resolve it
+  """
+  RELEASE_AMBIGUOUS
 }
 
 """
@@ -28424,6 +30192,94 @@ type UnblockCustomerResult {
   IDs of customers that are no longer blocked
   """
   affectedCustomerIds: [Int!]!
+}
+
+"""
+Upload the ApplePay Merchant Identifier certificate downloaded from the apple developer portal.
+"""
+input UploadApplePayMerchantIdentifierCertificateInput {
+  """
+  The base64 encoded text of the Apple Payment Merchant Identifier Certificate downloaded from apple. The file has to be base64 encoded as-is with no modifications.
+  """
+  applePayMerchantIdentifierCertificate: String!
+
+  """
+  The result of calling the mutation issueApplePayMerchantIdentifierCsr
+
+  Max length: 64.
+  """
+  applePayMerchantIdentifierCsrId: bigint!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+}
+
+"""
+The result of uploading the ApplePay Merchant Identifier certificate to Kronor
+"""
+type UploadApplePayMerchantIdentifierCertificateResult {
+  """
+  This id can be used to query details about the certificate.
+  """
+  applePayMerchantIdentifierCertificateId: bigint!
+}
+
+"""
+Upload the ApplePay Payment Processing certificate downloaded from the apple developer portal.
+"""
+input UploadApplePayPaymentProcessingCertificateInput {
+  """
+  The base64 encoded text of the Apple Payment Processing Certificate downloaded from apple. The file has to be base64 encoded as-is with no modifications.
+  """
+  applePayPaymentProcessingCertificate: String!
+
+  """
+  The result of calling the mutation issueApplePayPaymentProcessingCsr
+
+  Max length: 64.
+  """
+  applePayPaymentProcessingCsrId: bigint!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+
+  Max length: 64.
+  """
+  idempotencyKey: String!
+}
+
+"""
+The result of uploading the ApplePay Payment Processing certificate to Kronor
+"""
+type UploadApplePayPaymentProcessingCertificateResult {
+  """
+  This id can be used to query details about the certificate.
+  """
+  applePayPaymentProcessingCertificateId: bigint!
 }
 
 """
@@ -29080,6 +30936,11 @@ type mutation_root {
   addAcquirer(acquirerInfo: AddAcquirerInput!): AddAcquirerResult!
 
   """
+  Deliver transactions that were processed outside Kronor (e.g. directly with Klarna, Avarda, or Adyen) for Risk purposes.
+  """
+  addExternalTransactions(input: AddExternalTransactionsInput!): AddExternalTransactionsResult!
+
+  """
   Add new users.
   """
   addNewUser(add: AddUserInput!): AddNewUserResult!
@@ -29108,6 +30969,12 @@ type mutation_root {
   Blocks the specified token, after a successful operation, the given token will no longer work.
   """
   blockToken(token: BlockTokenInput!): BlockTokenResult!
+
+  """
+  Cancel a bank payout that is still waiting for the customer to
+  select an account
+  """
+  cancelBankPayout(payout: CancelBankPayoutInput!): CancelBankPayoutResult!
 
   """
   Cancel payment request.
@@ -29180,9 +31047,24 @@ type mutation_root {
   getReepayCheckoutEvents(paymentInfo: GetReepayCheckoutEventsInput!): GetReepayCheckoutEventsResult!
 
   """
+  Request a CSR to upload to the apple developer portal for downloading the merchant identifier certificate
+  """
+  issueApplePayMerchantIdentifierCsr(csrConfig: IssueApplePayMerchantIdentifierCsrInput!): IssueApplePayMerchantIdentifierCsrResult!
+
+  """
+  Request a CSR to upload to the apple developer portal for downloading the Payment Processing certificate
+  """
+  issueApplePayPaymentProcessingCsr(csrConfig: IssueApplePayPaymentProcessingCsrInput!): IssueApplePayPaymentProcessingCsrResult!
+
+  """
   Create a new payment request via bank transfer
   """
   newBankTransferPayment(pay: BankTransferPaymentInput!): BankTransferPaymentResult!
+
+  """
+  Create a new customer session to allow the customer to edit, save, and delete their saved credit cards
+  """
+  newCustomerSession(sessionInfo: CustomerSessionInput!): CustomerSessionResult!
 
   """
   Add a note to an invoice.
@@ -29300,6 +31182,11 @@ type mutation_root {
   reconciliationTransactionSummary("input parameters for function \"reconciliationTransactionSummary\"" args: reconciliationTransactionSummaryArgs!, "distinct select on columns" distinctOn: [ReconciliationTransactionSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [ReconciliationTransactionOrderBy!], "filter the rows returned" where: ReconciliationTransactionBoolExp): [ReconciliationTransaction!]!
 
   """
+  Record that a payment redirect was triggered.
+  """
+  redirectPayment(redirect: PaymentRedirectInput!): PaymentRedirectResult!
+
+  """
   Refund a payment
   """
   refundPayment(refund: RefundPaymentInput!): RefundPaymentResult!
@@ -29335,6 +31222,11 @@ type mutation_root {
   restartRefundStatusCheck(info: RestartRefundStatusCheckInput!): RestartRefundStatusCheckResult!
 
   """
+  Save a customer's credit card. Perform a zero amount authorization to verify the card.
+  """
+  saveCard(saveCardInfo: SaveCardInput!): SaveCardResult!
+
+  """
   Sets up clearhaus acquirer api, signing keys. Fetches account information from clearhaus and stores bin codes
   """
   setClearhausAcquirerInfo(setInfo: SetClearhausAcquirerInfoInput!): SetClearhausAcquirerInfoResult!
@@ -29343,6 +31235,11 @@ type mutation_root {
   Set the url that will receive webhook notifications
   """
   setWebhookUrl(setWebhookUrl: SetWebhookUrlInput!): SetWebhookUrlResult!
+
+  """
+  Setup apple pay for a merchant managed apple developer account
+  """
+  setupApplePayMerchantManaged(config: SetupApplePayMerchantManagedInput!): SetupApplePayMerchantManagedResult!
 
   """
   Enable / disable acquirer
@@ -29358,6 +31255,16 @@ type mutation_root {
   Remove a customer from the blocked list
   """
   unblockCustomer(unblock: UnblockCustomerInput!): UnblockCustomerResult!
+
+  """
+  Upload a Merchant Identifier certificate to kronor
+  """
+  uploadApplePayMerchantIdentifierCertificate(certificate: UploadApplePayMerchantIdentifierCertificateInput!): UploadApplePayMerchantIdentifierCertificateResult!
+
+  """
+  Upload an Apple Pay Payment Processing certificate to kronor
+  """
+  uploadApplePayPaymentProcessingCertificate(certificate: UploadApplePayPaymentProcessingCertificateInput!): UploadApplePayPaymentProcessingCertificateResult!
 }
 
 scalar numeric
@@ -29366,6 +31273,15 @@ scalar numeric
 Settings for organization webhook notifications
 """
 type organizationwebhookURLs {
+  """
+        Whether we have given up on this endpoint.
+
+        Derived from the state machine now, not set by hand — it is true exactly
+        while materialized_status is given_up. Kept only so
+        that code deployed before the statechart landed keeps working across the
+        rolling deploy; it is removed in a follow-up change.
+        
+  """
   faulty: Boolean!
 
   """
@@ -29373,7 +31289,30 @@ type organizationwebhookURLs {
   """
   id: Int!
 
+  """
+        The state the machine is currently in, copied here by
+        tenant.materialize_organization_webhook_settings_status so that the
+        portal and the GraphQL API can read a status without walking the fsm
+        tables.
+
+        One of delivering, waiting_for_next_attempt, retrying or given_up.
+
+        The two backing-off states are distinguished so that it is possible to
+        tell an endpoint that is waiting out its backoff from one with a
+        delivery in flight — which is what you need to see to know whether a
+        retry is stuck. The given_up substates are not distinguished: nothing
+        there is scheduled, so a failed retry has no way back and "retrying"
+        would keep claiming an attempt was in flight long after it failed.
+        
+  """
+  materializedStatus: String
+
   organizationId: bigint!
+
+  """
+  How many notifications are queued up behind this endpoint
+  """
+  queuedNotificationCount: Int
 
   webhookUrl: String!
 }
@@ -29392,7 +31331,11 @@ input organizationwebhookURLsBoolExp {
 
   id: IntComparisonExp
 
+  materializedStatus: StringComparisonExp
+
   organizationId: BigintComparisonExp
+
+  queuedNotificationCount: IntComparisonExp
 
   webhookUrl: StringComparisonExp
 }
@@ -29405,7 +31348,11 @@ input organizationwebhookURLsOrderBy {
 
   id: OrderBy
 
+  materializedStatus: OrderBy
+
   organizationId: OrderBy
+
+  queuedNotificationCount: OrderBy
 
   webhookUrl: OrderBy
 }
@@ -29423,6 +31370,11 @@ enum organizationwebhookURLsSelectColumn {
   column name
   """
   id
+
+  """
+  column name
+  """
+  materializedStatus
 
   """
   column name
@@ -29454,12 +31406,39 @@ input organizationwebhookURLsStreamCursorInput {
 Initial value of the column from where the streaming should start
 """
 input organizationwebhookURLsStreamCursorValueInput {
+  """
+        Whether we have given up on this endpoint.
+
+        Derived from the state machine now, not set by hand — it is true exactly
+        while materialized_status is given_up. Kept only so
+        that code deployed before the statechart landed keeps working across the
+        rolling deploy; it is removed in a follow-up change.
+        
+  """
   faulty: Boolean
 
   """
   Used to acquire a unique lock for a combination of webhook_url and organization ID
   """
   id: Int
+
+  """
+        The state the machine is currently in, copied here by
+        tenant.materialize_organization_webhook_settings_status so that the
+        portal and the GraphQL API can read a status without walking the fsm
+        tables.
+
+        One of delivering, waiting_for_next_attempt, retrying or given_up.
+
+        The two backing-off states are distinguished so that it is possible to
+        tell an endpoint that is waiting out its backoff from one with a
+        delivery in flight — which is what you need to see to know whether a
+        retry is stuck. The given_up substates are not distinguished: nothing
+        there is scheduled, so a failed retry has no way back and "retrying"
+        would keep claiming an attempt was in flight long after it failed.
+        
+  """
+  materializedStatus: String
 
   organizationId: bigint
 
@@ -29609,6 +31588,11 @@ type query_root {
   Get the list of Strong Customer Authentication processes and their status
   """
   bankIdAuth("distinct select on columns" distinctOn: [BankIdAuthSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [BankIdAuthOrderBy!], "filter the rows returned" where: BankIdAuthBoolExp): [BankIdAuth!]!
+
+  """
+  Get the list of bank payouts
+  """
+  bankPayouts("distinct select on columns" distinctOn: [BankPayoutSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [BankPayoutOrderBy!], "filter the rows returned" where: BankPayoutBoolExp): [BankPayout!]!
 
   """
   Get the list of accounts available for clearhaus acquirer
@@ -30018,6 +32002,11 @@ type subscription_root {
   bankIdAuth("distinct select on columns" distinctOn: [BankIdAuthSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [BankIdAuthOrderBy!], "filter the rows returned" where: BankIdAuthBoolExp): [BankIdAuth!]!
 
   """
+  Get the list of bank payouts
+  """
+  bankPayouts("distinct select on columns" distinctOn: [BankPayoutSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [BankPayoutOrderBy!], "filter the rows returned" where: BankPayoutBoolExp): [BankPayout!]!
+
+  """
   Get the list of CustomerBan directives
   """
   customerBans("distinct select on columns" distinctOn: [CustomerBanSelectColumn!], "limit the number of rows returned" limit: Int, "skip the first n rows. Use only with order_by" offset: Int, "sort the rows by one or more columns" orderBy: [CustomerBanOrderBy!], "filter the rows returned" where: CustomerBanBoolExp): [CustomerBan!]!
@@ -30375,7 +32364,38 @@ scalar uuid
 Settings for merchant webhook notifications
 """
 type webhookURLs {
+  """
+        Whether we have given up on this endpoint.
+
+        Derived from the state machine now, not set by hand — it is true exactly
+        while materialized_status is given_up. Kept only so
+        that code deployed before the statechart landed keeps working across the
+        rolling deploy; it is removed in a follow-up change.
+        
+  """
   faulty: Boolean!
+
+  """
+        The state the machine is currently in, copied here by
+        tenant.materialize_webhook_settings_status so that the portal and the
+        GraphQL API can read a status without walking the fsm tables.
+
+        One of delivering, waiting_for_next_attempt, retrying or given_up.
+
+        The two backing-off states are distinguished so that it is possible to
+        tell an endpoint that is waiting out its backoff from one with a
+        delivery in flight — which is what you need to see to know whether a
+        retry is stuck. The given_up substates are not distinguished: nothing
+        there is scheduled, so a failed retry has no way back and "retrying"
+        would keep claiming an attempt was in flight long after it failed.
+        
+  """
+  materializedStatus: String
+
+  """
+  How many notifications are queued up behind this endpoint
+  """
+  queuedNotificationCount: Int
 
   webhookUrl: String!
 }
@@ -30392,6 +32412,10 @@ input webhookURLsBoolExp {
 
   faulty: BooleanComparisonExp
 
+  materializedStatus: StringComparisonExp
+
+  queuedNotificationCount: IntComparisonExp
+
   webhookUrl: StringComparisonExp
 }
 
@@ -30400,6 +32424,10 @@ Ordering options when selecting data from "tenant.webhook_settings".
 """
 input webhookURLsOrderBy {
   faulty: OrderBy
+
+  materializedStatus: OrderBy
+
+  queuedNotificationCount: OrderBy
 
   webhookUrl: OrderBy
 }
@@ -30412,6 +32440,11 @@ enum webhookURLsSelectColumn {
   column name
   """
   faulty
+
+  """
+  column name
+  """
+  materializedStatus
 
   """
   column name
@@ -30438,7 +32471,33 @@ input webhookURLsStreamCursorInput {
 Initial value of the column from where the streaming should start
 """
 input webhookURLsStreamCursorValueInput {
+  """
+        Whether we have given up on this endpoint.
+
+        Derived from the state machine now, not set by hand — it is true exactly
+        while materialized_status is given_up. Kept only so
+        that code deployed before the statechart landed keeps working across the
+        rolling deploy; it is removed in a follow-up change.
+        
+  """
   faulty: Boolean
+
+  """
+        The state the machine is currently in, copied here by
+        tenant.materialize_webhook_settings_status so that the portal and the
+        GraphQL API can read a status without walking the fsm tables.
+
+        One of delivering, waiting_for_next_attempt, retrying or given_up.
+
+        The two backing-off states are distinguished so that it is possible to
+        tell an endpoint that is waiting out its backoff from one with a
+        delivery in flight — which is what you need to see to know whether a
+        retry is stuck. The given_up substates are not distinguished: nothing
+        there is scheduled, so a failed retry has no way back and "retrying"
+        would keep claiming an attempt was in flight long after it failed.
+        
+  """
+  materializedStatus: String
 
   webhookUrl: String
 }

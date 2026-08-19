@@ -23,6 +23,8 @@ sealed class PaymentMethod {
     object PayPal: PaymentMethod()
     object BankTransfer: PaymentMethod()
 
+    object GooglePay: PaymentMethod()
+
     data class Fallback(val paymentMethod : String) : PaymentMethod()
 }
 
@@ -35,6 +37,7 @@ fun PaymentMethod.toRedirectMethod() : String {
         is PaymentMethod.Swish -> "swish"
         is PaymentMethod.PayPal -> "paypal"
         is PaymentMethod.BankTransfer -> "bankTransfer"
+        is PaymentMethod.GooglePay ->  "googlePay"
         is PaymentMethod.Fallback -> this.paymentMethod
     }
 }
@@ -47,6 +50,7 @@ fun PaymentMethod.toPaymentGatewayMethod() : String {
         is PaymentMethod.Swish -> "swish"
         is PaymentMethod.PayPal -> "paypal"
         is PaymentMethod.BankTransfer -> "bankTransfer"
+        is PaymentMethod.GooglePay -> "googlePay"
         is PaymentMethod.Fallback -> this.paymentMethod
     }
 }

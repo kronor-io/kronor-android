@@ -355,6 +355,7 @@ fun getRedirectPage(paymentMethod: PaymentMethod): String {
         is PaymentMethod.CreditCard -> "reepay-redirect"
         is PaymentMethod.PayPal -> "paypal-redirect"
         is PaymentMethod.BankTransfer -> "payment-redirect"
+        is PaymentMethod.GooglePay -> "payment-redirect"
         is PaymentMethod.Fallback -> "payment"
     }
 }

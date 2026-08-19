@@ -68,6 +68,274 @@ type AddSessionDeviceInformationResult {
   result: Boolean!
 }
 
+"""Details for an Apple Pay transaction"""
+type ApplePayDetails {
+  acquirer: String
+  authorizationId: String
+  cardExpiryDate: date
+  cardNumber: String
+  cardType: String
+  initiative: String
+  sessionResponse: String
+}
+
+"""
+order by aggregate values of table "runtime.transaction_apple_pay_details"
+"""
+input ApplePayDetailsAggregateOrderBy {
+  count: OrderBy
+  max: ApplePayDetailsMaxOrderBy
+  min: ApplePayDetailsMinOrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "runtime.transaction_apple_pay_details". All fields are combined with a logical 'AND'.
+"""
+input ApplePayDetailsBoolExp {
+  _and: [ApplePayDetailsBoolExp!]
+  _not: ApplePayDetailsBoolExp
+  _or: [ApplePayDetailsBoolExp!]
+  acquirer: StringComparisonExp
+  authorizationId: StringComparisonExp
+  cardExpiryDate: DateComparisonExp
+  cardNumber: StringComparisonExp
+  cardType: StringComparisonExp
+  initiative: StringComparisonExp
+  sessionResponse: StringComparisonExp
+}
+
+"""
+order by max() on columns of table "runtime.transaction_apple_pay_details"
+"""
+input ApplePayDetailsMaxOrderBy {
+  acquirer: OrderBy
+  authorizationId: OrderBy
+  cardExpiryDate: OrderBy
+  cardNumber: OrderBy
+  cardType: OrderBy
+  initiative: OrderBy
+  sessionResponse: OrderBy
+}
+
+"""
+order by min() on columns of table "runtime.transaction_apple_pay_details"
+"""
+input ApplePayDetailsMinOrderBy {
+  acquirer: OrderBy
+  authorizationId: OrderBy
+  cardExpiryDate: OrderBy
+  cardNumber: OrderBy
+  cardType: OrderBy
+  initiative: OrderBy
+  sessionResponse: OrderBy
+}
+
+"""
+Ordering options when selecting data from "runtime.transaction_apple_pay_details".
+"""
+input ApplePayDetailsOrderBy {
+  acquirer: OrderBy
+  authorizationId: OrderBy
+  cardExpiryDate: OrderBy
+  cardNumber: OrderBy
+  cardType: OrderBy
+  initiative: OrderBy
+  sessionResponse: OrderBy
+}
+
+"""
+select columns of table "runtime.transaction_apple_pay_details"
+"""
+enum ApplePayDetailsSelectColumn {
+  """column name"""
+  acquirer
+
+  """column name"""
+  authorizationId
+
+  """column name"""
+  cardExpiryDate
+
+  """column name"""
+  cardNumber
+
+  """column name"""
+  cardType
+
+  """column name"""
+  initiative
+
+  """column name"""
+  sessionResponse
+}
+
+"""Arguments for creating a new apple pay payment"""
+input ApplePayPaymentInput {
+  """
+  Payment flow, either 'ecom' or 'mcom'.
+  This determines if the flow is apple pay on the web flow or apple pay on the ios app.
+  """
+  flow: String!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """The original return url as provided by the merchant."""
+  merchantReturnUrl: String
+
+  """
+  The url to return to after the payment is done. If the payment
+  screen is opened on a separate window, customer will be redirected
+  here on payment success or error.
+  """
+  returnUrl: String!
+
+  """
+  Verification URL obtained from Apple's SDK `onvalidatemerchant` callback. Mandatory when flow is ecom.
+  """
+  verificationUrl: String
+}
+
+"""The result of initiating an Apple Pay payment."""
+type ApplePayPaymentResult {
+  """
+  Once a payment is initialized, we will start the apple pay payment
+  workflow. You can use this token to query the current status
+  of the payment, with paymentRequests query.
+  """
+  authToken: String
+
+  """
+  The gateway this apple pay payment will use when processing the credit card.
+  """
+  gateway: GatewayEnum!
+
+  """
+  Once a payment is initialized, we will start the apple pay payment
+  workflow. You can use this token to query the current status
+  of the payment, with paymentRequests query.
+  """
+  waitToken: String!
+}
+
+"""Describes the schema for Avarda details"""
+type AvardaDetails {
+  """Authorization id returned by Avarda"""
+  authorizationId: uuid
+
+  """Latest authorization status reported by Avarda"""
+  authorizationStatus: String
+
+  """
+  Avarda credit product type (direct-invoice, loan, part-payment, invoice)
+  """
+  creditProduct: String
+
+  """Url the frontend should redirect the customer to for ID validation"""
+  redirectUrl: String
+}
+
+"""
+order by aggregate values of table "runtime.transaction_avarda_details"
+"""
+input AvardaDetailsAggregateOrderBy {
+  count: OrderBy
+  max: AvardaDetailsMaxOrderBy
+  min: AvardaDetailsMinOrderBy
+}
+
+"""
+Boolean expression to filter rows from the table "runtime.transaction_avarda_details". All fields are combined with a logical 'AND'.
+"""
+input AvardaDetailsBoolExp {
+  _and: [AvardaDetailsBoolExp!]
+  _not: AvardaDetailsBoolExp
+  _or: [AvardaDetailsBoolExp!]
+  authorizationId: UuidComparisonExp
+  authorizationStatus: StringComparisonExp
+  creditProduct: StringComparisonExp
+  redirectUrl: StringComparisonExp
+}
+
+"""
+order by max() on columns of table "runtime.transaction_avarda_details"
+"""
+input AvardaDetailsMaxOrderBy {
+  """Authorization id returned by Avarda"""
+  authorizationId: OrderBy
+
+  """Latest authorization status reported by Avarda"""
+  authorizationStatus: OrderBy
+
+  """
+  Avarda credit product type (direct-invoice, loan, part-payment, invoice)
+  """
+  creditProduct: OrderBy
+
+  """Url the frontend should redirect the customer to for ID validation"""
+  redirectUrl: OrderBy
+}
+
+"""
+order by min() on columns of table "runtime.transaction_avarda_details"
+"""
+input AvardaDetailsMinOrderBy {
+  """Authorization id returned by Avarda"""
+  authorizationId: OrderBy
+
+  """Latest authorization status reported by Avarda"""
+  authorizationStatus: OrderBy
+
+  """
+  Avarda credit product type (direct-invoice, loan, part-payment, invoice)
+  """
+  creditProduct: OrderBy
+
+  """Url the frontend should redirect the customer to for ID validation"""
+  redirectUrl: OrderBy
+}
+
+"""
+Ordering options when selecting data from "runtime.transaction_avarda_details".
+"""
+input AvardaDetailsOrderBy {
+  authorizationId: OrderBy
+  authorizationStatus: OrderBy
+  creditProduct: OrderBy
+  redirectUrl: OrderBy
+}
+
+"""
+select columns of table "runtime.transaction_avarda_details"
+"""
+enum AvardaDetailsSelectColumn {
+  """column name"""
+  authorizationId
+
+  """column name"""
+  authorizationStatus
+
+  """column name"""
+  creditProduct
+
+  """column name"""
+  redirectUrl
+}
+
 """Describes the schema for bank transfer details"""
 type BankTransferDetails {
   aspspId: bigint
@@ -392,6 +660,84 @@ input BooleanComparisonExp {
   _nin: [Boolean!]
 }
 
+"""Arguments for creating a new buy-now-pay-later payment"""
+input BuyNowPayLaterPaymentInput {
+  """The buy-now-pay-later product type to use for this payment."""
+  buyNowPayLaterProduct: BuyNowPayLaterProduct!
+
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """The original return url as provided by the merchant."""
+  merchantReturnUrl: String
+
+  """
+  Customer national identification number used by the gateway's
+  credit check (Swedish personnummer, Norwegian fødselsnummer,
+  Danish CPR, Finnish henkilötunnus). Required: Avarda rejects
+  authorizations without it.
+  
+  Max length: 64.
+  """
+  nationalIdentificationNumber: String!
+
+  """
+  The url to return to after the payment is done. If the payment
+  screen is opened on a separate window, customer will be redirected
+  here on payment success or error.
+  """
+  returnUrl: String!
+}
+
+"""The result of initiating a buy-now-pay-later payment."""
+type BuyNowPayLaterPaymentResult {
+  """The gateway this buy-now-pay-later payment will use."""
+  gateway: GatewayEnum!
+
+  """
+  Once a payment is initialized, we will start the buy-now-pay-later
+  payment workflow. You can use this paymentId to query the current status
+  of the payment, with paymentRequests query.
+  """
+  paymentId: String!
+
+  """
+  Once a payment is initialized, we will start the buy-now-pay-later
+  payment workflow. You can use this token to query the current status
+  of the payment, with paymentRequests query.
+  """
+  paymentRequestId: String
+}
+
+"""Product type for buy-now-pay-later payments"""
+enum BuyNowPayLaterProduct {
+  """Direct invoice"""
+  DIRECT_INVOICE
+
+  """Invoice"""
+  INVOICE
+
+  """Loan"""
+  LOAN
+
+  """Part payment"""
+  PART_PAYMENT
+}
+
 """Arguments for capturing a new PayPal payment"""
 input CapturePayPalPaymentInput {
   """
@@ -561,6 +907,55 @@ type CreditCardPaymentResult {
   waitToken: String!
 }
 
+enum CreditCardSchemeEnum {
+  """American Express"""
+  AMEX
+
+  """China Union Pay"""
+  CHINA_UNION_PAY
+
+  """Dankort"""
+  DANKORT
+
+  """Diners Club International"""
+  DINERS
+
+  """Discover Card"""
+  DISCOVER
+
+  """Forbrugsforeningen"""
+  FORBRUGSFORENINGEN
+
+  """JCB"""
+  JCB
+
+  """Maestro"""
+  MAESTRO
+
+  """Mastercard"""
+  MASTERCARD
+
+  """Visa"""
+  VISA
+
+  """Visa DK"""
+  VISA_DK
+
+  """Visa Electron"""
+  VISA_ELECTRON
+}
+
+"""
+Boolean expression to compare columns of type "CreditCardSchemeEnum". All fields are combined with logical 'AND'.
+"""
+input CreditCardSchemeEnumComparisonExp {
+  _eq: CreditCardSchemeEnum
+  _in: [CreditCardSchemeEnum!]
+  _isNull: Boolean
+  _neq: CreditCardSchemeEnum
+  _nin: [CreditCardSchemeEnum!]
+}
+
 """
 Boolean expression to compare columns of type "currency". All fields are combined with logical 'AND'.
 """
@@ -688,9 +1083,138 @@ enum CursorOrdering {
   DESC
 }
 
+"""Cards that were saved by the customer"""
+type CustomerCard {
+  """
+  The card type of the card used for the transaction: look at the definition for CreditCardSchemeEnum for what values could be used.
+  """
+  cardType: CreditCardSchemeEnum!
+  createdAt: timestamptz!
+
+  """
+  Reference sent by the merchant that uniquely identifies this customer in their system.
+  """
+  customerReference: String!
+  expiryMonth: Int!
+  expiryYear: Int!
+
+  """Id of a particular card"""
+  id: uuid!
+
+  """
+  Customer has selected this card as their default card. Only one default card per customer even if that card has expired
+  """
+  isDefault: Boolean!
+
+  """The last time this card was used to successfully authorize a payment"""
+  lastUsedAt: timestamptz!
+
+  """The masked card number of the card that was saved."""
+  maskedCard: String!
+
+  """The id of the merchant to whom this customer and card belongs to"""
+  merchantId: bigint!
+
+  """An optional nickname the customer wants to remember the card by"""
+  nickname: String
+}
+
+"""
+Boolean expression to filter rows from the table "payment_gateway.customer_card". All fields are combined with a logical 'AND'.
+"""
+input CustomerCardBoolExp {
+  _and: [CustomerCardBoolExp!]
+  _not: CustomerCardBoolExp
+  _or: [CustomerCardBoolExp!]
+  cardType: CreditCardSchemeEnumComparisonExp
+  createdAt: TimestamptzComparisonExp
+  customerReference: StringComparisonExp
+  expiryMonth: IntComparisonExp
+  expiryYear: IntComparisonExp
+  id: UuidComparisonExp
+  isDefault: BooleanComparisonExp
+  lastUsedAt: TimestamptzComparisonExp
+  maskedCard: StringComparisonExp
+  merchantId: BigintComparisonExp
+  nickname: StringComparisonExp
+}
+
+"""
+Ordering options when selecting data from "payment_gateway.customer_card".
+"""
+input CustomerCardOrderBy {
+  cardType: OrderBy
+  createdAt: OrderBy
+  customerReference: OrderBy
+  expiryMonth: OrderBy
+  expiryYear: OrderBy
+  id: OrderBy
+  isDefault: OrderBy
+  lastUsedAt: OrderBy
+  maskedCard: OrderBy
+  merchantId: OrderBy
+  nickname: OrderBy
+}
+
+"""
+select columns of table "payment_gateway.customer_card"
+"""
+enum CustomerCardSelectColumn {
+  """column name"""
+  cardType
+
+  """column name"""
+  createdAt
+
+  """column name"""
+  customerReference
+
+  """column name"""
+  expiryMonth
+
+  """column name"""
+  expiryYear
+
+  """column name"""
+  id
+
+  """column name"""
+  isDefault
+
+  """column name"""
+  lastUsedAt
+
+  """column name"""
+  maskedCard
+
+  """column name"""
+  merchantId
+
+  """column name"""
+  nickname
+}
+
 """Additional payment data"""
 type CustomerPaymentData {
   locale: spoken_lang!
+
+  """An array relationship"""
+  paymentRequests(
+    """distinct select on columns"""
+    distinctOn: [PaymentRequestSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [PaymentRequestOrderBy!]
+
+    """filter the rows returned"""
+    where: PaymentRequestBoolExp
+  ): [PaymentRequest!]!
 }
 
 """
@@ -701,11 +1225,28 @@ input CustomerPaymentDataBoolExp {
   _not: CustomerPaymentDataBoolExp
   _or: [CustomerPaymentDataBoolExp!]
   locale: SpokenLangComparisonExp
+  paymentRequests: PaymentRequestBoolExp
 }
 
 """Ordering options when selecting data from "dna.customer_payment_data"."""
 input CustomerPaymentDataOrderBy {
   locale: OrderBy
+  paymentRequestsAggregate: PaymentRequestAggregateOrderBy
+}
+
+"""
+Boolean expression to compare columns of type "date". All fields are combined with logical 'AND'.
+"""
+input DateComparisonExp {
+  _eq: date
+  _gt: date
+  _gte: date
+  _in: [date!]
+  _isNull: Boolean
+  _lt: date
+  _lte: date
+  _neq: date
+  _nin: [date!]
 }
 
 """
@@ -764,6 +1305,9 @@ enum FinsharkDetailsSelectColumn {
 }
 
 enum GatewayEnum {
+  """Avarda"""
+  AVARDA
+
   """Enable Banking"""
   ENABLE_BANKING
 
@@ -789,6 +1333,84 @@ input GatewayEnumComparisonExp {
   _isNull: Boolean
   _neq: GatewayEnum
   _nin: [GatewayEnum!]
+}
+
+"""Arguments for creating a new google pay payment"""
+input GooglePayPaymentInput {
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """The original return url as provided by the merchant."""
+  merchantReturnUrl: String
+
+  """
+  The url to return to after the payment is done. If the payment
+  screen is opened on a separate window, customer will be redirected
+  here on payment success or error.
+  """
+  returnUrl: String!
+}
+
+"""The result of initiating a google pay payment."""
+type GooglePayPaymentResult {
+  """
+  Once a payment is initialized, we will start the google pay payment
+  workflow. You can use this token to query the current status
+  of the payment, with paymentRequests query.
+  """
+  authToken: String
+
+  """
+  The gateway this google pay payment will use when processing the credit card.
+  """
+  gateway: GatewayEnum!
+
+  """
+  The merchant id to use on the tokenizationSpecification.gatewayMerchantId part of the google pay request.
+  """
+  gatewayMerchantId: String!
+
+  """
+  The Google Business Console merchant id, used as merchantInfo.merchantId
+  in the google pay request. Provisioned per-merchant by Kronor; the
+  mutation fails if the merchant has no Google Pay configuration.
+  """
+  googleMerchantId: String!
+
+  """
+  The display name used as merchantInfo.merchantName in the google pay
+  request. Provisioned per-merchant by Kronor; the mutation fails if the
+  merchant has no Google Pay configuration.
+  """
+  googleMerchantName: String!
+
+  """
+  The merchant's Google-verified web domain, sent as
+  merchantInfo.merchantOrigin in the web/iframe google pay flow so
+  Google's production domain check passes. Null when not configured.
+  """
+  googleMerchantOrigin: String
+
+  """
+  Once a payment is initialized, we will start the google pay payment
+  workflow. You can use this token to query the current status
+  of the payment, with paymentRequests query.
+  """
+  waitToken: String!
 }
 
 """
@@ -1490,8 +2112,14 @@ type PaymentCancelResult {
 }
 
 enum PaymentMethodEnum {
+  """Pay with Apple pay"""
+  APPLE_PAY
+
   """Pay directly with your bank account"""
   BANK_TRANSFER
+
+  """Buy now, pay later"""
+  BUY_NOW_PAY_LATER
 
   """Credit or Debit cards"""
   CREDIT_CARD
@@ -1505,6 +2133,9 @@ enum PaymentMethodEnum {
   """Open Banking recurring debit via Finshark"""
   FINSHARK_RECURRING_DEBIT
 
+  """Pay with Google pay"""
+  GOOGLE_PAY
+
   """Pay with MobilePay Online"""
   MOBILEPAY
 
@@ -1514,7 +2145,7 @@ enum PaymentMethodEnum {
   """Pay with PayPal"""
   PAYPAL
 
-  """Pay with Pointspay"""
+  """Pay with PointsPay"""
   POINTSPAY
 
   """Swish"""
@@ -1627,6 +2258,52 @@ input PaymentMethodStatusStreamCursorValueInput {
   paymentMethod: PaymentMethodEnum
 }
 
+"""Arguments for recording a payment redirect"""
+input PaymentRedirectInput {
+  """
+  Idempotency key is required to prevent double processing a request.
+  It is recommended to use a deterministic unique value, such as the combination of
+  the order id and the customer id. Avoid using time-based values.
+  Only alphanumeric character and the following are allowed:
+  - "-"
+  - "_"
+  - "."
+  - ","
+  - "["
+  - "]"
+  - "+"
+  
+  Max length: 64.
+  """
+  idempotencyKey: String!
+
+  """The payment request id whose flow should record a redirect."""
+  paymentRequestId: String!
+
+  """
+  Whether the customer is being redirected to an app/deeplink or to a web page.
+  """
+  redirectTarget: PaymentRedirectTarget!
+
+  """The URL the customer is being redirected to."""
+  redirectUrl: String!
+}
+
+"""The result of recording a payment redirect."""
+type PaymentRedirectResult {
+  """This token can be used to fetch status of payment."""
+  waitToken: String!
+}
+
+"""How the customer was redirected to continue the payment flow"""
+enum PaymentRedirectTarget {
+  """The payer was redirected into an app or deeplink"""
+  APP
+
+  """The payer was redirected to a web page"""
+  WEB
+}
+
 """A payment requested"""
 type PaymentRequest {
   amount: bigint!
@@ -1682,9 +2359,6 @@ type PaymentRequest {
   paymentMethodUsed: PaymentMethodStatus
   paymentProvider: PaymentMethodEnum
 
-  """An object relationship"""
-  payment_method_used: PaymentMethodStatus
-
   """
   
   Payments are linked to a reference, this can be a purchase id or
@@ -1695,6 +2369,9 @@ type PaymentRequest {
 
   """Id of the generated gateway payment (stand alone payments only)."""
   resultingPaymentId: bigint
+
+  """An object relationship"""
+  session: PaymentSession
 
   """List of statuses the payment is currently on"""
   status(
@@ -1731,6 +2408,46 @@ type PaymentRequest {
     """filter the rows returned"""
     where: CurrentPaymentStatusBoolExp
   ): [CurrentPaymentStatus!]
+
+  """
+  A computed field, executes function "runtime.get_transaction_apple_pay_details"
+  """
+  transactionApplePayDetails(
+    """distinct select on columns"""
+    distinctOn: [ApplePayDetailsSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [ApplePayDetailsOrderBy!]
+
+    """filter the rows returned"""
+    where: ApplePayDetailsBoolExp
+  ): [ApplePayDetails!]
+
+  """
+  A computed field, executes function "runtime.get_transaction_avarda_details"
+  """
+  transactionAvardaDetails(
+    """distinct select on columns"""
+    distinctOn: [AvardaDetailsSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [AvardaDetailsOrderBy!]
+
+    """filter the rows returned"""
+    where: AvardaDetailsBoolExp
+  ): [AvardaDetails!]
 
   """
   A computed field, executes function "runtime.get_transaction_bank_transfer_details"
@@ -1940,6 +2657,33 @@ type PaymentRequest {
 }
 
 """
+order by aggregate values of table "runtime.payment"
+"""
+input PaymentRequestAggregateOrderBy {
+  avg: PaymentRequestAvgOrderBy
+  count: OrderBy
+  max: PaymentRequestMaxOrderBy
+  min: PaymentRequestMinOrderBy
+  stddev: PaymentRequestStddevOrderBy
+  stddevPop: PaymentRequestStddevPopOrderBy
+  stddevSamp: PaymentRequestStddevSampOrderBy
+  sum: PaymentRequestSumOrderBy
+  varPop: PaymentRequestVarPopOrderBy
+  varSamp: PaymentRequestVarSampOrderBy
+  variance: PaymentRequestVarianceOrderBy
+}
+
+"""
+order by avg() on columns of table "runtime.payment"
+"""
+input PaymentRequestAvgOrderBy {
+  amount: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+}
+
+"""
 Boolean expression to filter rows from the table "runtime.payment". All fields are combined with a logical 'AND'.
 """
 input PaymentRequestBoolExp {
@@ -1958,11 +2702,13 @@ input PaymentRequestBoolExp {
   paymentFlow: StringComparisonExp
   paymentMethodUsed: PaymentMethodStatusBoolExp
   paymentProvider: PaymentMethodEnumComparisonExp
-  payment_method_used: PaymentMethodStatusBoolExp
   reference: StringComparisonExp
   resultingPaymentId: BigintComparisonExp
+  session: PaymentSessionBoolExp
   status: CurrentPaymentStatusBoolExp
   statusHistory: CurrentPaymentStatusBoolExp
+  transactionApplePayDetails: ApplePayDetailsBoolExp
+  transactionAvardaDetails: AvardaDetailsBoolExp
   transactionBankTransferDetails: BankTransferDetailsBoolExp
   transactionCreditCardDetails: CreditCardDetailsBoolExp
   transactionFinsharkDetails: FinsharkDetailsBoolExp
@@ -1975,6 +2721,62 @@ input PaymentRequestBoolExp {
   transactionTrustlyDetails: TrustlyDetailsBoolExp
   transactionVippsDetails: VippsDetailsBoolExp
   waitToken: UuidComparisonExp
+}
+
+"""
+order by max() on columns of table "runtime.payment"
+"""
+input PaymentRequestMaxOrderBy {
+  amount: OrderBy
+  createdAt: OrderBy
+  merchantReturnUrl: OrderBy
+  message: OrderBy
+  paymentFlow: OrderBy
+
+  """
+  
+  Payments are linked to a reference, this can be a purchase id or
+  any reference the merchant sends when making a stand alone payment.
+  
+  """
+  reference: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: OrderBy
+  waitToken: OrderBy
+}
+
+"""
+order by min() on columns of table "runtime.payment"
+"""
+input PaymentRequestMinOrderBy {
+  amount: OrderBy
+  createdAt: OrderBy
+  merchantReturnUrl: OrderBy
+  message: OrderBy
+  paymentFlow: OrderBy
+
+  """
+  
+  Payments are linked to a reference, this can be a purchase id or
+  any reference the merchant sends when making a stand alone payment.
+  
+  """
+  reference: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+
+  """
+  This id uniquely identifies the transaction in kronor among other types of transactions
+  """
+  transactionId: OrderBy
+  waitToken: OrderBy
 }
 
 """Ordering options when selecting data from "runtime.payment"."""
@@ -1991,11 +2793,13 @@ input PaymentRequestOrderBy {
   paymentFlow: OrderBy
   paymentMethodUsed: PaymentMethodStatusOrderBy
   paymentProvider: OrderBy
-  payment_method_used: PaymentMethodStatusOrderBy
   reference: OrderBy
   resultingPaymentId: OrderBy
+  session: PaymentSessionOrderBy
   statusAggregate: CurrentPaymentStatusAggregateOrderBy
   statusHistoryAggregate: CurrentPaymentStatusAggregateOrderBy
+  transactionApplePayDetailsAggregate: ApplePayDetailsAggregateOrderBy
+  transactionAvardaDetailsAggregate: AvardaDetailsAggregateOrderBy
   transactionBankTransferDetailsAggregate: BankTransferDetailsAggregateOrderBy
   transactionCreditCardDetailsAggregate: CreditCardDetailsAggregateOrderBy
   transactionFinsharkDetailsAggregate: FinsharkDetailsAggregateOrderBy
@@ -2048,6 +2852,140 @@ enum PaymentRequestSelectColumn {
   waitToken
 }
 
+"""
+order by stddev() on columns of table "runtime.payment"
+"""
+input PaymentRequestStddevOrderBy {
+  amount: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+}
+
+"""
+order by stddevPop() on columns of table "runtime.payment"
+"""
+input PaymentRequestStddevPopOrderBy {
+  amount: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+}
+
+"""
+order by stddevSamp() on columns of table "runtime.payment"
+"""
+input PaymentRequestStddevSampOrderBy {
+  amount: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+}
+
+"""
+order by sum() on columns of table "runtime.payment"
+"""
+input PaymentRequestSumOrderBy {
+  amount: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+}
+
+"""
+order by varPop() on columns of table "runtime.payment"
+"""
+input PaymentRequestVarPopOrderBy {
+  amount: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+}
+
+"""
+order by varSamp() on columns of table "runtime.payment"
+"""
+input PaymentRequestVarSampOrderBy {
+  amount: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+}
+
+"""
+order by variance() on columns of table "runtime.payment"
+"""
+input PaymentRequestVarianceOrderBy {
+  amount: OrderBy
+
+  """Id of the generated gateway payment (stand alone payments only)."""
+  resultingPaymentId: OrderBy
+}
+
+"""A payment session"""
+type PaymentSession {
+  amount: bigint
+  country: country
+  createdAt: timestamptz!
+  currency: currency!
+  id: uuid!
+  message: String!
+  saveCardDetails: Boolean!
+}
+
+"""
+Boolean expression to filter rows from the table "runtime.payment_session". All fields are combined with a logical 'AND'.
+"""
+input PaymentSessionBoolExp {
+  _and: [PaymentSessionBoolExp!]
+  _not: PaymentSessionBoolExp
+  _or: [PaymentSessionBoolExp!]
+  amount: BigintComparisonExp
+  country: CountryComparisonExp
+  createdAt: TimestamptzComparisonExp
+  currency: CurrencyComparisonExp
+  id: UuidComparisonExp
+  message: StringComparisonExp
+  saveCardDetails: BooleanComparisonExp
+}
+
+"""Ordering options when selecting data from "runtime.payment_session"."""
+input PaymentSessionOrderBy {
+  amount: OrderBy
+  country: OrderBy
+  createdAt: OrderBy
+  currency: OrderBy
+  id: OrderBy
+  message: OrderBy
+  saveCardDetails: OrderBy
+}
+
+"""
+select columns of table "runtime.payment_session"
+"""
+enum PaymentSessionSelectColumn {
+  """column name"""
+  amount
+
+  """column name"""
+  country
+
+  """column name"""
+  createdAt
+
+  """column name"""
+  currency
+
+  """column name"""
+  id
+
+  """column name"""
+  message
+
+  """column name"""
+  saveCardDetails
+}
+
 enum PaymentStatusEnum {
   """Payment is authorized. Can be captured now."""
   AUTHORIZED
@@ -2085,6 +3023,12 @@ enum PaymentStatusEnum {
 
   """Payment is undergoing check."""
   PRE_FLIGHT_CHECK
+
+  """Payment flow has redirected the payer to an app or deeplink."""
+  PROCESSING_REDIRECTED_APP
+
+  """Payment flow has redirected the payer to a website."""
+  PROCESSING_REDIRECTED_WEB
 
   """
   Payment reservation is released. (Only applicable for payments that support reservation)
@@ -2244,6 +3188,32 @@ type PointspayPaymentResult {
   status of the payment, with paymentRequests query.
   """
   paymentId: String!
+}
+
+"""
+The result of triggering a server-side refresh of the Avarda
+authorization status.
+"""
+type RefreshAvardaAuthorizationResult {
+  """
+  True when the refresh was accepted. The actual status change lands
+  asynchronously via the ProcessAvardaWebhook job; the frontend
+  continues its normal status polling.
+  """
+  result: Boolean!
+}
+
+"""
+The result of triggering an immediate server-side poll of the
+payment provider's status.
+"""
+type RefreshPaymentStatusResult {
+  """
+  True when the immediate status poll was accepted. The actual status
+  change lands asynchronously once the poll completes; the frontend
+  continues its normal status subscription/polling.
+  """
+  result: Boolean!
 }
 
 """
@@ -2997,6 +3967,8 @@ scalar country
 
 scalar currency
 
+scalar date
+
 scalar jsonb
 
 """mutation root"""
@@ -3016,11 +3988,20 @@ type mutation_root {
   """Log information about various stages of the payment component."""
   log(info: LogInput!): LogResult!
 
+  """Create a new payment request to accept a payment from Apple Pay"""
+  newApplePayPayment(pay: ApplePayPaymentInput!): ApplePayPaymentResult!
+
   """Create a new payment request via bank transfer"""
   newBankTransferPayment(pay: BankTransferPaymentInput!): BankTransferPaymentResult!
 
+  """Create a new buy-now-pay-later payment request"""
+  newBuyNowPayLaterPayment(pay: BuyNowPayLaterPaymentInput!): BuyNowPayLaterPaymentResult!
+
   """Create a new payment request to receive money via credit card"""
   newCreditCardPayment(pay: CreditCardPaymentInput!): CreditCardPaymentResult!
+
+  """Create a new payment request to receive money google pay"""
+  newGooglePayPayment(pay: GooglePayPaymentInput!): GooglePayPaymentResult!
 
   """
   Create a new payment request to receive money via MobilePay, available only in Denmark and Finland.
@@ -3046,6 +4027,30 @@ type mutation_root {
   Create a new payment request to receive money via Vipps, available only in Norway.
   """
   newVippsPayment(pay: VippsPaymentInput!): VippsPaymentResult!
+
+  """Record that a payment redirect was triggered."""
+  redirectPayment(redirect: PaymentRedirectInput!): PaymentRedirectResult!
+
+  """
+  Trigger a server-side refresh of the Avarda authorization status
+  for the current payment session. Called by the frontend once the
+  customer is redirected back to Kronor from Avarda's
+  ID-validation flow so the backend re-checks status with Avarda
+  immediately instead of waiting on Avarda's own server-side
+  callback (which is not reliably available on the Authorization
+  API).
+  """
+  refreshAvardaAuthorization: RefreshAvardaAuthorizationResult!
+
+  """
+  Trigger an immediate server-side poll of the payment provider's
+  status for the current payment session. Called by the frontend once
+  the customer is redirected back to Kronor from the provider's app
+  so the backend re-checks status immediately instead of waiting on
+  the provider's webhook (which can arrive late) or the next scheduled
+  poll.
+  """
+  refreshPaymentStatus: RefreshPaymentStatusResult!
 
   """Update the frontend flow state of a bank transfer"""
   updateBankTransferFlow(flow: BankTransferFlowInput!): BankTransferFlowResult!
@@ -3210,6 +4215,26 @@ type query_root {
   ): [aspsp!]!
 
   """
+  Get the list of cards saved for the customer in the current payment-gateway session, or an empty list when the session has no customer reference
+  """
+  paymentGatewayGetCustomerCards(
+    """distinct select on columns"""
+    distinctOn: [CustomerCardSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [CustomerCardOrderBy!]
+
+    """filter the rows returned"""
+    where: CustomerCardBoolExp
+  ): [CustomerCard!]!
+
+  """
   fetch data from the table: "tenant.payment_method_available"
   """
   paymentMethodStatus(
@@ -3229,7 +4254,7 @@ type query_root {
     where: PaymentMethodStatusBoolExp
   ): [PaymentMethodStatus!]!
 
-  """Get the list of payment requests"""
+  """An array relationship"""
   paymentRequests(
     """distinct select on columns"""
     distinctOn: [PaymentRequestSelectColumn!]
@@ -3246,6 +4271,24 @@ type query_root {
     """filter the rows returned"""
     where: PaymentRequestBoolExp
   ): [PaymentRequest!]!
+
+  """Get the list of payment requests"""
+  paymentSessions(
+    """distinct select on columns"""
+    distinctOn: [PaymentSessionSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [PaymentSessionOrderBy!]
+
+    """filter the rows returned"""
+    where: PaymentSessionBoolExp
+  ): [PaymentSession!]!
 
   """
   fetch data from the table: "tenant.paypal_setting"
@@ -3398,6 +4441,26 @@ type subscription_root {
   ): [aspsp!]!
 
   """
+  Get the list of cards saved for the customer in the current payment-gateway session, or an empty list when the session has no customer reference
+  """
+  paymentGatewayGetCustomerCards(
+    """distinct select on columns"""
+    distinctOn: [CustomerCardSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [CustomerCardOrderBy!]
+
+    """filter the rows returned"""
+    where: CustomerCardBoolExp
+  ): [CustomerCard!]!
+
+  """
   fetch data from the table: "tenant.payment_method_available"
   """
   paymentMethodStatus(
@@ -3417,7 +4480,7 @@ type subscription_root {
     where: PaymentMethodStatusBoolExp
   ): [PaymentMethodStatus!]!
 
-  """Get the list of payment requests"""
+  """An array relationship"""
   paymentRequests(
     """distinct select on columns"""
     distinctOn: [PaymentRequestSelectColumn!]
@@ -3434,6 +4497,24 @@ type subscription_root {
     """filter the rows returned"""
     where: PaymentRequestBoolExp
   ): [PaymentRequest!]!
+
+  """Get the list of payment requests"""
+  paymentSessions(
+    """distinct select on columns"""
+    distinctOn: [PaymentSessionSelectColumn!]
+
+    """limit the number of rows returned"""
+    limit: Int
+
+    """skip the first n rows. Use only with order_by"""
+    offset: Int
+
+    """sort the rows by one or more columns"""
+    orderBy: [PaymentSessionOrderBy!]
+
+    """filter the rows returned"""
+    where: PaymentSessionBoolExp
+  ): [PaymentSession!]!
 
   """
   fetch data from the table: "tenant.paypal_setting"
