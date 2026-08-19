@@ -2,6 +2,7 @@ plugins {
     id 'kronor.android.application'
     id 'kronor.android.compose'
     alias(libs.plugins.apollo)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 def kronorMerchantToken = project.hasProperty('KRONOR_MERCHANT_TOKEN') ? project.property('KRONOR_MERCHANT_TOKEN') : System.getenv('KRONOR_MERCHANT_TOKEN') ?: ''
@@ -42,16 +43,16 @@ dependencies {
     implementation libs.androidx.appcompat
     implementation libs.google.material
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.navigation.fragment.ktx
-    implementation libs.androidx.navigation.ui.ktx
-    implementation libs.androidx.navigation.compose
-    implementation libs.androidx.lifecycle.runtime.ktx
+    implementation libs.androidx.navigation3.runtime
+    implementation libs.androidx.navigation3.ui
+    implementation libs.androidx.lifecycle.viewmodel.navigation3
     implementation libs.androidx.activity.compose
     implementation libs.androidx.compose.ui
     implementation libs.androidx.compose.ui.tooling.preview
     implementation libs.androidx.compose.material
     implementation libs.androidx.compose.material3
     implementation libs.apollo.runtime
+    implementation libs.kotlinx.serialization.core
 
     testImplementation libs.junit4
     androidTestImplementation libs.androidx.test.ext.junit

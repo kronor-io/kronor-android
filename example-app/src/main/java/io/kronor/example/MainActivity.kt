@@ -1,12 +1,10 @@
 package io.kronor.example
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -19,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -46,11 +43,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -63,54 +57,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
-import androidx.core.util.Consumer
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import io.kronor.api.Environment
-import io.kronor.api.PaymentConfiguration
-import io.kronor.api.PaymentEvent
 import io.kronor.api.PaymentMethod
 import io.kronor.api.toPaymentGatewayMethod
-import io.kronor.example.type.GatewayEnum
-import io.kronor.component.bank_transfer.BankTransferComponent
-import io.kronor.component.bank_transfer.bankTransferViewModel
-import io.kronor.component.credit_card.CreditCardComponent
-import io.kronor.component.credit_card.creditCardViewModel
-import io.kronor.component.fallback.FallbackComponent
-import io.kronor.component.fallback.fallbackViewModel
-import io.kronor.component.googlepay.GooglePayComponent
-import io.kronor.component.googlepay.GooglePayViewModel
-import io.kronor.component.googlepay.googlePayViewModel
-import io.kronor.component.mobilepay.MobilePayComponent
-import io.kronor.component.mobilepay.mobilePayViewModel
-import io.kronor.component.paypal.PayPalComponent
-import io.kronor.component.paypal.paypalViewModel
-import io.kronor.component.swish.SwishComponent
-import io.kronor.component.swish.swishViewModel
-import io.kronor.component.vipps.VippsComponent
-import io.kronor.component.vipps.vippsViewModel
 import io.kronor.example.type.Country
+import io.kronor.example.type.GatewayEnum
 import io.kronor.example.type.SupportedCurrencyEnum
-import io.kronor.example.ui.theme.KronorSDKTheme
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.Locale
 import kotlin.enums.enumEntries
 
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+    private var redirectIntent by mutableStateOf<Intent?>(null)
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -122,481 +81,35 @@ class MainActivity : ComponentActivity() {
         )
         StrictMode.noteSlowCall("SlowCall")
         super.onCreate(savedInstanceState)
-        Log.d("onCreate", "${viewModel.paymentSessionToken}")
+        redirectIntent = intent.takeIf { it.data != null }
+        viewModel.handleIntent(intent)
         setContent {
-            val newIntent = produceState(initialValue = null as Intent?) {
-                val consumer = Consumer<Intent> {
-                    this.value = it
-                    viewModel.handleIntent(it)
-                }
-                this.value = intent
-                viewModel.handleIntent(intent)
-                addOnNewIntentListener(consumer)
-                awaitDispose {
-                    removeOnNewIntentListener(consumer)
-                }
-            }
-            KronorTestApp(viewModel, newIntent)
+            KronorTestApp(
+                viewModel = viewModel,
+                redirectIntent = redirectIntent,
+                onRedirectHandled = { handledIntent ->
+                    if (redirectIntent === handledIntent) {
+                        redirectIntent = null
+                    }
+                },
+            )
         }
     }
 
     override fun onNewIntent(intent: Intent) {
-        intent.let(viewModel::handleIntent)
         super.onNewIntent(intent)
+        setIntent(intent)
+        redirectIntent = intent.takeIf { it.data != null }
+        viewModel.handleIntent(intent)
     }
 }
 
-@SuppressLint("ComposeViewModelForwarding", "ComposeModifierReused")
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>, modifier: Modifier = Modifier) {
-    val navController = rememberNavController()
-    KronorSDKTheme {
-        NavHost(navController = navController, startDestination = "paymentMethods") {
-            composable("paymentMethods") {
-                PaymentMethodsScreen(viewModel, onNavigateToSwish = { sessionToken ->
-                    navController.navigate("swishScreen/${sessionToken}")
-                }, onNavigateToCreditCard = { sessionToken ->
-                    navController.navigate("creditCardScreen/${sessionToken}")
-                }, onNavigateToMobilePay = { sessionToken ->
-                    navController.navigate("mobilePayScreen/${sessionToken}")
-                }, onNavigateToVipps = { sessionToken ->
-                    navController.navigate("vippsScreen/$sessionToken")
-                }, onNavigateToPayPal = { sessionToken ->
-                    navController.navigate("paypalScreen/$sessionToken")
-                }, onNavigateToBankTransfer = { sessionToken ->
-                    navController.navigate("bankTransferScreen/$sessionToken")
-                }, onNavigateToGooglePay = { sessionToken ->
-                    navController.navigate("googlePayScreen/$sessionToken")
-                }, onNavigateToFallback = { pm, sessionToken ->
-                    navController.navigate("fallbackScreen/$pm/$sessionToken")
-                })
-            }
-            composable(
-                "swishScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
-                    type = NavType.StringType
-                })
-            ) {
-                it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val svm = swishViewModel(
-                        PaymentConfiguration(
-                            sessionToken = sessionToken,
-                            merchantLogo = R.drawable.kronor_logo,
-                            environment = Environment.Staging,
-                            appName = "kronor-android-test",
-                            appVersion = "0.1.0",
-                            locale = Locale.Builder().setRegion("US").setLanguage("en").build(),
-                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
-                        )
-                    )
-                    val lifecycle = LocalLifecycleOwner.current.lifecycle
-                    LaunchedEffect(Unit) {
-                        launch {
-                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                launch {
-                                    svm.events.collect { event ->
-                                        when (event) {
-                                            PaymentEvent.PaymentFailure -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-
-                                            is PaymentEvent.PaymentSuccess -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    LaunchedEffect(newIntent.value?.data) {
-                        newIntent.value?.let {
-                            Log.d("SwishComponent", "${it.data}")
-                            svm.handleIntent(it)
-                        }
-                    }
-                    SwishComponent(svm)
-                }
-            }
-            composable(
-                "creditCardScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
-                    type = NavType.StringType
-                })
-            ) {
-                it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val ccvm = creditCardViewModel(
-                        creditCardConfiguration = PaymentConfiguration(
-                            sessionToken = sessionToken,
-                            merchantLogo = R.drawable.kronor_logo,
-                            environment = Environment.Staging,
-                            appName = "kronor-android-test",
-                            appVersion = "0.1.0",
-                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
-                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
-                        )
-                    )
-
-                    val lifecycle = LocalLifecycleOwner.current.lifecycle
-                    LaunchedEffect(Unit) {
-                        launch {
-                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                launch {
-                                    ccvm.events.collect {
-                                        when (it) {
-                                            PaymentEvent.PaymentFailure -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-
-                                            is PaymentEvent.PaymentSuccess -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    CreditCardComponent(ccvm, modifier = modifier.statusBarsPadding())
-                }
-            }
-            composable(
-                "mobilePayScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
-                    type = NavType.StringType
-                })
-            ) {
-                it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val mpvm = mobilePayViewModel(
-                        mobilePayConfiguration = PaymentConfiguration(
-                            sessionToken = sessionToken,
-                            merchantLogo = R.drawable.kronor_logo,
-                            environment = Environment.Staging,
-                            appName = "kronor-android-test",
-                            appVersion = "0.1.0",
-                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
-                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
-                        )
-                    )
-                    val lifecycle = LocalLifecycleOwner.current.lifecycle
-                    LaunchedEffect(Unit) {
-                        launch {
-                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                launch {
-                                    mpvm.events.collect {
-                                        when (it) {
-                                            PaymentEvent.PaymentFailure -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-
-                                            is PaymentEvent.PaymentSuccess -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    LaunchedEffect(newIntent.value?.data) {
-                        newIntent.value?.let {
-                            Log.d("MobilePayComponent", "${it.data}")
-                            mpvm.handleIntent(it)
-                        }
-                    }
-                    MobilePayComponent(mpvm)
-                }
-            }
-            composable(
-                "vippsScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
-                    type = NavType.StringType
-                })
-            ) {
-                it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val vvm = vippsViewModel(
-                        PaymentConfiguration(
-                            sessionToken = sessionToken,
-                            merchantLogo = R.drawable.kronor_logo,
-                            environment = Environment.Staging,
-                            appName = "kronor-android-test",
-                            appVersion = "0.1.0",
-                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
-                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
-                        )
-                    )
-
-                    val lifecycle = LocalLifecycleOwner.current.lifecycle
-                    LaunchedEffect(Unit) {
-                        launch {
-                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                launch {
-                                    vvm.events.collect {
-                                        when (it) {
-                                            PaymentEvent.PaymentFailure -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-
-                                            is PaymentEvent.PaymentSuccess -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    LaunchedEffect(newIntent.value?.data) {
-                        newIntent.value?.let {
-                            Log.d("VippsComponent", "${it.data}")
-                            vvm.handleIntent(it)
-                        }
-                    }
-                    VippsComponent(vvm)
-                }
-            }
-            composable(
-                "paypalScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
-                    type = NavType.StringType
-                })
-            ) {
-                it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val ppvm = paypalViewModel(
-                        paypalConfiguration = PaymentConfiguration(
-                            sessionToken = sessionToken,
-                            merchantLogo = R.drawable.kronor_logo,
-                            environment = Environment.Staging,
-                            appName = "kronor-android-test",
-                            appVersion = "0.1.0",
-                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
-                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
-                        )
-                    )
-
-                    val lifecycle = LocalLifecycleOwner.current.lifecycle
-                    LaunchedEffect(Unit) {
-                        launch {
-                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                launch {
-                                    ppvm.events.collect {
-                                        when (it) {
-                                            PaymentEvent.PaymentFailure -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-
-                                            is PaymentEvent.PaymentSuccess -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    PayPalComponent(ppvm)
-                }
-            }
-            composable(
-                "bankTransferScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
-                    type = NavType.StringType
-                })
-            ) {
-                it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val svm = bankTransferViewModel(
-                        PaymentConfiguration(
-                            sessionToken = sessionToken,
-                            merchantLogo = R.drawable.kronor_logo,
-                            environment = Environment.Staging,
-                            appName = "kronor-android-test",
-                            appVersion = "0.1.0",
-                            locale = Locale.Builder().setRegion("US").setLanguage("en").build(),
-                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
-                        )
-                    )
-                    val lifecycle = LocalLifecycleOwner.current.lifecycle
-                    LaunchedEffect(Unit) {
-                        launch {
-                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                launch {
-                                    svm.events.collect { event ->
-                                        when (event) {
-                                            PaymentEvent.PaymentFailure -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-
-                                            is PaymentEvent.PaymentSuccess -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    LaunchedEffect(newIntent.value?.data) {
-                        newIntent.value?.let {
-                            Log.d("BankTransferComponent", "${it.data}")
-                            svm.handleIntent(it)
-                        }
-                    }
-                    BankTransferComponent(svm)
-                }
-            }
-            composable(
-                "googlePayScreen/{sessionToken}", arguments = listOf(navArgument("sessionToken") {
-                    type = NavType.StringType
-                })
-            ) {
-                it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                    val ccvm = googlePayViewModel(
-                        googlePayConfiguration = PaymentConfiguration(
-                            sessionToken = sessionToken,
-                            merchantLogo = R.drawable.kronor_logo,
-                            environment = Environment.Staging,
-                            appName = "kronor-android-test",
-                            appVersion = "0.1.0",
-                            redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
-                            locale = Locale.Builder().setRegion("US").setLanguage("en").build()
-                        )
-                    )
-
-                    val lifecycle = LocalLifecycleOwner.current.lifecycle
-                    LaunchedEffect(Unit) {
-                        launch {
-                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                launch {
-                                    ccvm.events.collect {
-                                        when (it) {
-                                            PaymentEvent.PaymentFailure -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-
-                                            is PaymentEvent.PaymentSuccess -> {
-                                                withContext(Dispatchers.Main) {
-                                                    viewModel.resetPaymentState()
-                                                    navController.navigate("paymentMethods")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    GooglePayComponent(ccvm, modifier = modifier.statusBarsPadding())
-                }
-            }
-            composable(
-                "fallbackScreen/{pm}/{sessionToken}", arguments = listOf(navArgument("pm") {
-                    type = NavType.StringType
-                }, navArgument("sessionToken") {
-                    type = NavType.StringType
-                })
-            ) {
-                it.arguments?.getString("pm")?.let { pm ->
-                    it.arguments?.getString("sessionToken")?.let { sessionToken ->
-                        val fbvm = fallbackViewModel(
-                            fallbackConfiguration = PaymentConfiguration(
-                                sessionToken = sessionToken,
-                                merchantLogo = R.drawable.kronor_logo,
-                                environment = Environment.Staging,
-                                appName = "kronor-android-test",
-                                appVersion = "0.1.0",
-                                redirectUrl = "kronorcheckout://io.kronor.example/".toUri(),
-                                locale = Locale.Builder().setRegion("US").setLanguage("en").build()
-                            ), paymentMethod = pm
-                        )
-
-                        val lifecycle = LocalLifecycleOwner.current.lifecycle
-                        LaunchedEffect(Unit) {
-                            launch {
-                                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                    launch {
-                                        fbvm.events.collect {
-                                            when (it) {
-                                                PaymentEvent.PaymentFailure -> {
-                                                    withContext(Dispatchers.Main) {
-                                                        viewModel.resetPaymentState()
-                                                        navController.navigate("paymentMethods")
-                                                    }
-                                                }
-
-                                                is PaymentEvent.PaymentSuccess -> {
-                                                    withContext(Dispatchers.Main) {
-                                                        viewModel.resetPaymentState()
-                                                        navController.navigate("paymentMethods")
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        LaunchedEffect(newIntent.value?.data) {
-                            newIntent.value?.let {
-                                Log.d("FallbackComponent", "${it.data}")
-                                fbvm.handleIntent(it)
-                            }
-                        }
-                        FallbackComponent(fbvm)
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-@OptIn(DelicateCoroutinesApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PaymentMethodsScreen(
     viewModel: MainViewModel,
-    onNavigateToSwish: (String) -> Unit,
-    onNavigateToCreditCard: (String) -> Unit,
-    onNavigateToMobilePay: (String) -> Unit,
-    onNavigateToVipps: (String) -> Unit,
-    onNavigateToPayPal: (String) -> Unit,
-    onNavigateToBankTransfer: (String) -> Unit,
-    onNavigateToGooglePay: (String) -> Unit,
-    onNavigateToFallback: (String, String) -> Unit,
+    onStartPayment: (PaymentMethod) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var amount by rememberSaveable(stateSaver = TextFieldValue.Saver) {
@@ -618,43 +131,6 @@ fun PaymentMethodsScreen(
     var useFallbackState by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage: String? by remember { mutableStateOf(null) }
-
-    LaunchedEffect(viewModel.paymentMethodSelected) {
-        when (viewModel.paymentMethodSelected.value) {
-            is PaymentMethod.Swish -> {
-                onNavigateToSwish(viewModel.paymentSessionToken!!)
-            }
-
-            PaymentMethod.CreditCard -> {
-                onNavigateToCreditCard(viewModel.paymentSessionToken!!)
-            }
-
-            PaymentMethod.MobilePay -> {
-                Log.d("PaymentMethodsScreen", "I am here!")
-                onNavigateToMobilePay(viewModel.paymentSessionToken!!)
-            }
-
-            PaymentMethod.Vipps -> {
-                onNavigateToVipps(viewModel.paymentSessionToken!!)
-            }
-
-            PaymentMethod.PayPal -> {
-                onNavigateToPayPal(viewModel.paymentSessionToken!!)
-            }
-            PaymentMethod.BankTransfer -> {
-                onNavigateToBankTransfer(viewModel.paymentSessionToken!!)
-            }
-            PaymentMethod.GooglePay -> {
-                onNavigateToGooglePay(viewModel.paymentSessionToken!!)
-            }
-            is PaymentMethod.Fallback -> {
-                onNavigateToFallback((viewModel.paymentMethodSelected.value as PaymentMethod.Fallback).paymentMethod, viewModel.paymentSessionToken!!)
-            }
-            null -> {
-
-            }
-        }
-    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -847,41 +323,24 @@ fun PaymentMethodsScreen(
                     showErrorDialog = true
                     return@Button
                 }
-                GlobalScope.launch {
-                    withContext(Dispatchers.Main) {
-                        val sessionResponse = viewModel.createNewPaymentSession(
-                            amount.text, selectedCountry, selectedCurrency, selectedGateway
-                        )
+                scope.launch {
+                    val sessionResponse = viewModel.createNewPaymentSession(
+                        amount.text, selectedCountry, selectedCurrency, selectedGateway
+                    )
 
-                        when (sessionResponse) {
-                            is KronorApiResponse.Error -> {
-                                errorMessage = sessionResponse.e
-                                showErrorDialog = true
+                    when (sessionResponse) {
+                        is KronorApiResponse.Error -> {
+                            errorMessage = sessionResponse.e
+                            showErrorDialog = true
+                        }
+
+                        is KronorApiResponse.Response -> {
+                            val paymentMethod = if (useFallbackState) {
+                                PaymentMethod.Fallback(selectedPaymentMethod.toPaymentGatewayMethod())
+                            } else {
+                                selectedPaymentMethod
                             }
-
-                            is KronorApiResponse.Response -> {
-                                val paymentMethod = if (useFallbackState) {
-                                    PaymentMethod.Fallback(selectedPaymentMethod.toPaymentGatewayMethod())
-                                } else {
-                                    selectedPaymentMethod
-                                }
-                                when (paymentMethod) {
-                                    is PaymentMethod.Swish -> onNavigateToSwish(sessionResponse.token)
-                                    PaymentMethod.CreditCard -> onNavigateToCreditCard(
-                                        sessionResponse.token
-                                    )
-
-                                    PaymentMethod.MobilePay -> onNavigateToMobilePay(sessionResponse.token)
-                                    PaymentMethod.Vipps -> onNavigateToVipps(sessionResponse.token)
-                                    PaymentMethod.PayPal -> onNavigateToPayPal(sessionResponse.token)
-                                    PaymentMethod.BankTransfer -> onNavigateToBankTransfer(sessionResponse.token)
-                                    PaymentMethod.GooglePay -> onNavigateToGooglePay(sessionResponse.token)
-                                    is PaymentMethod.Fallback -> onNavigateToFallback(
-                                        paymentMethod.paymentMethod,
-                                        sessionResponse.token
-                                    )
-                                }
-                            }
+                            onStartPayment(paymentMethod)
                         }
                     }
                 }
@@ -1206,21 +665,3 @@ fun setSupportedCurrencyGivenPaymentMethodAndCountry(
         else -> {}
     }
 }
-
-
-
-//@RequiresApi(Build.VERSION_CODES.O)
-//@Preview(showBackground = true)
-//@Composable
-//private fun DefaultPaymentMethodsPreview() {
-//    PaymentMethodsScreen(
-//        onNavigateToSwish = {},
-//        onNavigateToCreditCard = {},
-//        onNavigateToMobilePay = {},
-//        onNavigateToVipps = {},
-//        onNavigateToPayPal = {},
-//        viewModel = viewModel(),
-//        onNavigateToBankTransfer = {},
-//        onNavigateToFallback = { _, _ -> {}},
-//    )
-//}

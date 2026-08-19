@@ -14,6 +14,8 @@ core = "1.19.0"
 lifecycle = "2.11.0"
 material = "1.14.0"
 navigation = "2.9.8"
+navigation3 = "1.1.6"
+kotlinx-serialization = "1.11.0"
 webkit = "1.17.0"
 
 apollo-adapters = "0.7.0"
@@ -35,9 +37,10 @@ androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayo
 androidx-core = { module = "androidx.core:core", version.ref = "core" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
-androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation" }
-androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
@@ -59,6 +62,7 @@ compose-lint-checks = { module = "com.slack.lint.compose:compose-lint-checks", v
 google-material = { module = "com.google.android.material:material", version.ref = "material" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "mockwebserver" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 statemachine = { module = "com.tinder.statemachine:statemachine", version.ref = "statemachine" }
 trustly = { module = "com.trustly:trustly-android-library", version.ref = "trustly" }
 zxing = { module = "com.google.zxing:core", version.ref = "zxing" }
@@ -66,4 +70,5 @@ zxing = { module = "com.google.zxing:core", version.ref = "zxing" }
 [plugins]
 apollo = { id = "com.apollographql.apollo", version.ref = "apollo" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
