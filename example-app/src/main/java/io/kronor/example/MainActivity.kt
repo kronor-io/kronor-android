@@ -1,5 +1,6 @@
 package io.kronor.example
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -26,7 +27,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -39,6 +39,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -103,6 +105,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import kotlin.enums.enumEntries
 
 
 class MainActivity : ComponentActivity() {
@@ -143,6 +146,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("ComposeViewModelForwarding", "ComposeModifierReused")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun KronorTestApp(viewModel: MainViewModel, newIntent: State<Intent?>, modifier: Modifier = Modifier) {
@@ -652,11 +656,13 @@ fun PaymentMethodsScreen(
         }
     }
 
-    val scaffoldState = rememberScaffoldState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        modifier = modifier.fillMaxSize(), topBar = {
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
             TopAppBar(title = { Text("Kronor Payments Demo") }, )
         }
     ) { paddingValues ->
@@ -774,7 +780,7 @@ fun PaymentMethodsScreen(
                                     useFallbackState = false
                                 } else {
                                     scope.launch {
-                                        scaffoldState.snackbarHostState.showSnackbar(
+                                        snackbarHostState.showSnackbar(
                                             "Payment method ${selectedPaymentMethod.toPaymentGatewayMethod()} doesn't have a native implementation"
                                         )
                                     }
@@ -1104,9 +1110,9 @@ fun setSupportedCountriesAndCurrencies(
         }
 
         else -> {
-            setSupportedCountries(enumValues())
-            setSupportedCurrencies(enumValues())
-            setSupportedGateways(enumValues())
+            setSupportedCountries(enumEntries<Country>().toTypedArray())
+            setSupportedCurrencies(enumEntries<SupportedCurrencyEnum>().toTypedArray())
+            setSupportedGateways(enumEntries<GatewayEnum>().toTypedArray())
         }
     }
 }

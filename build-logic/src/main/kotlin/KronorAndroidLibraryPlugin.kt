@@ -8,13 +8,13 @@ class KronorAndroidLibraryPlugin : Plugin<Project> {
         pluginManager.apply("com.android.library")
 
         extensions.configure(LibraryExtension::class.java) {
-            compileSdk = 36
+            compileSdk = 37
 
             defaultConfig {
-                minSdk = 21
+                minSdk = 24
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 consumerProguardFiles("consumer-rules.pro")
-                aarMetadata.minCompileSdk = 21
+                aarMetadata.minCompileSdk = 24
             }
 
             buildTypes.named("release") {
@@ -32,8 +32,8 @@ class KronorAndroidLibraryPlugin : Plugin<Project> {
                 targetCompatibility = JavaVersion.VERSION_17
             }
 
-            lint.targetSdk = 36
-            testOptions.targetSdk = 36
+            lint.targetSdk = 37
+            testOptions.targetSdk = 37
         }
     }
 }

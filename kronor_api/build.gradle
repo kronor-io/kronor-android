@@ -31,7 +31,7 @@ apollo {
 }
 
 dependencies {
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.apollo.runtime
     implementation libs.apollo.adapters.core
     testImplementation libs.junit4
