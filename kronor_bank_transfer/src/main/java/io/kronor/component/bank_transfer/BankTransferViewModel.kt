@@ -19,6 +19,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.apollographql.apollo.exception.ApolloException
 import com.tinder.StateMachine
 import io.kronor.api.ApiError
 import io.kronor.api.KronorError

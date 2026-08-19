@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
-    id("com.apollographql.apollo3").version("3.8.6")
+    id("com.apollographql.apollo").version("4.4.1")
     id 'maven-publish'
     id 'signing'
 }
@@ -52,12 +52,17 @@ publishing {
 def kronorSdkVersion = project.hasProperty('VERSION') ? project.property('VERSION') : System.getenv('KRONOR_SDK_VERSION') ?: '"dev"'
 
 android {
+    lint {
+        targetSdk 36
+    }
+    testOptions {
+        targetSdk 36
+    }
     namespace 'io.kronor.api'
     compileSdk 36
 
     defaultConfig {
         minSdk 21
-        targetSdk 36
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -90,7 +95,7 @@ apollo {
         packageName.set("io.kronor.api")
         mapScalarToKotlinString("bigint")
         mapScalarToKotlinString("uuid")
-        mapScalar("timestamptz", "java.util.Date", "com.apollographql.apollo3.adapter.DateAdapter")
+        mapScalar("timestamptz", "java.util.Date", "com.apollographql.adapter.core.DateAdapter")
     }
 }
 
@@ -101,9 +106,8 @@ dependencies {
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.10.0'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
-    implementation('com.apollographql.apollo3:apollo-runtime:3.8.6')
-    implementation('com.apollographql.apollo3:apollo-adapters:3.8.6')
-
+    implementation('com.apollographql.apollo:apollo-runtime:4.4.1')
+    implementation('com.apollographql.adapters:apollo-adapters-core:0.7.0')
 }
 
 android.buildFeatures.buildConfig = true

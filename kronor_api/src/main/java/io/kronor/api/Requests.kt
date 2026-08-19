@@ -1,13 +1,13 @@
 package io.kronor.api
 
 import android.os.Build
-import com.apollographql.apollo3.ApolloCall
-import com.apollographql.apollo3.ApolloClient
-import com.apollographql.apollo3.api.Operation
-import com.apollographql.apollo3.api.Optional
-import com.apollographql.apollo3.exception.ApolloException
-import com.apollographql.apollo3.network.okHttpClient
-import com.apollographql.apollo3.network.ws.SubscriptionWsProtocol
+import com.apollographql.apollo.ApolloCall
+import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.Operation
+import com.apollographql.apollo.api.Optional
+import com.apollographql.apollo.exception.ApolloException
+import com.apollographql.apollo.network.okHttpClient
+import com.apollographql.apollo.network.ws.SubscriptionWsProtocol
 import io.kronor.api.type.AddSessionDeviceInformationInput
 import io.kronor.api.type.BankTransferPaymentInput
 import io.kronor.api.type.CreditCardPaymentInput
@@ -109,7 +109,7 @@ class Requests internal constructor(
 }
 
 data class ApiError(
-    val errors: List<com.apollographql.apollo3.api.Error>, val extensions: Map<String, Any?>
+    val errors: List<com.apollographql.apollo.api.Error>, val extensions: Map<String, Any?>
 )
 
 sealed class KronorError : Throwable() {
@@ -171,27 +171,25 @@ internal fun <T> Flow<T>.retryTransientErrors(
 }
 
 suspend fun <D : Operation.Data> ApolloCall<D>.executeMapKronorError(): Result<D> {
-    return try {
-        val response = this.execute()
-        val errors = response.errors.orEmpty()
-        if (errors.isNotEmpty()) {
-            failure(
-                KronorError.GraphQlError(
-                    ApiError(errors, response.extensions)
-                )
-            )
-        } else response.data?.let {
-            success(it)
-        } ?: failure(
+    val response = this.execute()
+    if (response.exception != null) {
+       return failure(KronorError.NetworkError(response.exception!!))
+    }
+    val errors = response.errors.orEmpty()
+    return if (errors.isNotEmpty()) {
+        failure(
             KronorError.GraphQlError(
-                ApiError(
-                    emptyList(), response.extensions
-                )
+                ApiError(errors, response.extensions)
             )
         )
-    } catch (e: ApolloException) {
-        failure(KronorError.NetworkError(e))
-    }
+    } else response.data?.let {
+        success(it)
+    } ?: failure(
+        KronorError.GraphQlError(
+            ApiError(
+               emptyList(), response.extensions
+           )
+    ))
 }
 
 data class PaymentRequestArgs(

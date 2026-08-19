@@ -9,8 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
-import com.apollographql.apollo3.api.Optional
-import com.apollographql.apollo3.exception.ApolloException
+import com.apollographql.apollo.api.Optional
+import com.apollographql.apollo.exception.ApolloException
 import io.kronor.example.databinding.FragmentFirstBinding
 import io.kronor.example.type.PaymentSessionInput
 import io.kronor.example.type.SupportedCurrencyEnum

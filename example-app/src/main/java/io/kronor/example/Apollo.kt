@@ -1,7 +1,7 @@
 package io.kronor.example
 
-import com.apollographql.apollo3.ApolloClient
-import com.apollographql.apollo3.network.okHttpClient
+import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.network.okHttpClient
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response

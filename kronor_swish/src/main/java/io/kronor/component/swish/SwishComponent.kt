@@ -67,7 +67,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.apollographql.apollo3.exception.ApolloException
+import com.apollographql.apollo.exception.ApolloException
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import io.kronor.api.KronorError
@@ -632,7 +632,7 @@ private fun PreviewSwishPaymentRejected() {
 private fun PreviewSwishPaymentErrored() {
     SwishWrapper {
         SwishPaymentErrored(
-            error = KronorError.NetworkError(ApolloException()),
+            error = KronorError.FlowError("Flow errored"),
             onPaymentRetry = { }) {}
     }
 }
