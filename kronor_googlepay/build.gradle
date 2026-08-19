@@ -1,121 +1,29 @@
 plugins {
-    id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
-    id 'maven-publish'
-    id 'signing'
-    id 'org.jetbrains.kotlin.plugin.compose'
+    id 'kronor.android.published-library'
+    id 'kronor.android.compose'
 }
-publishing {
-    publications {
-        release(MavenPublication) {
-            groupId 'io.kronor.component'
-            artifactId 'googlepay'
-            version rootProject.ext['version']
 
-            afterEvaluate {
-                from components.release
-            }
-
-            pom {
-                name = 'googlepay'
-                description = 'Kronor GooglePay Component for Kronor API'
-                url = 'https://github.com/kronor-io/kronor-android'
-                licenses {
-                    license {
-                        name = 'MIT License'
-                        url = 'https://github.com/kronor-io/kronor-android/blob/main/LICENSE'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'iAmMrinal0'
-                        name = 'Mrinal Purohit'
-                        email = 'mrinal@kronor.io'
-                    }
-                    developer {
-                        id = 'pranaysashank'
-                        name = 'Pranay Sashank'
-                        email = 'pranay.sashank@kronor.io'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:github.com/kronor-io/kronor-android.git'
-                    developerConnection = 'scm:git:ssh://github.com/kronor-io/kronor-android.git'
-                    url = 'https://github.com/kronor-io/kronor-android/tree/main'
-                }
-            }
-
-        }
-    }
+kronorPublishing {
+    groupId.set('io.kronor.component')
+    artifactId.set('googlepay')
+    displayName.set('googlepay')
+    description.set('Kronor GooglePay Component for Kronor API')
 }
 
 android {
-    namespace 'io.kronor.component.googlepay'
-    compileSdk 36
-
-    defaultConfig {
-        minSdk 21
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary true
-        }
-
-        aarMetadata {
-            minCompileSdk = 21
-        }
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-    publishing {
-        singleVariant("release") {}
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
-    buildFeatures {
-        viewBinding true
-        compose true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.2'
-    }
-    packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
-    }
-    lint {
-        targetSdk 36
-    }
-    testOptions {
-        targetSdk 36
-    }
+    namespace = 'io.kronor.component.googlepay'
 }
 
 dependencies {
+    implementation libs.androidx.lifecycle.viewmodel.compose
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.material
+    testImplementation libs.junit4
+    androidTestImplementation libs.androidx.compose.ui.test.junit4
+    debugImplementation libs.androidx.compose.ui.tooling
+    debugImplementation libs.androidx.compose.ui.test.manifest
+    lintChecks libs.compose.lint.checks
 
-    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
-    implementation "androidx.compose.ui:ui:$compose_ui_version"
-    implementation "androidx.compose.material:material:$compose_material_version"
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_ui_version"
-    debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
-    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
-
-    lintChecks("com.slack.lint.compose:compose-lint-checks:$compose_lint_version")
-
-    api project(path: ':kronor_api')
-    api project(path: ':kronor_webview_payment_gateway')
+    api project(':kronor_api')
+    api project(':kronor_webview_payment_gateway')
 }
-
-apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
