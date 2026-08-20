@@ -1,6 +1,5 @@
 package io.kronor.example
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -10,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -51,6 +51,7 @@ private data object PaymentMethodsDestination : ExampleDestination
 @Serializable
 private data class PaymentDestination(
     val kind: PaymentKind,
+    val sessionToken: String,
     val fallbackMethod: String? = null,
     val instanceId: String = UUID.randomUUID().toString(),
 ) : ExampleDestination
@@ -67,44 +68,53 @@ private enum class PaymentKind {
     FALLBACK,
 }
 
-private fun PaymentMethod.toDestination(): PaymentDestination = when (this) {
-    is PaymentMethod.Swish -> PaymentDestination(PaymentKind.SWISH)
-    PaymentMethod.CreditCard -> PaymentDestination(PaymentKind.CREDIT_CARD)
-    PaymentMethod.MobilePay -> PaymentDestination(PaymentKind.MOBILE_PAY)
-    PaymentMethod.Vipps -> PaymentDestination(PaymentKind.VIPPS)
-    PaymentMethod.PayPal -> PaymentDestination(PaymentKind.PAYPAL)
-    PaymentMethod.BankTransfer -> PaymentDestination(PaymentKind.BANK_TRANSFER)
-    PaymentMethod.GooglePay -> PaymentDestination(PaymentKind.GOOGLE_PAY)
+private fun PaymentMethod.toDestination(sessionToken: String): PaymentDestination = when (this) {
+    is PaymentMethod.Swish -> PaymentDestination(PaymentKind.SWISH, sessionToken)
+    PaymentMethod.CreditCard -> PaymentDestination(PaymentKind.CREDIT_CARD, sessionToken)
+    PaymentMethod.MobilePay -> PaymentDestination(PaymentKind.MOBILE_PAY, sessionToken)
+    PaymentMethod.Vipps -> PaymentDestination(PaymentKind.VIPPS, sessionToken)
+    PaymentMethod.PayPal -> PaymentDestination(PaymentKind.PAYPAL, sessionToken)
+    PaymentMethod.BankTransfer -> PaymentDestination(PaymentKind.BANK_TRANSFER, sessionToken)
+    PaymentMethod.GooglePay -> PaymentDestination(PaymentKind.GOOGLE_PAY, sessionToken)
     is PaymentMethod.Fallback -> PaymentDestination(
         kind = PaymentKind.FALLBACK,
+        sessionToken = sessionToken,
         fallbackMethod = paymentMethod,
     )
 }
 
-@SuppressLint("ComposeViewModelForwarding", "ComposeModifierReused")
+private fun Intent.toPaymentDestinationOrNull(): PaymentDestination? {
+    val uri = data ?: return null
+    val sessionToken = uri.getQueryParameter("sessionToken") ?: return null
+    val paymentMethod = when (val method = uri.getQueryParameter("paymentMethod")) {
+        "swish" -> PaymentMethod.Swish()
+        "creditcard" -> PaymentMethod.CreditCard
+        "mobilepay" -> PaymentMethod.MobilePay
+        "vipps" -> PaymentMethod.Vipps
+        "paypal" -> PaymentMethod.PayPal
+        null -> return null
+        else -> PaymentMethod.Fallback(method)
+    }
+    return paymentMethod.toDestination(sessionToken)
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun KronorTestApp(
-    viewModel: MainViewModel,
     redirectIntent: Intent?,
     onRedirectHandled: (Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val backStack = rememberNavBackStack(PaymentMethodsDestination)
-    val pendingPaymentMethod = viewModel.paymentMethodSelected.value
-    val sessionToken = viewModel.paymentSessionToken
 
     fun finishPayment() {
-        viewModel.resetPaymentState()
         while (backStack.size > 1) {
             backStack.removeLastOrNull()
         }
     }
 
-    LaunchedEffect(pendingPaymentMethod, sessionToken) {
-        if (pendingPaymentMethod != null && sessionToken != null) {
-            viewModel.clearPendingPaymentMethod()
-            val destination = pendingPaymentMethod.toDestination()
+    LaunchedEffect(redirectIntent) {
+        redirectIntent?.toPaymentDestinationOrNull()?.let { destination ->
             if (backStack.lastOrNull() is PaymentDestination) {
                 backStack[backStack.lastIndex] = destination
             } else {
@@ -119,7 +129,6 @@ fun KronorTestApp(
             onBack = {
                 if (backStack.size > 1) {
                     backStack.removeLastOrNull()
-                    viewModel.resetPaymentState()
                 }
             },
             entryDecorators = listOf(
@@ -128,33 +137,37 @@ fun KronorTestApp(
             ),
             entryProvider = entryProvider {
                 entry<PaymentMethodsDestination> {
-                    PaymentMethodsScreen(
-                        viewModel = viewModel,
-                        onStartPayment = { paymentMethod ->
-                            backStack.add(paymentMethod.toDestination())
+                    PaymentMethodsRoute(
+                        onStartPayment = { paymentMethod, sessionToken ->
+                            backStack.add(paymentMethod.toDestination(sessionToken))
                         },
                     )
                 }
                 entry<PaymentDestination> { destination ->
-                    val activeSessionToken = viewModel.paymentSessionToken
-                    if (activeSessionToken == null) {
-                        LaunchedEffect(destination) {
-                            finishPayment()
-                        }
-                    } else {
-                        PaymentScreen(
-                            destination = destination,
-                            sessionToken = activeSessionToken,
-                            redirectIntent = redirectIntent,
-                            onRedirectHandled = onRedirectHandled,
-                            onFinished = ::finishPayment,
-                            modifier = modifier,
-                        )
-                    }
+                    PaymentScreen(
+                        destination = destination,
+                        sessionToken = destination.sessionToken,
+                        redirectIntent = redirectIntent,
+                        onRedirectHandled = onRedirectHandled,
+                        onFinished = ::finishPayment,
+                        modifier = modifier,
+                    )
                 }
             },
         )
     }
+}
+
+@Composable
+@RequiresApi(Build.VERSION_CODES.O)
+private fun PaymentMethodsRoute(
+    onStartPayment: (PaymentMethod, String) -> Unit,
+    viewModel: MainViewModel = viewModel(),
+) {
+    PaymentMethodsScreen(
+        createPaymentSession = viewModel::createNewPaymentSession,
+        onStartPayment = onStartPayment,
+    )
 }
 
 @Composable
@@ -298,4 +311,3 @@ private fun PaymentEffects(
         }
     }
 }
-

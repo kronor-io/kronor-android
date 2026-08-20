@@ -7,7 +7,6 @@ import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -68,7 +67,6 @@ import kotlin.enums.enumEntries
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: MainViewModel by viewModels()
     private var redirectIntent by mutableStateOf<Intent?>(null)
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -82,10 +80,8 @@ class MainActivity : ComponentActivity() {
         StrictMode.noteSlowCall("SlowCall")
         super.onCreate(savedInstanceState)
         redirectIntent = intent.takeIf { it.data != null }
-        viewModel.handleIntent(intent)
         setContent {
             KronorTestApp(
-                viewModel = viewModel,
                 redirectIntent = redirectIntent,
                 onRedirectHandled = { handledIntent ->
                     if (redirectIntent === handledIntent) {
@@ -100,7 +96,6 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         redirectIntent = intent.takeIf { it.data != null }
-        viewModel.handleIntent(intent)
     }
 }
 
@@ -108,8 +103,13 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PaymentMethodsScreen(
-    viewModel: MainViewModel,
-    onStartPayment: (PaymentMethod) -> Unit,
+    createPaymentSession: suspend (
+        amount: String,
+        country: Country,
+        currency: SupportedCurrencyEnum,
+        gateway: GatewayEnum?,
+    ) -> KronorApiResponse,
+    onStartPayment: (PaymentMethod, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var amount by rememberSaveable(stateSaver = TextFieldValue.Saver) {
@@ -324,7 +324,7 @@ fun PaymentMethodsScreen(
                     return@Button
                 }
                 scope.launch {
-                    val sessionResponse = viewModel.createNewPaymentSession(
+                    val sessionResponse = createPaymentSession(
                         amount.text, selectedCountry, selectedCurrency, selectedGateway
                     )
 
@@ -340,7 +340,7 @@ fun PaymentMethodsScreen(
                             } else {
                                 selectedPaymentMethod
                             }
-                            onStartPayment(paymentMethod)
+                            onStartPayment(paymentMethod, sessionResponse.token)
                         }
                     }
                 }

@@ -1,18 +1,12 @@
 package io.kronor.example
 
-import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.exception.ApolloException
 import io.kronor.api.ApiError
-import io.kronor.api.PaymentMethod
 import io.kronor.example.type.GatewayEnum
 import io.kronor.example.type.AddressInput
 import io.kronor.example.type.Country
@@ -42,14 +36,7 @@ sealed class KronorApiResponse {
     data class Response(val token: String) : KronorApiResponse()
 }
 
-class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
-    var paymentSessionToken: String?
-        get() = savedStateHandle.get<String>("sessionToken")
-        set(value) = savedStateHandle.set("sessionToken", value)
-
-    private var _paymentMethodSelected: MutableState<PaymentMethod?> = mutableStateOf(null)
-    val paymentMethodSelected: State<PaymentMethod?> = _paymentMethodSelected
-
+class MainViewModel : ViewModel() {
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun createNewPaymentSession(
         amountToPay: String, country: Country, currency: SupportedCurrencyEnum, gateway: GatewayEnum?
@@ -114,7 +101,6 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
         }
         return response.data?.newPaymentSessionWithReferenceCheck?.let { it ->
             Log.d("NewPaymentSession", "Success")
-            this.paymentSessionToken = it.token
             KronorApiResponse.Response(it.token)
         } ?: run {
             var extensionMsgs : String = ""
@@ -154,35 +140,4 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
         return null
     }
 
-    fun handleIntent(intent: Intent): Unit {
-        intent.data?.let { uri ->
-            uri.getQueryParameter("sessionToken")?.let { st ->
-                this.paymentSessionToken = st
-                uri.getQueryParameter("paymentMethod")?.let {
-                    if (it == "swish") {
-                        this._paymentMethodSelected.value = PaymentMethod.Swish()
-                    } else if (it == "creditcard") {
-                        this._paymentMethodSelected.value = PaymentMethod.CreditCard
-                    } else if (it == "mobilepay") {
-                        this._paymentMethodSelected.value = PaymentMethod.MobilePay
-                    } else if (it == "vipps") {
-                        this._paymentMethodSelected.value = PaymentMethod.Vipps
-                    } else if (it == "paypal") {
-                        this._paymentMethodSelected.value = PaymentMethod.PayPal
-                    } else {
-                        this._paymentMethodSelected.value = PaymentMethod.Fallback(it)
-                    }
-                }
-            }
-        }
-    }
-
-    fun resetPaymentState(): Unit {
-        this._paymentMethodSelected.value = null
-        this.paymentSessionToken = null
-    }
-
-    fun clearPendingPaymentMethod() {
-        this._paymentMethodSelected.value = null
-    }
 }
