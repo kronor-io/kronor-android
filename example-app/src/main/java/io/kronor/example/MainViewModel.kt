@@ -113,7 +113,7 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
             return KronorApiResponse.Error(response.exception!!.toString())
         }
         return response.data?.newPaymentSessionWithReferenceCheck?.let { it ->
-            Log.d("NewPaymentSession", "Success ${it.token}")
+            Log.d("NewPaymentSession", "Success")
             this.paymentSessionToken = it.token
             KronorApiResponse.Response(it.token)
         } ?: run {
@@ -180,5 +180,9 @@ class MainViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel(
     fun resetPaymentState(): Unit {
         this._paymentMethodSelected.value = null
         this.paymentSessionToken = null
+    }
+
+    fun clearPendingPaymentMethod() {
+        this._paymentMethodSelected.value = null
     }
 }
