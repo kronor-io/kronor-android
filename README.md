@@ -54,8 +54,8 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:swish:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:swish:3.3.0'
 }
 ```
 
@@ -117,8 +117,8 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:bank_transfer:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:bank_transfer:3.3.0'
 }
 ```
 
@@ -179,9 +179,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:credit_card:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:credit_card:3.3.0'
+    implementation 'io.kronor.component:webview_payment_gateway:3.3.0'
 }
 ```
 
@@ -242,9 +242,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:mobilepay:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:mobilepay:3.3.0'
+    implementation 'io.kronor.component:webview_payment_gateway:3.3.0'
 }
 ```
 
@@ -305,9 +305,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:vipps:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:vipps:3.3.0'
+    implementation 'io.kronor.component:webview_payment_gateway:3.3.0'
 }
 ```
 
@@ -368,9 +368,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:paypal:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:paypal:3.3.0'
+    implementation 'io.kronor.component:webview_payment_gateway:3.3.0'
 }
 ```
 
@@ -431,8 +431,8 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:googlepay:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:googlepay:3.3.0'
 }
 ```
 
@@ -494,9 +494,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:avarda:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:avarda:3.3.0'
+    implementation 'io.kronor.component:webview_payment_gateway:3.3.0'
 }
 ```
 
@@ -572,9 +572,9 @@ Dependencies:
 
 ```groovy
 dependencies {
-    implementation 'io.kronor:api:3.0.1'
-    implementation 'io.kronor.component:fallback:3.0.1'
-    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
+    implementation 'io.kronor:api:3.3.0'
+    implementation 'io.kronor.component:fallback:3.3.0'
+    implementation 'io.kronor.component:webview_payment_gateway:3.3.0'
 }
 ```
 
