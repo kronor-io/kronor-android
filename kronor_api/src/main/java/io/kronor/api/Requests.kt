@@ -380,7 +380,8 @@ private suspend fun Requests.makeNewPaymentRequestOnce(
                 )
             ).executeMapKronorError().map { PaymentRequestResult(paymentId = it.newGooglePayPayment.waitToken, gateway = it.newGooglePayPayment.gateway) }
         }
-        is PaymentMethod.Fallback -> {
+        // These are created by the web version of the payment gateway
+        is PaymentMethod.Avarda, is PaymentMethod.Fallback -> {
             failure(Exception("Impossible!"))
         }
     }

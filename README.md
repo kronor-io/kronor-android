@@ -9,6 +9,7 @@
 [![googlepay](https://maven-badges.sml.io/sonatype-central/io.kronor.component/googlepay/badge.svg?style=plastic&subject=googlepay)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/googlepay/)
 [![webview_payment_gateway](https://maven-badges.sml.io/sonatype-central/io.kronor.component/webview_payment_gateway/badge.svg?style=plastic&subject=webview_payment_gateway)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/webview_payment_gateway/)
 [![fallback](https://maven-badges.sml.io/sonatype-central/io.kronor.component/fallback/badge.svg?style=plastic&subject=fallback)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/fallback/)
+[![avarda](https://maven-badges.sml.io/sonatype-central/io.kronor.component/avarda/badge.svg?style=plastic&subject=avarda)](https://maven-badges.sml.io/sonatype-central/io.kronor.component/avarda/)
 
 Kronor Android provides payment components that you can use to create a custom checkout solution for your customers by using any of our provided payment methods.
 
@@ -25,6 +26,7 @@ These are the payment methods that are currently provided and supported by this 
 - [PayPal](#paypal)
 - [BankTransfer](#bank-transfer)
 - [GooglePay](#google-pay)
+- [Avarda](#avarda)
 
 ### Fallback
 
@@ -486,6 +488,73 @@ lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
 }
 ```
 
+### Avarda
+
+Dependencies:
+
+```groovy
+dependencies {
+    implementation 'io.kronor:api:3.0.1'
+    implementation 'io.kronor.component:avarda:3.0.1'
+    implementation 'io.kronor.component:webview_payment_gateway:3.0.1'
+}
+```
+
+Imports:
+
+```kotlin
+import io.kronor.api.BuyNowPayLaterProduct
+import io.kronor.api.Environment
+import io.kronor.api.PaymentEvent
+import io.kronor.component.avarda.AvardaComponent
+import io.kronor.component.avarda.avardaViewModel
+```
+
+Invoking the Avarda component:
+
+```kotlin
+val viewModelForAvarda = avardaViewModel(
+    avardaConfiguration = PaymentConfiguration(
+        sessionToken = "sessionToken", // the token as received from the `newPaymentSession` mutation
+        merchantLogo = R.drawable.kronor_logo, // a logo to display to the user when the payment is in progress or null
+        environment = Environment.Staging, // environment to point to
+        appName = "your_app_name",
+        appVersion = "your_app_version",
+        redirectUrl = Uri.parse("your_app_uri"),
+        locale = Locale("en_US")
+    ),
+    buyNowPayLaterProduct = BuyNowPayLaterProduct.DirectInvoice // or Invoice, Loan, PartPayment
+)
+
+AvardaComponent(viewModelForAvarda)
+```
+
+Handling the payment events:
+
+```kotlin
+lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+    launch {
+        viewModelForAvarda.events.collect { event ->
+            when (event) {
+                PaymentEvent.PaymentFailure -> {
+                    // handle the event here, example:
+                    withContext(Dispatchers.Main) {
+                        navController.navigate("paymentMethods")
+                    }
+                }
+
+                is PaymentEvent.PaymentSuccess -> {
+                    // handle the success event here, example:
+                    withContext(Dispatchers.Main) {
+                        navController.navigate("paymentMethods")
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
 ### Fallback Component
 
 All payment methods are also supported in the fallback component, in case there is no native implementation.  
@@ -571,7 +640,7 @@ LaunchedEffect(Unit) {
 ## Handling redirects
 
 For payment methods that redirect to other apps or the browser, you need to handle a redirect to the
-app. Pass the intent on redirect to `viewModelFor{Swish,CreditCard,MobilePay,Vipps,PayPal,Fallback}.handleIntent(intent)`.
+app. Pass the intent on redirect to `viewModelFor{Swish,CreditCard,MobilePay,Vipps,PayPal,Avarda,Fallback}.handleIntent(intent)`.
 The redirect uri passed to the view model, will have a paymentMethod and sessionToken added as
 query parameters.
 

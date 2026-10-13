@@ -139,7 +139,7 @@ class WebviewGatewayViewModel(
 //        Log.d("WebviewGatewayViewModel", "handleSideEffect: ${this._webviewGatewayState}")
         when (sideEffect) {
             is WebviewGatewayStatechart.Companion.SideEffect.CreatePaymentRequest -> {
-                if (this.paymentMethod is PaymentMethod.Fallback) {
+                if (this.paymentMethod is PaymentMethod.Fallback || this.paymentMethod is PaymentMethod.Avarda) {
                     _transition(WebviewGatewayStatechart.Companion.Event.PaymentRequestWillBeCreatedElsewhere)
                     this._subscribe.value = true
                     return
@@ -340,11 +340,15 @@ private fun constructPaymentGatewayUrl(
             "payment-gateway.kronor.io"
         }
     }
-    return Uri.Builder().scheme("https").authority(paymentGatewayHost).appendPath(if (isRedirectPage) getRedirectPage(paymentMethod) else "payment")
+    val builder = Uri.Builder().scheme("https").authority(paymentGatewayHost).appendPath(if (isRedirectPage) getRedirectPage(paymentMethod) else "payment")
         .appendQueryParameter("env", toGatewayEnvName(environment))
         .appendQueryParameter("paymentMethod", paymentMethod.toPaymentGatewayMethod())
         .appendQueryParameter("token", sessionToken)
-        .appendQueryParameter("merchantReturnUrl", merchantReturnUrl.toString()).build()
+        .appendQueryParameter("merchantReturnUrl", merchantReturnUrl.toString())
+    if (paymentMethod is PaymentMethod.Avarda) {
+        builder.appendQueryParameter("buyNowPayLaterProduct", paymentMethod.buyNowPayLaterProduct.value)
+    }
+    return builder.build()
 }
 
 fun getRedirectPage(paymentMethod: PaymentMethod): String {
@@ -356,6 +360,7 @@ fun getRedirectPage(paymentMethod: PaymentMethod): String {
         is PaymentMethod.PayPal -> "paypal-redirect"
         is PaymentMethod.BankTransfer -> "payment-redirect"
         is PaymentMethod.GooglePay -> "payment-redirect"
+        is PaymentMethod.Avarda -> "payment"
         is PaymentMethod.Fallback -> "payment"
     }
 }

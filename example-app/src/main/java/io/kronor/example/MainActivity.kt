@@ -426,6 +426,7 @@ private fun PaymentMethodsDropDown(
                 PaymentMethod.PayPal,
                 PaymentMethod.BankTransfer,
                 PaymentMethod.GooglePay,
+                PaymentMethod.Avarda(),
                 PaymentMethod.Fallback("p24"),
             ).forEach {
                 DropdownMenuItem(
@@ -562,6 +563,12 @@ fun setSupportedCountriesAndCurrencies(
             setSupportedGateways(arrayOf(GatewayEnum.KRONOR, GatewayEnum.REEPAY))
         }
 
+        is PaymentMethod.Avarda -> {
+            setSupportedCountries(arrayOf(Country.SE, Country.FI, Country.NO, Country.DK))
+            setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.SEK, SupportedCurrencyEnum.EUR, SupportedCurrencyEnum.NOK, SupportedCurrencyEnum.DKK))
+            setSupportedGateways(arrayOf(GatewayEnum.AVARDA))
+        }
+
         PaymentMethod.Fallback("p24") -> {
             setSupportedCountries(arrayOf(Country.PL))
             setSupportedCurrencies(arrayOf(SupportedCurrencyEnum.PLN))
@@ -587,6 +594,7 @@ fun nativeImplementationExists(selectedPaymentMethod: PaymentMethod): Boolean {
         PaymentMethod.PayPal -> true
         PaymentMethod.BankTransfer -> true
         PaymentMethod.GooglePay -> true
+        is PaymentMethod.Avarda -> true
         is PaymentMethod.Fallback -> false
     }
 }
@@ -632,6 +640,12 @@ fun setDefaultConfiguration(
             setSupportedCountry(Country.SE)
             setSupportedCurrency(SupportedCurrencyEnum.SEK)
             setDefaultGateway(GatewayEnum.KRONOR)
+        }
+
+        is PaymentMethod.Avarda -> {
+            setSupportedCountry(Country.SE)
+            setSupportedCurrency(SupportedCurrencyEnum.SEK)
+            setDefaultGateway(GatewayEnum.AVARDA)
         }
 
         PaymentMethod.Fallback("p24") -> {

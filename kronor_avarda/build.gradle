@@ -1,0 +1,29 @@
+plugins {
+    id 'kronor.android.published-library'
+    id 'kronor.android.compose'
+}
+
+kronorPublishing {
+    groupId.set('io.kronor.component')
+    artifactId.set('avarda')
+    displayName.set('avarda')
+    description.set('Kronor Avarda Component for Kronor API')
+}
+
+android {
+    namespace = 'io.kronor.component.avarda'
+}
+
+dependencies {
+    implementation libs.androidx.lifecycle.viewmodel.compose
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.material
+    testImplementation libs.junit4
+    androidTestImplementation libs.androidx.compose.ui.test.junit4
+    debugImplementation libs.androidx.compose.ui.tooling
+    debugImplementation libs.androidx.compose.ui.test.manifest
+    lintChecks libs.compose.lint.checks
+
+    api project(':kronor_api')
+    api project(':kronor_webview_payment_gateway')
+}

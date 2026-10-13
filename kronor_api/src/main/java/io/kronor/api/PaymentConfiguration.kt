@@ -22,12 +22,27 @@ sealed class PaymentMethod {
     object Vipps: PaymentMethod()
     object PayPal: PaymentMethod()
     object BankTransfer: PaymentMethod()
-
     object GooglePay: PaymentMethod()
+    data class Avarda(
+        val buyNowPayLaterProduct: BuyNowPayLaterProduct = BuyNowPayLaterProduct.DirectInvoice
+    ) : PaymentMethod()
 
     data class Fallback(val paymentMethod : String) : PaymentMethod()
 }
 
+// The buy-now-pay-later product used for an Avarda payment.
+enum class BuyNowPayLaterProduct(val value: String) {
+    DirectInvoice("DIRECT_INVOICE"),
+    Invoice("INVOICE"),
+    Loan("LOAN"),
+    PartPayment("PART_PAYMENT");
+
+    companion object {
+        fun fromValue(value: String): BuyNowPayLaterProduct? {
+            return entries.firstOrNull { it.value == value }
+        }
+    }
+}
 
 fun PaymentMethod.toRedirectMethod() : String {
     return when(this) {
@@ -38,6 +53,7 @@ fun PaymentMethod.toRedirectMethod() : String {
         is PaymentMethod.PayPal -> "paypal"
         is PaymentMethod.BankTransfer -> "bankTransfer"
         is PaymentMethod.GooglePay ->  "googlePay"
+        is PaymentMethod.Avarda -> "avarda"
         is PaymentMethod.Fallback -> this.paymentMethod
     }
 }
@@ -51,6 +67,7 @@ fun PaymentMethod.toPaymentGatewayMethod() : String {
         is PaymentMethod.PayPal -> "paypal"
         is PaymentMethod.BankTransfer -> "bankTransfer"
         is PaymentMethod.GooglePay -> "googlePay"
+        is PaymentMethod.Avarda -> "avarda"
         is PaymentMethod.Fallback -> this.paymentMethod
     }
 }

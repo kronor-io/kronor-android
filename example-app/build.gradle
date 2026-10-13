@@ -72,5 +72,6 @@ dependencies {
     implementation project(':kronor_paypal')
     implementation project(':kronor_bank_transfer')
     implementation project(':kronor_fallback')
+    implementation project(':kronor_avarda')
     implementation project(':kronor_googlepay')
 }

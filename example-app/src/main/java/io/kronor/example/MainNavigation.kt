@@ -16,10 +16,13 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import io.kronor.api.BuyNowPayLaterProduct
 import io.kronor.api.Environment
 import io.kronor.api.PaymentConfiguration
 import io.kronor.api.PaymentEvent
 import io.kronor.api.PaymentMethod
+import io.kronor.component.avarda.AvardaComponent
+import io.kronor.component.avarda.avardaViewModel
 import io.kronor.component.bank_transfer.BankTransferComponent
 import io.kronor.component.bank_transfer.bankTransferViewModel
 import io.kronor.component.credit_card.CreditCardComponent
@@ -53,6 +56,7 @@ private data class PaymentDestination(
     val kind: PaymentKind,
     val sessionToken: String,
     val fallbackMethod: String? = null,
+    val buyNowPayLaterProduct: BuyNowPayLaterProduct? = null,
     val instanceId: String = UUID.randomUUID().toString(),
 ) : ExampleDestination
 
@@ -65,6 +69,7 @@ private enum class PaymentKind {
     PAYPAL,
     BANK_TRANSFER,
     GOOGLE_PAY,
+    AVARDA,
     FALLBACK,
 }
 
@@ -76,6 +81,11 @@ private fun PaymentMethod.toDestination(sessionToken: String): PaymentDestinatio
     PaymentMethod.PayPal -> PaymentDestination(PaymentKind.PAYPAL, sessionToken)
     PaymentMethod.BankTransfer -> PaymentDestination(PaymentKind.BANK_TRANSFER, sessionToken)
     PaymentMethod.GooglePay -> PaymentDestination(PaymentKind.GOOGLE_PAY, sessionToken)
+    is PaymentMethod.Avarda -> PaymentDestination(
+        kind = PaymentKind.AVARDA,
+        sessionToken = sessionToken,
+        buyNowPayLaterProduct = buyNowPayLaterProduct
+    )
     is PaymentMethod.Fallback -> PaymentDestination(
         kind = PaymentKind.FALLBACK,
         sessionToken = sessionToken,
@@ -92,6 +102,7 @@ private fun Intent.toPaymentDestinationOrNull(): PaymentDestination? {
         "mobilepay" -> PaymentMethod.MobilePay
         "vipps" -> PaymentMethod.Vipps
         "paypal" -> PaymentMethod.PayPal
+        "avarda" -> PaymentMethod.Avarda()
         null -> return null
         else -> PaymentMethod.Fallback(method)
     }
@@ -274,6 +285,19 @@ private fun PaymentScreen(
                 onFinished = onFinished,
             )
             GooglePayComponent(paymentViewModel, modifier = modifier.statusBarsPadding())
+        }
+
+        PaymentKind.AVARDA -> {
+            val product = requireNotNull(destination.buyNowPayLaterProduct)
+            val paymentViewModel = avardaViewModel(configuration, product)
+            PaymentEffects(
+                events = paymentViewModel.events,
+                redirectIntent = redirectIntent,
+                onRedirect = paymentViewModel::handleIntent,
+                onRedirectHandled = onRedirectHandled,
+                onFinished = onFinished,
+            )
+            AvardaComponent(paymentViewModel)
         }
 
         PaymentKind.FALLBACK -> {
